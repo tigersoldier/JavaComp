@@ -12,13 +12,15 @@ import javax.annotation.Nullable;
 import org.javacomp.proto.SymbolProto.Symbol;
 
 public class SymbolIndexScope {
-  public static final SymbolIndexScope GLOBAL_SCOPE =
-      new SymbolIndexScope(null /* parentScope */, createPseudoSymbol());
 
   private final Multimap<String, SymbolIndexScope> index;
   @Nullable private final SymbolIndexScope parentScope;
   // The symbol that opens this scope.
   @Nullable private final Symbol symbol;
+
+  public static SymbolIndexScope newGlobalScope() {
+    return new SymbolIndexScope(null /* parentScope */, createPseudoSymbol());
+  }
 
   private SymbolIndexScope(@Nullable SymbolIndexScope parentScope, Symbol symbol) {
     this.parentScope = parentScope;
@@ -54,7 +56,7 @@ public class SymbolIndexScope {
   public SymbolIndexScope addSymbol(Symbol symbol) {
     SymbolIndexScope symbolScope = indexSymbolSimpleName(symbol);
     if (isTypeDeclaraion(symbol.getType())) {
-      GLOBAL_SCOPE.indexSymbolSimpleName(symbol);
+      getGlobalScope().indexSymbolSimpleName(symbol);
     }
     return symbolScope;
   }
@@ -64,8 +66,12 @@ public class SymbolIndexScope {
     return parentScope;
   }
 
-  public boolean isGlobalScope() {
-    return this == GLOBAL_SCOPE;
+  public SymbolIndexScope getGlobalScope() {
+    SymbolIndexScope currentScope = this;
+    while (currentScope.getParentScope() != null) {
+      currentScope = currentScope.getParentScope();
+    }
+    return currentScope;
   }
 
   public List<SymbolIndexScope> getNamedScopes(

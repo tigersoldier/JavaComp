@@ -1,43 +1,24 @@
 package org.javacomp;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.base.Joiner;
-import com.sun.tools.javac.file.JavacFileManager;
-import com.sun.tools.javac.parser.JavacParser;
-import com.sun.tools.javac.parser.ParserFactory;
-import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
-import com.sun.tools.javac.util.Context;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import org.javacomp.model.SymbolIndexScope;
-import org.javacomp.parser.AstScanner;
+import org.javacomp.project.Project;
 import org.javacomp.proto.SymbolProto.Symbol;
 
 public class JavaComp {
   private final String filename;
+  private final Project project;
 
   public JavaComp(String filename) {
     this.filename = filename;
+    this.project = new Project();
   }
 
   public void parse() {
-    String input;
-    try {
-      input = new String(Files.readAllBytes(Paths.get(filename)), UTF_8);
-      Context context = new Context();
-      JavacFileManager fileManager = new JavacFileManager(context, true /* register */, UTF_8);
-      JavacParser parser =
-          ParserFactory.instance(context)
-              .newParser(
-                  input, true /* keepDocComments */, true /* keepEndPos */, true /* keepLineMap */);
-      JCCompilationUnit compilationUnit = parser.parseCompilationUnit();
-      new AstScanner().scan(compilationUnit, SymbolIndexScope.GLOBAL_SCOPE);
-      printScope(SymbolIndexScope.GLOBAL_SCOPE, 0);
-    } catch (IOException e) {
-      System.exit(1);
-    }
+    project.addFile(filename);
+    printScope(project.getGlobalScope(), 0 /* index */);
   }
 
   private static String formatSymbol(Symbol symbol) {
