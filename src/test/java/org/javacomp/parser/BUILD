@@ -8,9 +8,8 @@ java_library(
         "//external:jsr305",
         "//external:junit4",
         "//external:truth",
-        "//src/main/java/org/javacomp/model:symbol_index_scope",
+        "//src/main/java/org/javacomp/model",
         "//src/main/java/org/javacomp/parser:ast_scanner",
-        "//src/main/proto:symbol_proto",
     ],
 )
 

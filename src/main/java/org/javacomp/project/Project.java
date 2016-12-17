@@ -10,18 +10,18 @@ import com.sun.tools.javac.util.Context;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import org.javacomp.model.SymbolIndexScope;
+import org.javacomp.model.GlobalIndex;
 import org.javacomp.parser.AstScanner;
 
 /** Handles all files in a project. */
 public class Project {
-  private final SymbolIndexScope globalScope;
+  private final GlobalIndex globalIndex;
   private final Context javacContext;
   private final JavacFileManager fileManager;
   private final AstScanner astScanner;
 
   public Project() {
-    globalScope = SymbolIndexScope.newGlobalScope();
+    globalIndex = new GlobalIndex();
     javacContext = new Context();
     fileManager = new JavacFileManager(javacContext, true /* register */, UTF_8);
     astScanner = new AstScanner();
@@ -35,13 +35,13 @@ public class Project {
               .newParser(
                   input, true /* keepDocComments */, true /* keepEndPos */, true /* keepLineMap */);
       JCCompilationUnit compilationUnit = parser.parseCompilationUnit();
-      astScanner.scan(compilationUnit, globalScope);
+      astScanner.scan(compilationUnit, globalIndex);
     } catch (IOException e) {
       System.exit(1);
     }
   }
 
-  public SymbolIndexScope getGlobalScope() {
-    return globalScope;
+  public GlobalIndex getGlobalIndex() {
+    return globalIndex;
   }
 }

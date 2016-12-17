@@ -3,7 +3,8 @@ package org.javacomp.parser;
 import static com.google.common.truth.Truth.assertThat;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import com.google.common.base.Joiner;
+import com.google.common.base.Optional;
+import com.google.common.collect.Iterables;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.parser.JavacParser;
 import com.sun.tools.javac.parser.ParserFactory;
@@ -11,9 +12,10 @@ import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import com.sun.tools.javac.util.Context;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.List;
-import org.javacomp.model.SymbolIndexScope;
-import org.javacomp.proto.SymbolProto.Symbol;
+import java.util.Collection;
+import org.javacomp.model.GlobalIndex;
+import org.javacomp.model.Symbol;
+import org.javacomp.model.SymbolIndex;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -25,7 +27,7 @@ public class AstScannerTest {
       "src/test/java/org/javacomp/parser/testdata/TestData.java";
 
   private final AstScanner scanner = new AstScanner();
-  private final SymbolIndexScope globalScope = SymbolIndexScope.newGlobalScope();
+  private final GlobalIndex globalIndex = new GlobalIndex();
 
   private JCCompilationUnit compilationUnit;
 
@@ -39,42 +41,75 @@ public class AstScannerTest {
             .newParser(
                 input, true /* keepDocComments */, true /* keepEndPos */, true /* keepLineMap */);
     compilationUnit = parser.parseCompilationUnit();
-    scanner.scan(compilationUnit, globalScope);
+    scanner.startScan(compilationUnit, globalIndex);
   }
 
   @Test
   public void packagesAreIndexed() {
-    SymbolIndexScope packageScope = lookupQualifiedName(globalScope, "test.data");
-    assertThat(packageScope.getSymbol().getType()).isEqualTo(Symbol.Type.QUALIFIER);
+    Symbol packageSymbol = lookupQualifiedName(globalIndex, "test.data");
+    assertThat(packageSymbol.getKind()).isEqualTo(Symbol.Kind.QUALIFIER);
   }
 
   @Test
   public void classIsIndexedInPackage() {
-    SymbolIndexScope classScope = lookupQualifiedName(globalScope, "test.data.TestData");
-    assertThat(classScope.getSymbol().getType()).isEqualTo(Symbol.Type.CLASS);
+    Symbol classSymbol = lookupQualifiedName(globalIndex, "test.data.TestData");
+    assertThat(classSymbol.getKind()).isEqualTo(Symbol.Kind.CLASS);
   }
 
   @Test
-  public void classIsIndexedInGlobalScope() {
-    SymbolIndexScope classScope = lookupQualifiedName(globalScope, "TestData");
-    assertThat(classScope.getSymbol().getType()).isEqualTo(Symbol.Type.CLASS);
+  public void classIsIndexedInGlobalIndex() {
+    Optional<Symbol> classSymbol =
+        globalIndex.getSymbolWithNameAndKind("TestData", Symbol.Kind.CLASS);
+    assertThat(classSymbol).isPresent();
+    assertThat(classSymbol.get().getKind()).isEqualTo(Symbol.Kind.CLASS);
   }
 
-  private static SymbolIndexScope lookupQualifiedName(
-      SymbolIndexScope scope, String qualifiedName) {
+  @Test
+  public void methodIsIndexedInClassIndex() {
+    Symbol methodSymbol =
+        lookupQualifiedName(globalIndex, "test.data.TestData.publicIfBlockMethod");
+    assertThat(methodSymbol.getKind()).isEqualTo(Symbol.Kind.METHOD);
+  }
+
+  @Test
+  public void classStaticFieldIsIndexedInClassIndex() {
+    Symbol variableSymbol =
+        lookupQualifiedName(globalIndex, "test.data.TestData.publicStaticIntField");
+    assertThat(variableSymbol.getKind()).isEqualTo(Symbol.Kind.VARIABLE);
+  }
+
+  @Test
+  public void innerClassIsIndexedInClassIndex() {
+    Symbol classSymbol =
+        lookupQualifiedName(globalIndex, "test.data.TestData.PrivateStaticInnerClass");
+    assertThat(classSymbol.getKind()).isEqualTo(Symbol.Kind.CLASS);
+    Symbol annotationSymbol =
+        lookupQualifiedName(globalIndex, "test.data.TestData.PublicInnerAnnotation");
+    assertThat(annotationSymbol.getKind()).isEqualTo(Symbol.Kind.ANNOTATION);
+    Symbol enumSymbol = lookupQualifiedName(globalIndex, "test.data.TestData.PublicInnerEnum");
+    assertThat(enumSymbol.getKind()).isEqualTo(Symbol.Kind.ENUM);
+    Symbol interfaceSymbol =
+        lookupQualifiedName(globalIndex, "test.data.TestData.PublicInnerInterface");
+    assertThat(interfaceSymbol.getKind()).isEqualTo(Symbol.Kind.INTERFACE);
+  }
+
+  @Test
+  public void enumItemIsIndexedInEnumIndex() {
+    Symbol variableSymbol =
+        lookupQualifiedName(globalIndex, "test.data.TestData.PublicInnerEnum.ENUM_VALUE1");
+    assertThat(variableSymbol.getKind()).isEqualTo(Symbol.Kind.VARIABLE);
+  }
+
+  private static Symbol lookupQualifiedName(SymbolIndex index, String qualifiedName) {
     String[] qualifiers = qualifiedName.split("\\.");
-    SymbolIndexScope currentScope = scope;
+    SymbolIndex currentIndex = index;
+    Symbol symbol = null;
     for (String qualifier : qualifiers) {
-      List<SymbolIndexScope> scopes = currentScope.getNamedScopes(qualifier);
-      if (scopes.isEmpty()) {
-        throw new RuntimeException(
-            "scope "
-                + qualifier
-                + " not found in "
-                + Joiner.on(".").join(currentScope.getQualifiers()));
-      }
-      currentScope = scopes.get(0);
+      Collection<Symbol> symbols = currentIndex.getAllSymbols().get(qualifier);
+      assertThat(symbols).isNotEmpty();
+      symbol = Iterables.getFirst(symbols, null);
+      currentIndex = symbol.getChildIndex();
     }
-    return currentScope;
+    return symbol;
   }
 }

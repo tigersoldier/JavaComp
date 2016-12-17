@@ -1,7 +1,8 @@
 package test.data;
 
 public class TestData {
-  private final int a;
+  public static final int publicStaticIntField;
+  private final boolean privateMemberBooleanField;
 
   private TestData() {
     a = 0;
@@ -56,15 +57,30 @@ public class TestData {
     }
   }
 
-  private static class PrivateStaticSubClass {
+  private static class PrivateStaticInnerClass {
     private void privateMethod1() {}
 
     public void publicMethod1() {}
   }
 
-  public class PublicSubClass {
+  public class PublicInnerClass {
     public void publicMethod2() {}
 
     private void privateMethod2() {}
+  }
+
+  public interface PublicInnerInterface {
+    void interfaceMethod();
+  }
+
+  public @interface PublicInnerAnnotation {
+    int value();
+  }
+
+  public enum PublicInnerEnum {
+    ENUM_VALUE1,
+    ENUM_VALUE2,
+    ;
+    public void publicEnumMethod() {}
   }
 }

@@ -1,10 +1,12 @@
+package(
+    default_visibility = ["//visibility:public"],
+)
+
 java_library(
-    name = "symbol_index_scope",
-    srcs = ["SymbolIndexScope.java"],
-    visibility = ["//visibility:public"],
+    name = "model",
+    srcs = glob(["*.java"]),
     deps = [
         "//external:guava",
         "//external:jsr305",
-        "//src/main/proto:symbol_proto",
     ],
 )
