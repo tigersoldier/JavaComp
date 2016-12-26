@@ -5,18 +5,15 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
-import com.google.common.collect.RangeMap;
 import java.util.List;
-import javax.annotation.Nullable;
 
-/** Index of symbols in the scope of a Java source file. */
-public class FileIndex implements SymbolIndex {
+/** Index of symbols in a unnamed block of statements, such as if, while, or switch. */
+public class BlockIndex implements SymbolIndex {
   // Map of simple names -> symbols.
   private final Multimap<String, Symbol> symbols;
   private final SymbolIndex parentIndex;
-  private RangeMap<Integer, SymbolIndex> indexRangeMap = null;
 
-  public FileIndex(SymbolIndex parentIndex) {
+  public BlockIndex(SymbolIndex parentIndex) {
     this.symbols = HashMultimap.create();
     this.parentIndex = parentIndex;
   }
@@ -50,14 +47,5 @@ public class FileIndex implements SymbolIndex {
   @Override
   public void addSymbol(Symbol symbol) {
     symbols.put(symbol.getSimpleName(), symbol);
-  }
-
-  public void setIndexRangeMap(RangeMap<Integer, SymbolIndex> indexRangeMap) {
-    this.indexRangeMap = indexRangeMap;
-  }
-
-  @Nullable
-  public SymbolIndex getSymbolIndexAt(int position) {
-    return indexRangeMap.get(position);
   }
 }

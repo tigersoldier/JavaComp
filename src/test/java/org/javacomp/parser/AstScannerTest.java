@@ -4,6 +4,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.parser.JavacParser;
@@ -14,6 +15,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Collection;
 import org.javacomp.model.GlobalIndex;
+import org.javacomp.model.MethodSymbol;
 import org.javacomp.model.Symbol;
 import org.javacomp.model.SymbolIndex;
 import org.junit.Before;
@@ -30,18 +32,22 @@ public class AstScannerTest {
   private final GlobalIndex globalIndex = new GlobalIndex();
 
   private JCCompilationUnit compilationUnit;
+  private String testDataContent;
 
   @Before
-  public void setUpCompilationUnit() throws Exception {
+  public void startScan() throws Exception {
     Context javacContext = new Context();
     JavacFileManager fileManager = new JavacFileManager(javacContext, true /* register */, UTF_8);
-    String input = new String(Files.readAllBytes(Paths.get(TEST_DATA_PATH)), UTF_8);
+    testDataContent = new String(Files.readAllBytes(Paths.get(TEST_DATA_PATH)), UTF_8);
     JavacParser parser =
         ParserFactory.instance(javacContext)
             .newParser(
-                input, true /* keepDocComments */, true /* keepEndPos */, true /* keepLineMap */);
+                testDataContent,
+                true /* keepDocComments */,
+                true /* keepEndPos */,
+                true /* keepLineMap */);
     compilationUnit = parser.parseCompilationUnit();
-    scanner.startScan(compilationUnit, globalIndex);
+    scanner.startScan(compilationUnit, globalIndex, TEST_DATA_PATH);
   }
 
   @Test
@@ -98,6 +104,133 @@ public class AstScannerTest {
     Symbol variableSymbol =
         lookupQualifiedName(globalIndex, "test.data.TestData.PublicInnerEnum.ENUM_VALUE1");
     assertThat(variableSymbol.getKind()).isEqualTo(Symbol.Kind.VARIABLE);
+  }
+
+  @Test
+  public void topLevelClassIndexRange() {
+    SymbolIndex indexAtStart = getSymbolIndexAfter("public class TestData {");
+    SymbolIndex indexAtEnd = getSymbolIndexBefore("} // class TestData");
+    SymbolIndex indexAtField = getSymbolIndexAfter("publicStaticIntField;");
+    for (SymbolIndex index : ImmutableList.of(indexAtStart, indexAtEnd, indexAtField)) {
+      assertThat(index)
+          .isEqualTo(lookupQualifiedName(globalIndex, "test.data.TestData").getChildIndex());
+    }
+  }
+
+  @Test
+  public void innerEnumIndexRange() {
+    SymbolIndex indexAtStart = getSymbolIndexAfter("public enum PublicInnerEnum {");
+    SymbolIndex indexAtEnd = getSymbolIndexBefore("} // PublicInnerEnum");
+    SymbolIndex indexAtField = getSymbolIndexAfter("ENUM_VALUE1,");
+    for (SymbolIndex index : ImmutableList.of(indexAtStart, indexAtEnd, indexAtField)) {
+      assertThat(index)
+          .isEqualTo(
+              lookupQualifiedName(globalIndex, "test.data.TestData.PublicInnerEnum")
+                  .getChildIndex());
+    }
+  }
+
+  @Test
+  public void innerInterfaceIndexRange() {
+    SymbolIndex indexAtStart = getSymbolIndexAfter("public interface PublicInnerInterface {");
+    SymbolIndex indexAtEnd = getSymbolIndexBefore("} // PublicInnerInterface");
+    SymbolIndex indexAtField = getSymbolIndexAfter("interfaceMethod();");
+    for (SymbolIndex index : ImmutableList.of(indexAtStart, indexAtEnd, indexAtField)) {
+      assertThat(index)
+          .isEqualTo(
+              lookupQualifiedName(globalIndex, "test.data.TestData.PublicInnerInterface")
+                  .getChildIndex());
+    }
+  }
+
+  @Test
+  public void methodIndexRange() {
+    SymbolIndex indexAtStart = getSymbolIndexAfter("publicIfBlockMethod() {");
+    SymbolIndex indexAtEnd = getSymbolIndexBefore("} // publicIfBlockMethod");
+    SymbolIndex indexAtField = getSymbolIndexAfter("methodScopeVar");
+    for (SymbolIndex index : ImmutableList.of(indexAtStart, indexAtEnd, indexAtField)) {
+      MethodSymbol methodSymbol =
+          (MethodSymbol) lookupQualifiedName(globalIndex, "test.data.TestData.publicIfBlockMethod");
+      assertThat(index).isEqualTo(methodSymbol.getOverloadIndexes().get(0));
+    }
+  }
+
+  @Test
+  public void ifBlockIndexRange() {
+    SymbolIndex indexAtStart = getSymbolIndexAfter("if (a == 1) {");
+    SymbolIndex indexAtEnd = getSymbolIndexBefore("} else { // end of if");
+    SymbolIndex indexAtField = getSymbolIndexAfter("ifScopeVar");
+    for (SymbolIndex index : ImmutableList.of(indexAtStart, indexAtEnd, indexAtField)) {
+      assertThat(index.getSymbolWithNameAndKind("ifScopeVar", Symbol.Kind.VARIABLE)).isPresent();
+      assertThat(index.getSymbolsWithName("elseScopeVar")).isEmpty();
+    }
+  }
+
+  @Test
+  public void elseBlockIndexRange() {
+    SymbolIndex indexAtStart = getSymbolIndexAfter("else {");
+    SymbolIndex indexAtEnd = getSymbolIndexBefore("} // else");
+    SymbolIndex indexAtField = getSymbolIndexAfter("elseScopeVar");
+    for (SymbolIndex index : ImmutableList.of(indexAtStart, indexAtEnd, indexAtField)) {
+      assertThat(index.getSymbolWithNameAndKind("elseScopeVar", Symbol.Kind.VARIABLE)).isPresent();
+      assertThat(index.getSymbolsWithName("ifScopeVar")).isEmpty();
+    }
+  }
+
+  @Test
+  public void whileBlockIndexRange() {
+    SymbolIndex indexAtStart = getSymbolIndexAfter("while (number > 0) {");
+    SymbolIndex indexAtEnd = getSymbolIndexBefore("} // while loop");
+    SymbolIndex indexAtField = getSymbolIndexAfter("whileScopeVar");
+    for (SymbolIndex index : ImmutableList.of(indexAtStart, indexAtEnd, indexAtField)) {
+      assertThat(index.getSymbolWithNameAndKind("whileScopeVar", Symbol.Kind.VARIABLE)).isPresent();
+    }
+  }
+
+  @Test
+  public void forBlockIndexRange() {
+    SymbolIndex indexAtStart = getSymbolIndexAfter("for (String s : input) {");
+    SymbolIndex indexAtEnd = getSymbolIndexBefore("} // for loop");
+    SymbolIndex indexAtField = getSymbolIndexAfter("forScopeVar");
+    for (SymbolIndex index : ImmutableList.of(indexAtStart, indexAtEnd, indexAtField)) {
+      assertThat(index.getSymbolWithNameAndKind("forScopeVar", Symbol.Kind.VARIABLE)).isPresent();
+    }
+  }
+
+  @Test
+  public void switchBlockIndexRange() {
+    SymbolIndex indexAtStart = getSymbolIndexAfter("switch (a) {");
+    SymbolIndex indexAtEnd = getSymbolIndexBefore("} // switch");
+    SymbolIndex indexAtField = getSymbolIndexAfter("switchScopeVar");
+    for (SymbolIndex index : ImmutableList.of(indexAtStart, indexAtEnd, indexAtField)) {
+      assertThat(index.getSymbolWithNameAndKind("switchScopeVar", Symbol.Kind.VARIABLE))
+          .isPresent();
+      assertThat(index.getSymbolsWithName("caseScopeVar")).isEmpty();
+    }
+  }
+
+  @Test
+  public void switchCaseBlockIndexRange() {
+    SymbolIndex indexAtStart = getSymbolIndexBefore("{ // start of case block");
+    SymbolIndex indexAtEnd = getSymbolIndexBefore("} // end of case block");
+    SymbolIndex indexAtField = getSymbolIndexAfter("caseScopeVar");
+    for (SymbolIndex index : ImmutableList.of(indexAtStart, indexAtEnd, indexAtField)) {
+      assertThat(index.getSymbolWithNameAndKind("switchScopeVar", Symbol.Kind.VARIABLE))
+          .isPresent();
+      assertThat(index.getSymbolWithNameAndKind("caseScopeVar", Symbol.Kind.VARIABLE)).isPresent();
+    }
+  }
+
+  private SymbolIndex getSymbolIndexAfter(String subString) {
+    assertThat(testDataContent).contains(subString);
+    int pos = testDataContent.indexOf(subString);
+    return globalIndex.getFileIndex(TEST_DATA_PATH).getSymbolIndexAt(pos + subString.length());
+  }
+
+  private SymbolIndex getSymbolIndexBefore(String subString) {
+    assertThat(testDataContent).contains(subString);
+    int pos = testDataContent.indexOf(subString);
+    return globalIndex.getFileIndex(TEST_DATA_PATH).getSymbolIndexAt(pos);
   }
 
   private static Symbol lookupQualifiedName(SymbolIndex index, String qualifiedName) {

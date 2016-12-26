@@ -4,19 +4,26 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Range;
+import com.sun.source.tree.BlockTree;
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.IdentifierTree;
 import com.sun.source.tree.MemberSelectTree;
 import com.sun.source.tree.MethodTree;
+import com.sun.source.tree.StatementTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.tree.VariableTree;
 import com.sun.source.util.TreeScanner;
+import com.sun.tools.javac.tree.EndPosTable;
+import com.sun.tools.javac.tree.JCTree;
+import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
+import org.javacomp.model.BlockIndex;
 import org.javacomp.model.ClassIndex;
 import org.javacomp.model.ClassSymbol;
 import org.javacomp.model.FileIndex;
@@ -28,6 +35,7 @@ import org.javacomp.model.PackageSymbol;
 import org.javacomp.model.Symbol;
 import org.javacomp.model.SymbolIndex;
 import org.javacomp.model.VariableSymbol;
+import org.javacomp.model.util.NestedRangeMapBuilder;
 
 public class AstScanner extends TreeScanner<Void, SymbolIndex> {
   private static final List<String> EMPTY_QUALIFIERS = ImmutableList.of();
@@ -35,10 +43,15 @@ public class AstScanner extends TreeScanner<Void, SymbolIndex> {
   private GlobalIndex globalIndex = null;
   private FileIndex fileIndex = null;
   private List<String> currentQualifiers = new ArrayList<>();
+  private EndPosTable endPosTable = null;
+  private NestedRangeMapBuilder<SymbolIndex> indexRangeBuilder = null;
+  private String filename = null;
 
-  public Void startScan(Tree node, GlobalIndex globalIndex) {
+  public Void startScan(JCCompilationUnit node, GlobalIndex globalIndex, String filename) {
     this.globalIndex = globalIndex;
+    this.filename = filename;
     super.scan(node, globalIndex);
+    this.filename = null;
     this.globalIndex = null;
     return null;
   }
@@ -65,12 +78,25 @@ public class AstScanner extends TreeScanner<Void, SymbolIndex> {
     }
 
     this.fileIndex = new FileIndex(currentIndex);
-    for (Tree decl : node.getTypeDecls()) {
-      this.scan(decl, fileIndex);
-    }
+    this.indexRangeBuilder = new NestedRangeMapBuilder<>();
+    this.endPosTable = ((JCCompilationUnit) node).endPositions;
 
+    // Map file name to the FileIndex.
+    // TODO: if this is an update (e.g. the filename exists in global index), remove all symbols in
+    // the existing FileIndex from global index.
+    globalIndex.addFileIndex(filename, this.fileIndex);
+
+    // Handle toplevel type declarations (class, interface, enum, annotation, etc).
+    for (Tree decl : node.getTypeDecls()) {
+      this.scan(decl, this.fileIndex);
+    }
+    this.fileIndex.setIndexRangeMap(indexRangeBuilder.build());
+
+    // Cleanup
     this.currentQualifiers.clear();
     this.fileIndex = null;
+    this.indexRangeBuilder = null;
+    this.endPosTable = null;
     return null;
   }
 
@@ -99,6 +125,7 @@ public class AstScanner extends TreeScanner<Void, SymbolIndex> {
             node.getSimpleName().toString(), symbolKind, this.currentQualifiers, classIndex);
     this.globalIndex.addSymbol(classSymbol);
     currentIndex.addSymbol(classSymbol);
+    addIndexRange((JCTree) node, classIndex);
     this.currentQualifiers.add(classSymbol.getSimpleName());
     for (Tree member : node.getMembers()) {
       scan(member, classIndex);
@@ -126,7 +153,9 @@ public class AstScanner extends TreeScanner<Void, SymbolIndex> {
     // No symbol defined inside method scope is qualified.
     this.currentQualifiers = EMPTY_QUALIFIERS;
     if (node.getBody() != null) {
-      visitBlock(node.getBody(), methodIndex);
+      // Use user.visitBlock because it doesn't create extra BlockIndex.
+      super.visitBlock(node.getBody(), methodIndex);
+      addIndexRange((JCTree) node, methodIndex);
     }
     this.currentQualifiers = previousQualifiers;
     return null;
@@ -141,6 +170,16 @@ public class AstScanner extends TreeScanner<Void, SymbolIndex> {
     return null;
   }
 
+  @Override
+  public Void visitBlock(BlockTree node, SymbolIndex currentIndex) {
+    BlockIndex blockIndex = new BlockIndex(currentIndex);
+    for (StatementTree statement : node.getStatements()) {
+      this.scan(statement, blockIndex);
+    }
+    addIndexRange((JCTree) node, blockIndex);
+    return null;
+  }
+
   private static List<String> nameToQualifiers(ExpressionTree name) {
     Deque<String> stack = new ArrayDeque<>();
     while (name instanceof MemberSelectTree) {
@@ -150,5 +189,11 @@ public class AstScanner extends TreeScanner<Void, SymbolIndex> {
     }
     stack.addFirst(((IdentifierTree) name).getName().toString());
     return ImmutableList.copyOf(stack);
+  }
+
+  private void addIndexRange(JCTree node, SymbolIndex index) {
+    Range<Integer> range =
+        Range.closedOpen(node.getStartPosition(), node.getEndPosition(endPosTable));
+    indexRangeBuilder.put(range, index);
   }
 }

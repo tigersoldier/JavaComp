@@ -1,7 +1,8 @@
 package org.javacomp.model;
 
-import java.util.List;
+import com.google.common.collect.FluentIterable;
 import java.util.ArrayList;
+import java.util.List;
 
 /** Represents a method. */
 public class MethodSymbol extends Symbol {
@@ -16,6 +17,10 @@ public class MethodSymbol extends Symbol {
   public SymbolIndex getChildIndex() {
     // Unknown index until we know the overloading.
     return LeafIndex.INSTANCE;
+  }
+
+  public List<MethodIndex> getOverloadIndexes() {
+    return FluentIterable.from(overloads).transform(overload -> overload.methodIndex).toList();
   }
 
   public void addOverload(MethodIndex methodIndex) {

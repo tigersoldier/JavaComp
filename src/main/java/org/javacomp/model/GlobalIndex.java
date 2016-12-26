@@ -5,7 +5,10 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import javax.annotation.Nullable;
 
 /**
  * The index of the whole project. Can reach all scoped symbols (e.g. packages, classes) defined in
@@ -14,9 +17,12 @@ import java.util.List;
 public class GlobalIndex implements SymbolIndex {
   // Map of simple names -> symbols.
   private final Multimap<String, Symbol> symbols;
+  // Map of filename -> FileIndex.
+  private final Map<String, FileIndex> fileIndexMap;
 
   public GlobalIndex() {
     this.symbols = HashMultimap.create();
+    this.fileIndexMap = new HashMap<>();
   }
 
   @Override
@@ -42,5 +48,14 @@ public class GlobalIndex implements SymbolIndex {
   @Override
   public void addSymbol(Symbol symbol) {
     symbols.put(symbol.getSimpleName(), symbol);
+  }
+
+  public void addFileIndex(String filename, FileIndex fileIndex) {
+    fileIndexMap.put(filename, fileIndex);
+  }
+
+  @Nullable
+  public FileIndex getFileIndex(String filename) {
+    return fileIndexMap.get(filename);
   }
 }
