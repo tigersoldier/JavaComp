@@ -1,6 +1,6 @@
 java_library(
-    name = "ast_scanner",
-    srcs = ["AstScanner.java"],
+    name = "parser",
+    srcs = glob(["*.java"]),
     visibility = ["//visibility:public"],
     deps = [
         "//external:guava",

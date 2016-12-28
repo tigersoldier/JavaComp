@@ -22,6 +22,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import com.sun.tools.javac.util.Log;
 
 @RunWith(JUnit4.class)
 public class AstScannerTest {
@@ -39,6 +40,12 @@ public class AstScannerTest {
     Context javacContext = new Context();
     JavacFileManager fileManager = new JavacFileManager(javacContext, true /* register */, UTF_8);
     testDataContent = new String(Files.readAllBytes(Paths.get(TEST_DATA_PATH)), UTF_8);
+
+    // If source file not set, parser will throw IllegalArgumentException when errors occur.
+    SourceFileObject sourceFileObject = new SourceFileObject("/" + TEST_DATA_PATH);
+    Log javacLog = Log.instance(javacContext);
+    javacLog.useSource(sourceFileObject);
+
     JavacParser parser =
         ParserFactory.instance(javacContext)
             .newParser(

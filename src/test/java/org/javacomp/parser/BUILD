@@ -9,7 +9,7 @@ java_library(
         "//external:junit4",
         "//external:truth",
         "//src/main/java/org/javacomp/model",
-        "//src/main/java/org/javacomp/parser:ast_scanner",
+        "//src/main/java/org/javacomp/parser",
     ],
 )
 

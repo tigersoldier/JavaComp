@@ -12,6 +12,8 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import org.javacomp.model.GlobalIndex;
 import org.javacomp.parser.AstScanner;
+import com.sun.tools.javac.util.Log;
+import org.javacomp.parser.SourceFileObject;
 
 /** Handles all files in a project. */
 public class Project {
@@ -30,6 +32,14 @@ public class Project {
   public void addFile(String filename) {
     try {
       String input = new String(Files.readAllBytes(Paths.get(filename)), UTF_8);
+
+      // Set source file of the log before parsing. If not set, IllegalArgumentException will be
+      // thrown if the parser enconters errors.
+      SourceFileObject sourceFileObject = new SourceFileObject(filename);
+      Log javacLog = Log.instance(javacContext);
+      javacLog.useSource(sourceFileObject);
+
+      // Create a parser and start parsing.
       JavacParser parser =
           ParserFactory.instance(javacContext)
               .newParser(
