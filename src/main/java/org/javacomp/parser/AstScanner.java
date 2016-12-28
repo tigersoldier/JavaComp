@@ -38,7 +38,7 @@ import org.javacomp.model.VariableSymbol;
 import org.javacomp.model.util.NestedRangeMapBuilder;
 
 public class AstScanner extends TreeScanner<Void, SymbolIndex> {
-  private static final List<String> EMPTY_QUALIFIERS = ImmutableList.of();
+  private static final List<String> UNAVAILABLE_QUALIFIERS = ImmutableList.of();
 
   private GlobalIndex globalIndex = null;
   private FileIndex fileIndex = null;
@@ -126,11 +126,18 @@ public class AstScanner extends TreeScanner<Void, SymbolIndex> {
     this.globalIndex.addSymbol(classSymbol);
     currentIndex.addSymbol(classSymbol);
     addIndexRange((JCTree) node, classIndex);
-    this.currentQualifiers.add(classSymbol.getSimpleName());
+    if (this.currentQualifiers != UNAVAILABLE_QUALIFIERS) {
+      // Not in a method, can be reached globally.
+      this.currentQualifiers.add(classSymbol.getSimpleName());
+    }
+
     for (Tree member : node.getMembers()) {
       scan(member, classIndex);
     }
-    this.currentQualifiers.remove(this.currentQualifiers.size() - 1);
+
+    if (this.currentQualifiers != UNAVAILABLE_QUALIFIERS) {
+      this.currentQualifiers.remove(this.currentQualifiers.size() - 1);
+    }
     return null;
   }
 
@@ -151,7 +158,7 @@ public class AstScanner extends TreeScanner<Void, SymbolIndex> {
     currentIndex.addSymbol(methodSymbol);
     List<String> previousQualifiers = this.currentQualifiers;
     // No symbol defined inside method scope is qualified.
-    this.currentQualifiers = EMPTY_QUALIFIERS;
+    this.currentQualifiers = UNAVAILABLE_QUALIFIERS;
     if (node.getBody() != null) {
       // Use user.visitBlock because it doesn't create extra BlockIndex.
       super.visitBlock(node.getBody(), methodIndex);

@@ -221,6 +221,18 @@ public class AstScannerTest {
     }
   }
 
+  @Test
+  public void annonymousClassIndexRange() {
+    SymbolIndex indexAtStart = getSymbolIndexAfter("new PublicInnerInterface() {");
+    SymbolIndex indexAtEnd = getSymbolIndexBefore("} /* end of new PublicInnerInterface *");
+    SymbolIndex indexAtField = getSymbolIndexAfter("privateAnnonymousClassMethod");
+    for (SymbolIndex index : ImmutableList.of(indexAtStart, indexAtEnd, indexAtField)) {
+      assertThat(index.getSymbolWithNameAndKind("privateAnnonymousClassMethod", Symbol.Kind.METHOD))
+          .isPresent();
+      assertThat(index.getSymbolWithNameAndKind("interfaceMethod", Symbol.Kind.METHOD)).isPresent();
+    }
+  }
+
   private SymbolIndex getSymbolIndexAfter(String subString) {
     assertThat(testDataContent).contains(subString);
     int pos = testDataContent.indexOf(subString);

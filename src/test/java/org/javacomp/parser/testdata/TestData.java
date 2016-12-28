@@ -45,6 +45,18 @@ public class TestData {
     return output;
   } // privateForBlockMethod
 
+  private void annonymousClass() {
+    this.setInnerInterfaceObject(
+        new PublicInnerInterface() {
+          @Override
+          public void interfaceMethod() {
+            // noop
+          }
+
+          private void privateAnnonymousClassMethod() {}
+        } /* end of new PublicInnerInterface */);
+  }
+
   void packagePrivateSwitchCaseMethod() {
     switch (a) {
       case 0:
