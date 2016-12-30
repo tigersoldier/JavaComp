@@ -7,12 +7,13 @@ import com.sun.tools.javac.parser.JavacParser;
 import com.sun.tools.javac.parser.ParserFactory;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.Log;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import org.javacomp.model.FileIndex;
 import org.javacomp.model.GlobalIndex;
 import org.javacomp.parser.AstScanner;
-import com.sun.tools.javac.util.Log;
 import org.javacomp.parser.SourceFileObject;
 
 /** Handles all files in a project. */
@@ -45,7 +46,8 @@ public class Project {
               .newParser(
                   input, true /* keepDocComments */, true /* keepEndPos */, true /* keepLineMap */);
       JCCompilationUnit compilationUnit = parser.parseCompilationUnit();
-      astScanner.scan(compilationUnit, globalIndex);
+      FileIndex fileIndex = astScanner.startScan(compilationUnit, filename);
+      globalIndex.addOrReplaceFileIndex(filename, fileIndex);
     } catch (IOException e) {
       System.exit(1);
     }

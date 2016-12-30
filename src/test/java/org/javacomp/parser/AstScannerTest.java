@@ -3,7 +3,6 @@ package org.javacomp.parser;
 import static com.google.common.truth.Truth.assertThat;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.sun.tools.javac.file.JavacFileManager;
@@ -11,10 +10,12 @@ import com.sun.tools.javac.parser.JavacParser;
 import com.sun.tools.javac.parser.ParserFactory;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.Log;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Collection;
-import org.javacomp.model.GlobalIndex;
+import java.util.List;
+import org.javacomp.model.FileIndex;
 import org.javacomp.model.MethodSymbol;
 import org.javacomp.model.Symbol;
 import org.javacomp.model.SymbolIndex;
@@ -22,7 +23,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import com.sun.tools.javac.util.Log;
 
 @RunWith(JUnit4.class)
 public class AstScannerTest {
@@ -30,10 +30,10 @@ public class AstScannerTest {
       "src/test/java/org/javacomp/parser/testdata/TestData.java";
 
   private final AstScanner scanner = new AstScanner();
-  private final GlobalIndex globalIndex = new GlobalIndex();
 
   private JCCompilationUnit compilationUnit;
   private String testDataContent;
+  private FileIndex fileIndex;
 
   @Before
   public void startScan() throws Exception {
@@ -54,62 +54,54 @@ public class AstScannerTest {
                 true /* keepEndPos */,
                 true /* keepLineMap */);
     compilationUnit = parser.parseCompilationUnit();
-    scanner.startScan(compilationUnit, globalIndex, TEST_DATA_PATH);
+    fileIndex = scanner.startScan(compilationUnit, TEST_DATA_PATH);
   }
 
   @Test
-  public void packagesAreIndexed() {
-    Symbol packageSymbol = lookupQualifiedName(globalIndex, "test.data");
-    assertThat(packageSymbol.getKind()).isEqualTo(Symbol.Kind.QUALIFIER);
+  public void fileIndexHasCorrectPackage() {
+    assertThat(fileIndex.getPackageQualifiers()).containsExactly("test", "data").inOrder();
   }
 
   @Test
   public void classIsIndexedInPackage() {
-    Symbol classSymbol = lookupQualifiedName(globalIndex, "test.data.TestData");
+    Symbol classSymbol = lookupSymbol(fileIndex, "TestData");
     assertThat(classSymbol.getKind()).isEqualTo(Symbol.Kind.CLASS);
   }
 
   @Test
-  public void classIsIndexedInGlobalIndex() {
-    Optional<Symbol> classSymbol =
-        globalIndex.getSymbolWithNameAndKind("TestData", Symbol.Kind.CLASS);
-    assertThat(classSymbol).isPresent();
-    assertThat(classSymbol.get().getKind()).isEqualTo(Symbol.Kind.CLASS);
+  public void classIsIndexedGlobally() {
+    List<Symbol> classSymbol = fileIndex.getGlobalSymbolsWithName("TestData");
+    assertThat(classSymbol).hasSize(1);
+    assertThat(classSymbol.get(0).getKind()).isEqualTo(Symbol.Kind.CLASS);
   }
 
   @Test
   public void methodIsIndexedInClassIndex() {
-    Symbol methodSymbol =
-        lookupQualifiedName(globalIndex, "test.data.TestData.publicIfBlockMethod");
+    Symbol methodSymbol = lookupSymbol(fileIndex, "TestData.publicIfBlockMethod");
     assertThat(methodSymbol.getKind()).isEqualTo(Symbol.Kind.METHOD);
   }
 
   @Test
   public void classStaticFieldIsIndexedInClassIndex() {
-    Symbol variableSymbol =
-        lookupQualifiedName(globalIndex, "test.data.TestData.publicStaticIntField");
+    Symbol variableSymbol = lookupSymbol(fileIndex, "TestData.publicStaticIntField");
     assertThat(variableSymbol.getKind()).isEqualTo(Symbol.Kind.VARIABLE);
   }
 
   @Test
   public void innerClassIsIndexedInClassIndex() {
-    Symbol classSymbol =
-        lookupQualifiedName(globalIndex, "test.data.TestData.PrivateStaticInnerClass");
+    Symbol classSymbol = lookupSymbol(fileIndex, "TestData.PrivateStaticInnerClass");
     assertThat(classSymbol.getKind()).isEqualTo(Symbol.Kind.CLASS);
-    Symbol annotationSymbol =
-        lookupQualifiedName(globalIndex, "test.data.TestData.PublicInnerAnnotation");
+    Symbol annotationSymbol = lookupSymbol(fileIndex, "TestData.PublicInnerAnnotation");
     assertThat(annotationSymbol.getKind()).isEqualTo(Symbol.Kind.ANNOTATION);
-    Symbol enumSymbol = lookupQualifiedName(globalIndex, "test.data.TestData.PublicInnerEnum");
+    Symbol enumSymbol = lookupSymbol(fileIndex, "TestData.PublicInnerEnum");
     assertThat(enumSymbol.getKind()).isEqualTo(Symbol.Kind.ENUM);
-    Symbol interfaceSymbol =
-        lookupQualifiedName(globalIndex, "test.data.TestData.PublicInnerInterface");
+    Symbol interfaceSymbol = lookupSymbol(fileIndex, "TestData.PublicInnerInterface");
     assertThat(interfaceSymbol.getKind()).isEqualTo(Symbol.Kind.INTERFACE);
   }
 
   @Test
   public void enumItemIsIndexedInEnumIndex() {
-    Symbol variableSymbol =
-        lookupQualifiedName(globalIndex, "test.data.TestData.PublicInnerEnum.ENUM_VALUE1");
+    Symbol variableSymbol = lookupSymbol(fileIndex, "TestData.PublicInnerEnum.ENUM_VALUE1");
     assertThat(variableSymbol.getKind()).isEqualTo(Symbol.Kind.VARIABLE);
   }
 
@@ -119,8 +111,7 @@ public class AstScannerTest {
     SymbolIndex indexAtEnd = getSymbolIndexBefore("} // class TestData");
     SymbolIndex indexAtField = getSymbolIndexAfter("publicStaticIntField;");
     for (SymbolIndex index : ImmutableList.of(indexAtStart, indexAtEnd, indexAtField)) {
-      assertThat(index)
-          .isEqualTo(lookupQualifiedName(globalIndex, "test.data.TestData").getChildIndex());
+      assertThat(index).isEqualTo(lookupSymbol(fileIndex, "TestData").getChildIndex());
     }
   }
 
@@ -131,9 +122,7 @@ public class AstScannerTest {
     SymbolIndex indexAtField = getSymbolIndexAfter("ENUM_VALUE1,");
     for (SymbolIndex index : ImmutableList.of(indexAtStart, indexAtEnd, indexAtField)) {
       assertThat(index)
-          .isEqualTo(
-              lookupQualifiedName(globalIndex, "test.data.TestData.PublicInnerEnum")
-                  .getChildIndex());
+          .isEqualTo(lookupSymbol(fileIndex, "TestData.PublicInnerEnum").getChildIndex());
     }
   }
 
@@ -144,9 +133,7 @@ public class AstScannerTest {
     SymbolIndex indexAtField = getSymbolIndexAfter("interfaceMethod();");
     for (SymbolIndex index : ImmutableList.of(indexAtStart, indexAtEnd, indexAtField)) {
       assertThat(index)
-          .isEqualTo(
-              lookupQualifiedName(globalIndex, "test.data.TestData.PublicInnerInterface")
-                  .getChildIndex());
+          .isEqualTo(lookupSymbol(fileIndex, "TestData.PublicInnerInterface").getChildIndex());
     }
   }
 
@@ -157,7 +144,7 @@ public class AstScannerTest {
     SymbolIndex indexAtField = getSymbolIndexAfter("methodScopeVar");
     for (SymbolIndex index : ImmutableList.of(indexAtStart, indexAtEnd, indexAtField)) {
       MethodSymbol methodSymbol =
-          (MethodSymbol) lookupQualifiedName(globalIndex, "test.data.TestData.publicIfBlockMethod");
+          (MethodSymbol) lookupSymbol(fileIndex, "TestData.publicIfBlockMethod");
       assertThat(index).isEqualTo(methodSymbol.getOverloadIndexes().get(0));
     }
   }
@@ -243,16 +230,16 @@ public class AstScannerTest {
   private SymbolIndex getSymbolIndexAfter(String subString) {
     assertThat(testDataContent).contains(subString);
     int pos = testDataContent.indexOf(subString);
-    return globalIndex.getFileIndex(TEST_DATA_PATH).getSymbolIndexAt(pos + subString.length());
+    return fileIndex.getSymbolIndexAt(pos + subString.length());
   }
 
   private SymbolIndex getSymbolIndexBefore(String subString) {
     assertThat(testDataContent).contains(subString);
     int pos = testDataContent.indexOf(subString);
-    return globalIndex.getFileIndex(TEST_DATA_PATH).getSymbolIndexAt(pos);
+    return fileIndex.getSymbolIndexAt(pos);
   }
 
-  private static Symbol lookupQualifiedName(SymbolIndex index, String qualifiedName) {
+  private static Symbol lookupSymbol(SymbolIndex index, String qualifiedName) {
     String[] qualifiers = qualifiedName.split("\\.");
     SymbolIndex currentIndex = index;
     Symbol symbol = null;

@@ -13,20 +13,21 @@ import javax.annotation.Nullable;
 public class FileIndex implements SymbolIndex {
   // Map of simple names -> symbols.
   private final Multimap<String, Symbol> symbols;
-  private final SymbolIndex parentIndex;
+  // Simples that can be reached globally.
+  // Map of simple names -> symbols.
+  private final Multimap<String, Symbol> globalSymbols;
+  private final ImmutableList<String> packageQualifiers;
   private RangeMap<Integer, SymbolIndex> indexRangeMap = null;
 
-  public FileIndex(SymbolIndex parentIndex) {
+  public FileIndex(List<String> packageQualifiers) {
     this.symbols = HashMultimap.create();
-    this.parentIndex = parentIndex;
+    this.packageQualifiers = ImmutableList.copyOf(packageQualifiers);
+    this.globalSymbols = HashMultimap.create();
   }
 
   @Override
   public List<Symbol> getSymbolsWithName(String simpleName) {
-    ImmutableList.Builder<Symbol> builder = new ImmutableList.Builder<>();
-    builder.addAll(symbols.get(simpleName));
-    builder.addAll(parentIndex.getSymbolsWithName(simpleName));
-    return builder.build();
+    return ImmutableList.copyOf(symbols.get(simpleName));
   }
 
   @Override
@@ -36,15 +37,12 @@ public class FileIndex implements SymbolIndex {
         return Optional.of(symbol);
       }
     }
-    return parentIndex.getSymbolWithNameAndKind(simpleName, symbolKind);
+    return Optional.absent();
   }
 
   @Override
   public Multimap<String, Symbol> getAllSymbols() {
-    ImmutableMultimap.Builder<String, Symbol> builder = new ImmutableMultimap.Builder<>();
-    builder.putAll(symbols);
-    builder.putAll(parentIndex.getAllSymbols());
-    return builder.build();
+    return ImmutableMultimap.copyOf(symbols);
   }
 
   @Override
@@ -59,5 +57,22 @@ public class FileIndex implements SymbolIndex {
   @Nullable
   public SymbolIndex getSymbolIndexAt(int position) {
     return indexRangeMap.get(position);
+  }
+
+  public void addGlobalSymbol(Symbol symbol) {
+    globalSymbols.put(symbol.getSimpleName(), symbol);
+  }
+
+  /** @return a multimap of symbol simple name to symbols */
+  public Multimap<String, Symbol> getGlobalSymbols() {
+    return ImmutableMultimap.copyOf(globalSymbols);
+  }
+
+  public List<Symbol> getGlobalSymbolsWithName(String simpleName) {
+    return ImmutableList.copyOf(globalSymbols.get(simpleName));
+  }
+
+  public List<String> getPackageQualifiers() {
+    return packageQualifiers;
   }
 }

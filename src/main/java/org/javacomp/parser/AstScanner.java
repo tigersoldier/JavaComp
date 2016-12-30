@@ -2,7 +2,6 @@ package org.javacomp.parser;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Range;
 import com.sun.source.tree.BlockTree;
@@ -27,11 +26,8 @@ import org.javacomp.model.BlockIndex;
 import org.javacomp.model.ClassIndex;
 import org.javacomp.model.ClassSymbol;
 import org.javacomp.model.FileIndex;
-import org.javacomp.model.GlobalIndex;
 import org.javacomp.model.MethodIndex;
 import org.javacomp.model.MethodSymbol;
-import org.javacomp.model.PackageIndex;
-import org.javacomp.model.PackageSymbol;
 import org.javacomp.model.Symbol;
 import org.javacomp.model.SymbolIndex;
 import org.javacomp.model.VariableSymbol;
@@ -40,51 +36,30 @@ import org.javacomp.model.util.NestedRangeMapBuilder;
 public class AstScanner extends TreeScanner<Void, SymbolIndex> {
   private static final List<String> UNAVAILABLE_QUALIFIERS = ImmutableList.of();
 
-  private GlobalIndex globalIndex = null;
   private FileIndex fileIndex = null;
   private List<String> currentQualifiers = new ArrayList<>();
   private EndPosTable endPosTable = null;
   private NestedRangeMapBuilder<SymbolIndex> indexRangeBuilder = null;
   private String filename = null;
 
-  public Void startScan(JCCompilationUnit node, GlobalIndex globalIndex, String filename) {
-    this.globalIndex = globalIndex;
+  public FileIndex startScan(JCCompilationUnit node, String filename) {
     this.filename = filename;
-    super.scan(node, globalIndex);
+    super.scan(node, null);
     this.filename = null;
-    this.globalIndex = null;
-    return null;
+    return this.fileIndex;
   }
 
   @Override
-  public Void visitCompilationUnit(CompilationUnitTree node, SymbolIndex currentIndex) {
+  public Void visitCompilationUnit(CompilationUnitTree node, SymbolIndex unused) {
     // Find or create package index
     if (node.getPackageName() != null) {
       List<String> qualifiers = nameToQualifiers(node.getPackageName());
-
-      for (String qualifier : qualifiers) {
-        Optional<Symbol> packageSymbol =
-            currentIndex.getSymbolWithNameAndKind(qualifier, Symbol.Kind.QUALIFIER);
-        if (packageSymbol.isPresent()) {
-          currentIndex = packageSymbol.get().getChildIndex();
-        } else {
-          PackageIndex packageIndex = new PackageIndex(currentIndex);
-          currentIndex.addSymbol(
-              new PackageSymbol(qualifier, this.currentQualifiers, packageIndex));
-          currentIndex = packageIndex;
-        }
-        this.currentQualifiers.add(qualifier);
-      }
+      this.currentQualifiers.addAll(qualifiers);
     }
 
-    this.fileIndex = new FileIndex(currentIndex);
+    this.fileIndex = new FileIndex(this.currentQualifiers);
     this.indexRangeBuilder = new NestedRangeMapBuilder<>();
     this.endPosTable = ((JCCompilationUnit) node).endPositions;
-
-    // Map file name to the FileIndex.
-    // TODO: if this is an update (e.g. the filename exists in global index), remove all symbols in
-    // the existing FileIndex from global index.
-    globalIndex.addFileIndex(filename, this.fileIndex);
 
     // Handle toplevel type declarations (class, interface, enum, annotation, etc).
     for (Tree decl : node.getTypeDecls()) {
@@ -94,7 +69,6 @@ public class AstScanner extends TreeScanner<Void, SymbolIndex> {
 
     // Cleanup
     this.currentQualifiers.clear();
-    this.fileIndex = null;
     this.indexRangeBuilder = null;
     this.endPosTable = null;
     return null;
@@ -123,12 +97,12 @@ public class AstScanner extends TreeScanner<Void, SymbolIndex> {
     ClassSymbol classSymbol =
         new ClassSymbol(
             node.getSimpleName().toString(), symbolKind, this.currentQualifiers, classIndex);
-    this.globalIndex.addSymbol(classSymbol);
     currentIndex.addSymbol(classSymbol);
     addIndexRange((JCTree) node, classIndex);
     if (this.currentQualifiers != UNAVAILABLE_QUALIFIERS) {
       // Not in a method, can be reached globally.
       this.currentQualifiers.add(classSymbol.getSimpleName());
+      this.fileIndex.addGlobalSymbol(classSymbol);
     }
 
     for (Tree member : node.getMembers()) {

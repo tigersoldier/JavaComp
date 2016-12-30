@@ -53,3 +53,19 @@ maven_jar(
     artifact = "com.google.truth:truth:0.30",
     sha1 = "9d591b5a66eda81f0b88cf1c748ab8853d99b18b",
 )
+
+maven_jar(
+    name = "org_mockito_mockito_core",
+    artifact = "org.mockito:mockito-core:2.4.2",
+    sha1 = "368a656183eac6b47daa37de39ce77b080dac412",
+)
+
+maven_jar(
+    name = "net_bytebutty_byte_butty",
+    artifact = "net.bytebuddy:byte-buddy:1.5.5",
+)
+
+maven_jar(
+    name = "org_objenesis_objenesis",
+    artifact = "org.objenesis:objenesis:2.4",
+)
