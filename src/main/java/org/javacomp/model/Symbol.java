@@ -1,5 +1,6 @@
 package org.javacomp.model;
 
+import com.google.common.collect.ImmutableList;
 import java.util.List;
 
 /**
@@ -32,7 +33,7 @@ public abstract class Symbol {
   protected Symbol(String simpleName, Kind kind, List<String> qualifiers) {
     this.simpleName = simpleName;
     this.kind = kind;
-    this.qualifiers = qualifiers;
+    this.qualifiers = ImmutableList.copyOf(qualifiers);
   }
 
   /**
@@ -43,9 +44,7 @@ public abstract class Symbol {
     return simpleName;
   }
 
-  /**
-   * Gets the qualifiers of the name of the symbol.
-   */
+  /** Gets the qualifiers of the name of the symbol. */
   public List<String> getQualifiers() {
     return qualifiers;
   }
