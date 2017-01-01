@@ -56,6 +56,11 @@ public class GlobalIndex implements SymbolIndex {
   }
 
   @Override
+  public Multimap<String, Symbol> getMemberSymbols() {
+    return rootPackage.getMemberSymbols();
+  }
+
+  @Override
   public void addSymbol(Symbol symbol) {
     throw new UnsupportedOperationException();
   }

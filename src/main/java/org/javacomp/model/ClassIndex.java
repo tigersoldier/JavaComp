@@ -7,9 +7,7 @@ import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
 import java.util.List;
 
-/**
- * The index of symbols in the scope of a class, interface, enum, or annotation.
- */
+/** The index of symbols in the scope of a class, interface, enum, or annotation. */
 public class ClassIndex implements SymbolIndex {
   // Map of simple names -> symbols.
   private final Multimap<String, Symbol> symbols;
@@ -50,6 +48,11 @@ public class ClassIndex implements SymbolIndex {
     // TODO: check imports.
     // TODO: check super class and interfaces
     return builder.build();
+  }
+
+  @Override
+  public Multimap<String, Symbol> getMemberSymbols() {
+    return ImmutableMultimap.copyOf(symbols);
   }
 
   @Override

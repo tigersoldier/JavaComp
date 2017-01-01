@@ -1,9 +1,6 @@
 package org.javacomp;
 
-
 import com.google.common.base.Joiner;
-import java.io.IOException;
-import org.javacomp.model.GlobalIndex;
 import org.javacomp.model.Symbol;
 import org.javacomp.model.SymbolIndex;
 import org.javacomp.project.Project;
@@ -25,27 +22,16 @@ public class JavaComp {
   private static String formatSymbol(Symbol symbol) {
     StringBuilder sb = new StringBuilder();
     boolean first = true;
-    for (String qualifier : symbol.getQualifiers()) {
-      if (first) {
-        first = false;
-      } else {
-        sb.append('.');
-      }
-      sb.append(qualifier);
-    }
-    if (!first) {
-      sb.append('.');
-    }
     sb.append(symbol.getSimpleName());
     return sb.toString();
   }
 
   private static void printIndex(SymbolIndex index, int indent) {
     Joiner joiner = Joiner.on(".");
-    for (int i = 0; i < indent; i++) {
-      System.out.print(' ');
-    }
-    for (Symbol symbol : index.getAllSymbols().values()) {
+    for (Symbol symbol : index.getMemberSymbols().values()) {
+      for (int i = 0; i < indent; i++) {
+        System.out.print(' ');
+      }
       System.out.println(formatSymbol(symbol));
       printIndex(symbol.getChildIndex(), indent + 2);
     }

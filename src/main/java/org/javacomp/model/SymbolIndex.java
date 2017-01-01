@@ -11,5 +11,7 @@ public interface SymbolIndex {
 
   Multimap<String, Symbol> getAllSymbols();
 
+  Multimap<String, Symbol> getMemberSymbols();
+
   void addSymbol(Symbol symbol);
 }

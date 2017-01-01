@@ -48,6 +48,11 @@ public class MethodIndex implements SymbolIndex {
   }
 
   @Override
+  public Multimap<String, Symbol> getMemberSymbols() {
+    return ImmutableMultimap.of();
+  }
+
+  @Override
   public void addSymbol(Symbol symbol) {
     symbols.put(symbol.getSimpleName(), symbol);
   }

@@ -46,6 +46,11 @@ public class FileIndex implements SymbolIndex {
   }
 
   @Override
+  public Multimap<String, Symbol> getMemberSymbols() {
+    return ImmutableMultimap.copyOf(symbols);
+  }
+
+  @Override
   public void addSymbol(Symbol symbol) {
     symbols.put(symbol.getSimpleName(), symbol);
   }

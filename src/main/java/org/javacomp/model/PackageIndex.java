@@ -59,6 +59,16 @@ public class PackageIndex implements SymbolIndex {
   }
 
   @Override
+  public Multimap<String, Symbol> getMemberSymbols() {
+    ImmutableMultimap.Builder<String, Symbol> builder = new ImmutableMultimap.Builder<>();
+    builder.putAll(subPackages);
+    for (FileIndex fileIndex : files) {
+      builder.putAll(fileIndex.getMemberSymbols());
+    }
+    return builder.build();
+  }
+
+  @Override
   public void addSymbol(Symbol symbol) {
     checkArgument(
         symbol instanceof PackageSymbol,

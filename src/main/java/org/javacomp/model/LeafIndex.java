@@ -28,6 +28,11 @@ public class LeafIndex implements SymbolIndex {
   }
 
   @Override
+  public Multimap<String, Symbol> getMemberSymbols() {
+    return ImmutableMultimap.of();
+  }
+
+  @Override
   public void addSymbol(Symbol symbol) {
     throw new UnsupportedOperationException("No symbol is allowed to be added to a LeafIndex.");
   }
