@@ -59,6 +59,10 @@ public class FileIndex implements SymbolIndex {
     this.indexRangeMap = indexRangeMap;
   }
 
+  public RangeMap<Integer, SymbolIndex> getIndexRangeMap() {
+    return indexRangeMap;
+  }
+
   @Nullable
   public SymbolIndex getSymbolIndexAt(int position) {
     return indexRangeMap.get(position);

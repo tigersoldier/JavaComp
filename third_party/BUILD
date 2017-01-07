@@ -16,3 +16,39 @@ java_library(
         "@org_objenesis_objenesis//jar",
     ],
 )
+
+java_library(
+    name = "auto_value",
+    exported_plugins = [
+        ":auto_annotation_plugin",
+        ":auto_value_plugin",
+    ],
+    visibility = ["//visibility:public"],
+    exports = [
+        "@com_google_auto_value_auto_value//jar",
+    ],
+)
+
+java_plugin(
+    name = "auto_annotation_plugin",
+    processor_class = "com.google.auto.value.processor.AutoAnnotationProcessor",
+    tags = [
+        "annotation=com.google.auto.value.AutoAnnotation;" +
+        "genclass=${package}.AutoAnnotation_${outerclasses}${classname}_${methodname}",
+    ],
+    deps = [
+        "@com_google_auto_value_auto_value//jar",
+    ],
+)
+
+java_plugin(
+    name = "auto_value_plugin",
+    processor_class = "com.google.auto.value.processor.AutoValueProcessor",
+    tags = [
+        "annotation=com.google.auto.value.AutoValue;" +
+        "genclass=${package}.AutoValue_${outerclasses}${classname}",
+    ],
+    deps = [
+        "@com_google_auto_value_auto_value//jar",
+    ],
+)

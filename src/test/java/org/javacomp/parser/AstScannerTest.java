@@ -54,7 +54,7 @@ public class AstScannerTest {
                 true /* keepEndPos */,
                 true /* keepLineMap */);
     compilationUnit = parser.parseCompilationUnit();
-    fileIndex = scanner.startScan(compilationUnit, TEST_DATA_PATH);
+    fileIndex = scanner.startScan(compilationUnit);
   }
 
   @Test

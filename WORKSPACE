@@ -69,3 +69,8 @@ maven_jar(
     name = "org_objenesis_objenesis",
     artifact = "org.objenesis:objenesis:2.4",
 )
+
+maven_jar(
+    name = "com_google_auto_value_auto_value",
+    artifact = "com.google.auto.value:auto-value:1.3",
+)
