@@ -1,15 +1,15 @@
-package org.javacomp;
+package org.javacomp.tool;
 
 import com.google.common.base.Joiner;
 import org.javacomp.model.Symbol;
 import org.javacomp.model.SymbolIndex;
 import org.javacomp.project.Project;
 
-public class JavaComp {
+public class IndexPrinter {
   private final String filename;
   private final Project project;
 
-  public JavaComp(String filename) {
+  public IndexPrinter(String filename) {
     this.filename = filename;
     this.project = new Project();
   }
@@ -42,6 +42,6 @@ public class JavaComp {
       System.out.println("Need at least one param.");
       System.exit(1);
     }
-    new JavaComp(args[0]).parse();
+    new IndexPrinter(args[0]).parse();
   }
 }
