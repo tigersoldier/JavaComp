@@ -2,8 +2,10 @@ package org.javacomp.parser;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Range;
+import com.sun.source.tree.ArrayTypeTree;
 import com.sun.source.tree.BlockTree;
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.CompilationUnitTree;
@@ -11,6 +13,7 @@ import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.IdentifierTree;
 import com.sun.source.tree.MemberSelectTree;
 import com.sun.source.tree.MethodTree;
+import com.sun.source.tree.ParameterizedTypeTree;
 import com.sun.source.tree.StatementTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.tree.VariableTree;
@@ -23,18 +26,21 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 import org.javacomp.model.BlockIndex;
-import org.javacomp.model.ClassIndex;
 import org.javacomp.model.ClassSymbol;
 import org.javacomp.model.FileIndex;
 import org.javacomp.model.MethodIndex;
 import org.javacomp.model.MethodSymbol;
 import org.javacomp.model.Symbol;
 import org.javacomp.model.SymbolIndex;
+import org.javacomp.model.TypeReference;
 import org.javacomp.model.VariableSymbol;
 import org.javacomp.model.util.NestedRangeMapBuilder;
 
 public class AstScanner extends TreeScanner<Void, SymbolIndex> {
   private static final List<String> UNAVAILABLE_QUALIFIERS = ImmutableList.of();
+
+  private final TypeReferenceScanner typeReferenceScanner = new TypeReferenceScanner();
+  private final ParameterScanner parameterScanner = new ParameterScanner(typeReferenceScanner);
 
   private FileIndex fileIndex = null;
   private List<String> currentQualifiers = new ArrayList<>();
@@ -90,12 +96,24 @@ public class AstScanner extends TreeScanner<Void, SymbolIndex> {
       default:
         throw new IllegalArgumentException("Unknown symbol kind for class: " + node.getKind());
     }
-    ClassIndex classIndex = new ClassIndex(currentIndex);
+    ImmutableList.Builder<TypeReference> interfaceBuilder = new ImmutableList.Builder<>();
+    Optional<TypeReference> superClass = Optional.absent();
+    if (node.getExtendsClause() != null) {
+      superClass = Optional.of(typeReferenceScanner.getTypeReference(node.getExtendsClause()));
+    }
+    for (Tree implementClause : node.getImplementsClause()) {
+      interfaceBuilder.add(typeReferenceScanner.getTypeReference(implementClause));
+    }
     ClassSymbol classSymbol =
         new ClassSymbol(
-            node.getSimpleName().toString(), symbolKind, this.currentQualifiers, classIndex);
+            node.getSimpleName().toString(),
+            symbolKind,
+            this.currentQualifiers,
+            currentIndex,
+            superClass,
+            interfaceBuilder.build());
     currentIndex.addSymbol(classSymbol);
-    addIndexRange((JCTree) node, classIndex);
+    addIndexRange((JCTree) node, classSymbol);
     if (this.currentQualifiers != UNAVAILABLE_QUALIFIERS) {
       // Not in a method, can be reached globally.
       this.currentQualifiers.add(classSymbol.getSimpleName());
@@ -103,7 +121,7 @@ public class AstScanner extends TreeScanner<Void, SymbolIndex> {
     }
 
     for (Tree member : node.getMembers()) {
-      scan(member, classIndex);
+      scan(member, classSymbol);
     }
 
     if (this.currentQualifiers != UNAVAILABLE_QUALIFIERS) {
@@ -114,7 +132,8 @@ public class AstScanner extends TreeScanner<Void, SymbolIndex> {
 
   @Override
   public Void visitMethod(MethodTree node, SymbolIndex currentIndex) {
-    checkArgument(currentIndex instanceof ClassIndex, "Method's parent index must be class index");
+    checkArgument(
+        currentIndex instanceof ClassSymbol, "Method's parent index must be a class symbol");
     MethodSymbol methodSymbol =
         (MethodSymbol)
             currentIndex
@@ -123,8 +142,23 @@ public class AstScanner extends TreeScanner<Void, SymbolIndex> {
     if (methodSymbol == null) {
       methodSymbol = new MethodSymbol(node.getName().toString(), this.currentQualifiers);
     }
-    MethodIndex methodIndex = new MethodIndex((ClassIndex) currentIndex);
-    methodSymbol.addOverload(methodIndex);
+
+    MethodIndex methodIndex = new MethodIndex((ClassSymbol) currentIndex);
+    TypeReference returnType;
+    if (node.getReturnType() == null) {
+      // Constructor doesn't have return type.
+      returnType = TypeReference.VOID_TYPE;
+    } else {
+      returnType = typeReferenceScanner.getTypeReference(node.getReturnType());
+    }
+    ImmutableList.Builder<MethodSymbol.Parameter> parameterListBuilder =
+        new ImmutableList.Builder<>();
+    for (Tree parameter : node.getParameters()) {
+      parameterListBuilder.add(parameterScanner.getParameter(parameter));
+    }
+
+    methodSymbol.addOverload(
+        MethodSymbol.Overload.create(methodIndex, returnType, parameterListBuilder.build()));
     // TODO: distinguish between static and non-static methods.
     currentIndex.addSymbol(methodSymbol);
     List<String> previousQualifiers = this.currentQualifiers;
@@ -172,5 +206,72 @@ public class AstScanner extends TreeScanner<Void, SymbolIndex> {
   private void addIndexRange(JCTree node, SymbolIndex index) {
     Range<Integer> range = Range.closed(node.getStartPosition(), node.getEndPosition(endPosTable));
     indexRangeBuilder.put(range, index);
+  }
+
+  private static class TypeReferenceScanner extends TreeScanner<Void, Void> {
+    private final Deque<String> names = new ArrayDeque<>();
+
+    public TypeReference getTypeReference(Tree node) {
+      names.clear();
+      scan(node, null);
+      if (names.isEmpty()) {
+        // Malformed input, no type can be referenced
+        return TypeReference.VOID_TYPE;
+      }
+      String simpleName = names.removeLast();
+      List<String> qualifiers = ImmutableList.copyOf(names);
+      return new TypeReference(simpleName, qualifiers);
+    }
+
+    @Override
+    public Void visitParameterizedType(ParameterizedTypeTree node, Void unused) {
+      scan(node.getType(), unused);
+      // TODO: handle type parameters.
+      return null;
+    }
+
+    @Override
+    public Void visitArrayType(ArrayTypeTree node, Void unused) {
+      // TODO: handle array types.
+      scan(node.getType(), unused);
+      return null;
+    }
+
+    @Override
+    public Void visitMemberSelect(MemberSelectTree node, Void unused) {
+      names.addFirst(node.getIdentifier().toString());
+      scan(node.getExpression(), unused);
+      return null;
+    }
+
+    @Override
+    public Void visitIdentifier(IdentifierTree node, Void unused) {
+      names.addFirst(node.getName().toString());
+      return null;
+    }
+  }
+
+  private static class ParameterScanner extends TreeScanner<Void, Void> {
+    private final TypeReferenceScanner typeReferenceScanner;
+    private String name = "";
+    private TypeReference type = TypeReference.VOID_TYPE;
+
+    private ParameterScanner(TypeReferenceScanner typeReferenceScanner) {
+      this.typeReferenceScanner = typeReferenceScanner;
+    }
+
+    private MethodSymbol.Parameter getParameter(Tree node) {
+      name = "";
+      type = TypeReference.VOID_TYPE;
+      scan(node, null);
+      return MethodSymbol.Parameter.create(type, name);
+    }
+
+    @Override
+    public Void visitVariable(VariableTree node, Void unused) {
+      name = node.getName().toString();
+      type = typeReferenceScanner.getTypeReference(node.getType());
+      return null;
+    }
   }
 }

@@ -1,6 +1,7 @@
 package org.javacomp.model;
 
-import com.google.common.collect.FluentIterable;
+import com.google.auto.value.AutoValue;
+import com.google.common.collect.ImmutableList;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,19 +20,37 @@ public class MethodSymbol extends Symbol {
     return LeafIndex.INSTANCE;
   }
 
-  public List<MethodIndex> getOverloadIndexes() {
-    return FluentIterable.from(overloads).transform(overload -> overload.methodIndex).toList();
+  public ImmutableList<Overload> getOverloads() {
+    return ImmutableList.copyOf(overloads);
   }
 
-  public void addOverload(MethodIndex methodIndex) {
-    this.overloads.add(new Overload(methodIndex));
+  public void addOverload(Overload overload) {
+    this.overloads.add(overload);
   }
 
-  private static class Overload {
-    private final MethodIndex methodIndex;
+  @AutoValue
+  public abstract static class Overload {
+    public abstract MethodIndex getMethodIndex();
 
-    private Overload(MethodIndex methodIndex) {
-      this.methodIndex = methodIndex;
+    public abstract TypeReference getReturnType();
+
+    public abstract ImmutableList<Parameter> getParameters();
+
+    public static Overload create(
+        MethodIndex methodIndex, TypeReference returnType, List<Parameter> parameters) {
+      return new AutoValue_MethodSymbol_Overload(
+          methodIndex, returnType, ImmutableList.copyOf(parameters));
+    }
+  }
+
+  @AutoValue
+  public abstract static class Parameter {
+    public abstract TypeReference getType();
+
+    public abstract String getName();
+
+    public static Parameter create(TypeReference type, String name) {
+      return new AutoValue_MethodSymbol_Parameter(type, name);
     }
   }
 }

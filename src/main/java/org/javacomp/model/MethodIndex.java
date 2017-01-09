@@ -11,18 +11,18 @@ import java.util.List;
 public class MethodIndex implements SymbolIndex {
   // Map of simple names -> symbols.
   private final Multimap<String, Symbol> symbols;
-  private final ClassIndex classIndex;
+  private final ClassSymbol classSymbol;
 
-  public MethodIndex(ClassIndex classIndex) {
+  public MethodIndex(ClassSymbol classSymbol) {
     this.symbols = HashMultimap.create();
-    this.classIndex = classIndex;
+    this.classSymbol = classSymbol;
   }
 
   @Override
   public List<Symbol> getSymbolsWithName(String simpleName) {
     ImmutableList.Builder<Symbol> builder = new ImmutableList.Builder<>();
     builder.addAll(symbols.get(simpleName));
-    builder.addAll(classIndex.getSymbolsWithName(simpleName));
+    builder.addAll(classSymbol.getSymbolsWithName(simpleName));
     // TODO: distinguish between static method and instance method
     return builder.build();
   }
@@ -35,14 +35,14 @@ public class MethodIndex implements SymbolIndex {
       }
     }
     // TODO: distinguish between static method and instance method
-    return classIndex.getSymbolWithNameAndKind(simpleName, symbolKind);
+    return classSymbol.getSymbolWithNameAndKind(simpleName, symbolKind);
   }
 
   @Override
   public Multimap<String, Symbol> getAllSymbols() {
     ImmutableMultimap.Builder<String, Symbol> builder = new ImmutableMultimap.Builder<>();
     builder.putAll(symbols);
-    builder.putAll(classIndex.getAllSymbols());
+    builder.putAll(classSymbol.getAllSymbols());
     // TODO: distinguish between static method and instance method
     return builder.build();
   }
