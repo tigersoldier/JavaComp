@@ -33,7 +33,7 @@ public class TestData {
     return ret;
   } // protectedWhileBlockMethod
 
-  private String privateForBlockMethod(List<String> input) {
+  private String privateForBlockMethod(java.util.List<String> input) {
     String output;
     for (String s : input) {
       int forScopeVar;

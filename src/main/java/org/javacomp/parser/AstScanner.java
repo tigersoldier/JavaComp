@@ -14,6 +14,7 @@ import com.sun.source.tree.IdentifierTree;
 import com.sun.source.tree.MemberSelectTree;
 import com.sun.source.tree.MethodTree;
 import com.sun.source.tree.ParameterizedTypeTree;
+import com.sun.source.tree.PrimitiveTypeTree;
 import com.sun.source.tree.StatementTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.tree.VariableTree;
@@ -221,9 +222,7 @@ public class AstScanner extends TreeScanner<Void, SymbolIndex> {
         // Malformed input, no type can be referenced
         return TypeReference.VOID_TYPE;
       }
-      String simpleName = names.removeLast();
-      List<String> qualifiers = ImmutableList.copyOf(names);
-      return new TypeReference(simpleName, qualifiers);
+      return new TypeReference(ImmutableList.copyOf(names));
     }
 
     @Override
@@ -250,6 +249,12 @@ public class AstScanner extends TreeScanner<Void, SymbolIndex> {
     @Override
     public Void visitIdentifier(IdentifierTree node, Void unused) {
       names.addFirst(node.getName().toString());
+      return null;
+    }
+
+    @Override
+    public Void visitPrimitiveType(PrimitiveTypeTree node, Void unused) {
+      names.addFirst(node.getPrimitiveTypeKind().name().toLowerCase());
       return null;
     }
   }

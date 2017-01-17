@@ -1,21 +1,25 @@
 package org.javacomp.model;
 
+import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import java.util.List;
-import org.javacomp.model.util.QualifiedNames;
 
 /** A reference to a type for lazy resolution. */
 public class TypeReference {
-  public static final TypeReference VOID_TYPE =
-      new TypeReference("void", ImmutableList.<String>of() /* qualifiers */);
-  private final String simpleName;
-  private final ImmutableList<String> qualifiers;
+  public static final TypeReference VOID_TYPE = new TypeReference();
+
+  private static final Joiner JOINER = Joiner.on(".");
+
+  private final ImmutableList<String> fullName;
 
   private Symbol resolvedSymbol = null;
 
-  public TypeReference(String simpleName, List<String> qualifiers) {
-    this.simpleName = simpleName;
-    this.qualifiers = ImmutableList.copyOf(qualifiers);
+  public TypeReference(String... fullName) {
+    this(ImmutableList.copyOf(fullName));
+  }
+
+  public TypeReference(List<String> fullName) {
+    this.fullName = ImmutableList.copyOf(fullName);
   }
 
   public void setResolvedSymbol(Symbol resolvedSymbol) {
@@ -23,15 +27,15 @@ public class TypeReference {
   }
 
   public String getSimpleName() {
-    return this.simpleName;
+    return fullName.get(fullName.size() - 1);
   }
 
-  public ImmutableList<String> getQualifiers() {
-    return this.qualifiers;
+  public List<String> getFullName() {
+    return fullName;
   }
 
   @Override
   public String toString() {
-    return "TypeReference<" + QualifiedNames.formatQualifiedName(qualifiers, simpleName) + ">";
+    return "TypeReference<" + JOINER.join(fullName) + ">";
   }
 }

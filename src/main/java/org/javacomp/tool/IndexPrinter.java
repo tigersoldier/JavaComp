@@ -7,10 +7,10 @@ import org.javacomp.model.MethodSymbol;
 import org.javacomp.model.Symbol;
 import org.javacomp.model.SymbolIndex;
 import org.javacomp.model.TypeReference;
-import org.javacomp.model.util.QualifiedNames;
 import org.javacomp.project.Project;
 
 public class IndexPrinter {
+  private static final Joiner QUALIFIER_JOINER = Joiner.on(".");
   private final String filename;
   private final Project project;
 
@@ -36,9 +36,7 @@ public class IndexPrinter {
       Optional<TypeReference> superClass = classSymbol.getSuperClass();
       if (superClass.isPresent()) {
         sb.append(" extends ");
-        sb.append(
-            QualifiedNames.formatQualifiedName(
-                superClass.get().getQualifiers(), superClass.get().getSimpleName()));
+        sb.append(formatTypeReference(superClass.get()));
       }
       boolean hasInterface = false;
       for (TypeReference iface : classSymbol.getInterfaces()) {
@@ -46,7 +44,7 @@ public class IndexPrinter {
           hasInterface = true;
           sb.append(" implements ");
         }
-        sb.append(QualifiedNames.formatQualifiedName(iface.getQualifiers(), iface.getSimpleName()));
+        System.out.print(formatTypeReference(iface));
       }
     } else if (symbol instanceof MethodSymbol) {
       MethodSymbol methodSymbol = (MethodSymbol) symbol;
@@ -62,17 +60,13 @@ public class IndexPrinter {
             firstParameter = false;
           }
           TypeReference parameterType = parameter.getType();
-          sb.append(
-              QualifiedNames.formatQualifiedName(
-                  parameterType.getQualifiers(), parameterType.getSimpleName()));
+          sb.append(formatTypeReference(parameterType));
           sb.append(' ');
           sb.append(parameter.getName());
         }
         sb.append(")->");
         TypeReference returnType = overload.getReturnType();
-        sb.append(
-            QualifiedNames.formatQualifiedName(
-                returnType.getQualifiers(), returnType.getSimpleName()));
+        sb.append(formatTypeReference(returnType));
       }
     }
     return sb.toString();
@@ -92,6 +86,10 @@ public class IndexPrinter {
       System.out.println(formatSymbol(symbol, indent));
       printIndex(symbol.getChildIndex(), indent + 2);
     }
+  }
+
+  private static String formatTypeReference(TypeReference typeReference) {
+    return QUALIFIER_JOINER.join(typeReference.getFullName());
   }
 
   public static void main(String[] args) {

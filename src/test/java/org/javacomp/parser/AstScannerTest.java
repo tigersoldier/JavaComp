@@ -19,6 +19,7 @@ import org.javacomp.model.FileIndex;
 import org.javacomp.model.MethodSymbol;
 import org.javacomp.model.Symbol;
 import org.javacomp.model.SymbolIndex;
+import org.javacomp.model.TypeReference;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -225,6 +226,24 @@ public class AstScannerTest {
           .isPresent();
       assertThat(index.getSymbolWithNameAndKind("interfaceMethod", Symbol.Kind.METHOD)).isPresent();
     }
+  }
+
+  @Test
+  public void primitiveTypeReference() {
+    MethodSymbol methodSymbol =
+        (MethodSymbol) lookupSymbol(fileIndex, "TestData.protectedWhileBlockMethod");
+    TypeReference intReference =
+        methodSymbol.getOverloads().get(0).getParameters().get(0).getType();
+    assertThat(intReference.getFullName()).containsExactly("int").inOrder();
+  }
+
+  @Test
+  public void nonPrimitiveTypeReference() {
+    MethodSymbol methodSymbol =
+        (MethodSymbol) lookupSymbol(fileIndex, "TestData.privateForBlockMethod");
+    TypeReference intReference =
+        methodSymbol.getOverloads().get(0).getParameters().get(0).getType();
+    assertThat(intReference.getFullName()).containsExactly("java", "util", "List").inOrder();
   }
 
   private SymbolIndex getSymbolIndexAfter(String subString) {
