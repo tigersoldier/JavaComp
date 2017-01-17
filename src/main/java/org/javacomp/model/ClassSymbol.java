@@ -96,4 +96,9 @@ public class ClassSymbol extends Symbol implements SymbolIndex {
   public Optional<TypeReference> getSuperClass() {
     return superClass;
   }
+
+  @Override
+  public Optional<SymbolIndex> getParentIndex() {
+    return Optional.of(parentIndex);
+  }
 }

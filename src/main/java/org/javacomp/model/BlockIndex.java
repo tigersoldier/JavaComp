@@ -53,4 +53,9 @@ public class BlockIndex implements SymbolIndex {
   public void addSymbol(Symbol symbol) {
     symbols.put(symbol.getSimpleName(), symbol);
   }
+
+  @Override
+  public Optional<SymbolIndex> getParentIndex() {
+    return Optional.of(parentIndex);
+  }
 }

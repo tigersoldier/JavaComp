@@ -92,4 +92,9 @@ public class PackageIndex implements SymbolIndex {
   public boolean hasChildren() {
     return !(subPackages.isEmpty() && files.isEmpty());
   }
+
+  @Override
+  public Optional<SymbolIndex> getParentIndex() {
+    return Optional.absent();
+  }
 }

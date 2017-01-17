@@ -36,4 +36,9 @@ public class LeafIndex implements SymbolIndex {
   public void addSymbol(Symbol symbol) {
     throw new UnsupportedOperationException("No symbol is allowed to be added to a LeafIndex.");
   }
+
+  @Override
+  public Optional<SymbolIndex> getParentIndex() {
+    return Optional.absent();
+  }
 }

@@ -13,5 +13,7 @@ public interface SymbolIndex {
 
   Multimap<String, Symbol> getMemberSymbols();
 
+  Optional<SymbolIndex> getParentIndex();
+
   void addSymbol(Symbol symbol);
 }

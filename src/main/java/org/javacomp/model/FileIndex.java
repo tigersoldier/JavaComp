@@ -84,4 +84,9 @@ public class FileIndex implements SymbolIndex {
   public List<String> getPackageQualifiers() {
     return packageQualifiers;
   }
+
+  @Override
+  public Optional<SymbolIndex> getParentIndex() {
+    return Optional.absent();
+  }
 }

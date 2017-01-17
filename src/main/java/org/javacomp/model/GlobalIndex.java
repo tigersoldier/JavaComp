@@ -127,4 +127,9 @@ public class GlobalIndex implements SymbolIndex {
       currentPackage.removePackage(packageSymbol);
     }
   }
+
+  @Override
+  public Optional<SymbolIndex> getParentIndex() {
+    return Optional.absent();
+  }
 }
