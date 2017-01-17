@@ -5,10 +5,13 @@ import static com.google.common.base.Preconditions.checkArgument;
 import com.google.common.base.Optional;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /** Represents a class, interface, enum, or annotation. */
@@ -22,6 +25,7 @@ public class ClassSymbol extends Symbol implements SymbolIndex {
   private final SymbolIndex parentIndex;
   private final Optional<TypeReference> superClass;
   private final ImmutableList<TypeReference> interfaces;
+  private final Map<String, ClassSymbol> innerClasses;
 
   public ClassSymbol(
       String simpleName,
@@ -40,6 +44,7 @@ public class ClassSymbol extends Symbol implements SymbolIndex {
     this.parentIndex = parentIndex;
     this.superClass = superClass;
     this.interfaces = ImmutableList.copyOf(interfaces);
+    this.innerClasses = new HashMap<>();
   }
 
   @Override
@@ -72,8 +77,7 @@ public class ClassSymbol extends Symbol implements SymbolIndex {
   @Override
   public Multimap<String, Symbol> getAllSymbols() {
     ImmutableMultimap.Builder<String, Symbol> builder = new ImmutableMultimap.Builder<>();
-    builder.putAll(symbols);
-    builder.putAll(parentIndex.getAllSymbols());
+    builder.putAll(symbols).putAll(innerClasses.entrySet()).putAll(parentIndex.getAllSymbols());
     // TODO: check imports.
     // TODO: check super class and interfaces
     return builder.build();
@@ -81,12 +85,17 @@ public class ClassSymbol extends Symbol implements SymbolIndex {
 
   @Override
   public Multimap<String, Symbol> getMemberSymbols() {
-    return ImmutableMultimap.copyOf(symbols);
+    ImmutableMultimap.Builder<String, Symbol> builder = new ImmutableMultimap.Builder<>();
+    return builder.putAll(symbols).putAll(innerClasses.entrySet()).build();
   }
 
   @Override
   public void addSymbol(Symbol symbol) {
-    symbols.put(symbol.getSimpleName(), symbol);
+    if (symbol instanceof ClassSymbol) {
+      innerClasses.put(symbol.getSimpleName(), (ClassSymbol) symbol);
+    } else {
+      symbols.put(symbol.getSimpleName(), symbol);
+    }
   }
 
   public ImmutableList<TypeReference> getInterfaces() {
@@ -100,5 +109,9 @@ public class ClassSymbol extends Symbol implements SymbolIndex {
   @Override
   public Optional<SymbolIndex> getParentIndex() {
     return Optional.of(parentIndex);
+  }
+
+  public Map<String, ClassSymbol> getInnerClasses() {
+    return ImmutableMap.copyOf(innerClasses);
   }
 }
