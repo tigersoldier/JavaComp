@@ -43,8 +43,8 @@ public class Project {
 
       // Set source file of the log before parsing. If not set, IllegalArgumentException will be
       // thrown if the parser enconters errors.
-      FileIndex fileIndex = astScanner.startScan(parseFile(filename, input));
-      globalIndex.addOrReplaceFileIndex(filename, fileIndex);
+      FileIndex fileIndex = astScanner.startScan(parseFile(filename, input), filename);
+      globalIndex.addOrReplaceFileIndex(fileIndex);
     } catch (IOException e) {
       System.exit(1);
     }
@@ -79,7 +79,7 @@ public class Project {
     inputBuilder.append(targetLine);
 
     JCCompilationUnit completionUnit = parseFile(filename, inputBuilder.toString());
-    FileIndex inputFileIndex = astScanner.startScan(completionUnit);
+    FileIndex inputFileIndex = astScanner.startScan(completionUnit, filename);
     return completor.getCompletionCandidates(
         globalIndex, inputFileIndex, completionUnit, filename, inputBuilder.toString());
   }

@@ -11,6 +11,7 @@ import javax.annotation.Nullable;
 
 /** Index of symbols in the scope of a Java source file. */
 public class FileIndex implements SymbolIndex {
+  private final String filename;
   // Map of simple names -> symbols.
   private final Multimap<String, Symbol> symbols;
   // Simples that can be reached globally.
@@ -19,7 +20,8 @@ public class FileIndex implements SymbolIndex {
   private final ImmutableList<String> packageQualifiers;
   private RangeMap<Integer, SymbolIndex> indexRangeMap = null;
 
-  public FileIndex(List<String> packageQualifiers) {
+  public FileIndex(String filename, List<String> packageQualifiers) {
+    this.filename = filename;
     this.symbols = HashMultimap.create();
     this.packageQualifiers = ImmutableList.copyOf(packageQualifiers);
     this.globalSymbols = HashMultimap.create();
@@ -88,5 +90,9 @@ public class FileIndex implements SymbolIndex {
   @Override
   public Optional<SymbolIndex> getParentIndex() {
     return Optional.absent();
+  }
+
+  public String getFilename() {
+    return filename;
   }
 }

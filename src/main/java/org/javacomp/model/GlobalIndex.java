@@ -10,7 +10,6 @@ import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import javax.annotation.Nullable;
 
 /**
  * The index of the whole project. Can reach all scoped symbols (e.g. packages, classes) defined in
@@ -65,8 +64,8 @@ public class GlobalIndex implements SymbolIndex {
     throw new UnsupportedOperationException();
   }
 
-  public void addOrReplaceFileIndex(String filename, FileIndex fileIndex) {
-    FileIndex existingFileIndex = fileIndexMap.get(filename);
+  public void addOrReplaceFileIndex(FileIndex fileIndex) {
+    FileIndex existingFileIndex = fileIndexMap.get(fileIndex.getFilename());
     // Add the new file index to the package first, so that we don't GC the pacakge if
     // the new file and old file are in the same pacakge and is the only file in the package.
     addFileToPackage(fileIndex);
@@ -78,15 +77,14 @@ public class GlobalIndex implements SymbolIndex {
       }
       removeFileFromPacakge(existingFileIndex);
     }
-    fileIndexMap.put(filename, fileIndex);
+    fileIndexMap.put(fileIndex.getFilename(), fileIndex);
     for (String symbolName : fileIndex.getGlobalSymbols().keys()) {
       nameToFileMap.put(symbolName, fileIndex);
     }
   }
 
-  @Nullable
-  public FileIndex getFileIndex(String filename) {
-    return fileIndexMap.get(filename);
+  public Optional<FileIndex> getFileIndex(String filename) {
+    return Optional.fromNullable(fileIndexMap.get(filename));
   }
 
   private void addFileToPackage(FileIndex fileIndex) {

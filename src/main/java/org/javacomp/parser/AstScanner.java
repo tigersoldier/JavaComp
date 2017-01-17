@@ -46,9 +46,12 @@ public class AstScanner extends TreeScanner<Void, SymbolIndex> {
   private List<String> currentQualifiers = new ArrayList<>();
   private EndPosTable endPosTable = null;
   private NestedRangeMapBuilder<SymbolIndex> indexRangeBuilder = null;
+  private String filename = null;
 
-  public FileIndex startScan(JCCompilationUnit node) {
+  public FileIndex startScan(JCCompilationUnit node, String filename) {
+    this.filename = filename;
     super.scan(node, null);
+    this.filename = null;
     return this.fileIndex;
   }
 
@@ -60,7 +63,7 @@ public class AstScanner extends TreeScanner<Void, SymbolIndex> {
       this.currentQualifiers.addAll(qualifiers);
     }
 
-    this.fileIndex = new FileIndex(this.currentQualifiers);
+    this.fileIndex = new FileIndex(filename, this.currentQualifiers);
     this.indexRangeBuilder = new NestedRangeMapBuilder<>();
     this.endPosTable = ((JCCompilationUnit) node).endPositions;
 

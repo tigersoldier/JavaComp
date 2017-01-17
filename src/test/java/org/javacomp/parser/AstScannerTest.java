@@ -54,7 +54,7 @@ public class AstScannerTest {
                 true /* keepEndPos */,
                 true /* keepLineMap */);
     compilationUnit = parser.parseCompilationUnit();
-    fileIndex = scanner.startScan(compilationUnit);
+    fileIndex = scanner.startScan(compilationUnit, TEST_DATA_PATH);
   }
 
   @Test
@@ -145,7 +145,7 @@ public class AstScannerTest {
     for (SymbolIndex index : ImmutableList.of(indexAtStart, indexAtEnd, indexAtField)) {
       MethodSymbol methodSymbol =
           (MethodSymbol) lookupSymbol(fileIndex, "TestData.publicIfBlockMethod");
-      assertThat(index).isEqualTo(methodSymbol.getOverloadIndexes().get(0));
+      assertThat(index).isEqualTo(methodSymbol.getOverloads().get(0).getMethodIndex());
     }
   }
 

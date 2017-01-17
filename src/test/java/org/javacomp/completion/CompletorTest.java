@@ -45,7 +45,7 @@ public class CompletorTest {
             .newParser(
                 input, true /* keepDocComments */, true /* keepEndPos */, true /* keepLineMap */);
     JCCompilationUnit compilationUnit = parser.parseCompilationUnit();
-    FileIndex inputFileIndex = new AstScanner().startScan(compilationUnit);
+    FileIndex inputFileIndex = new AstScanner().startScan(compilationUnit, inputFilePath);
     GlobalIndex globalIndex = new GlobalIndex();
 
     // throw new RuntimeException(String.format("input length: %s, ranges: %s", input.length(), inputFileIndex.getIndexRangeMap()));
