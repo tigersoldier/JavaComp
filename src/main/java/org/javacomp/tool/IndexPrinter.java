@@ -58,6 +58,8 @@ public class IndexPrinter {
         for (MethodSymbol.Parameter parameter : overload.getParameters()) {
           if (!firstParameter) {
             sb.append(", ");
+          } else {
+            firstParameter = false;
           }
           TypeReference parameterType = parameter.getType();
           sb.append(
