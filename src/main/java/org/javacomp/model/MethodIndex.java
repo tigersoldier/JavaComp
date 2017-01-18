@@ -61,4 +61,8 @@ public class MethodIndex implements SymbolIndex {
   public Optional<SymbolIndex> getParentIndex() {
     return Optional.of(classSymbol);
   }
+
+  public ClassSymbol getParentClass() {
+    return classSymbol;
+  }
 }

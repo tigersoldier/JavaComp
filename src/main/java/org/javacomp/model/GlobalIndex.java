@@ -87,6 +87,10 @@ public class GlobalIndex implements SymbolIndex {
     return Optional.fromNullable(fileIndexMap.get(filename));
   }
 
+  public PackageIndex getRootPackage() {
+    return rootPackage;
+  }
+
   private void addFileToPackage(FileIndex fileIndex) {
     List<String> currentQualifiers = new ArrayList<>();
     PackageIndex currentPackage = rootPackage;

@@ -6,7 +6,9 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.RangeMap;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import javax.annotation.Nullable;
 
 /** Index of symbols in the scope of a Java source file. */
@@ -18,6 +20,7 @@ public class FileIndex implements SymbolIndex {
   // Map of simple names -> symbols.
   private final Multimap<String, Symbol> globalSymbols;
   private final ImmutableList<String> packageQualifiers;
+  private final Map<String, TypeReference> importedClasses;
   private RangeMap<Integer, SymbolIndex> indexRangeMap = null;
 
   public FileIndex(String filename, List<String> packageQualifiers) {
@@ -25,6 +28,7 @@ public class FileIndex implements SymbolIndex {
     this.symbols = HashMultimap.create();
     this.packageQualifiers = ImmutableList.copyOf(packageQualifiers);
     this.globalSymbols = HashMultimap.create();
+    this.importedClasses = new HashMap<>();
   }
 
   @Override
@@ -50,6 +54,14 @@ public class FileIndex implements SymbolIndex {
   @Override
   public Multimap<String, Symbol> getMemberSymbols() {
     return ImmutableMultimap.copyOf(symbols);
+  }
+
+  public Optional<TypeReference> getImportedClass(String simpleName) {
+    return Optional.fromNullable(importedClasses.get(simpleName));
+  }
+
+  public void addImportedClass(TypeReference typeReference) {
+    importedClasses.put(typeReference.getSimpleName(), typeReference);
   }
 
   @Override

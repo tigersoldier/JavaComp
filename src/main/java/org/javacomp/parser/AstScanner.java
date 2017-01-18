@@ -11,6 +11,7 @@ import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.IdentifierTree;
+import com.sun.source.tree.ImportTree;
 import com.sun.source.tree.MemberSelectTree;
 import com.sun.source.tree.MethodTree;
 import com.sun.source.tree.ParameterizedTypeTree;
@@ -67,6 +68,12 @@ public class AstScanner extends TreeScanner<Void, SymbolIndex> {
     this.fileIndex = new FileIndex(filename, this.currentQualifiers);
     this.indexRangeBuilder = new NestedRangeMapBuilder<>();
     this.endPosTable = ((JCCompilationUnit) node).endPositions;
+
+    // Handle imports
+    for (ImportTree importTree : node.getImports()) {
+      this.fileIndex.addImportedClass(
+          typeReferenceScanner.getTypeReference(importTree.getQualifiedIdentifier()));
+    }
 
     // Handle toplevel type declarations (class, interface, enum, annotation, etc).
     for (Tree decl : node.getTypeDecls()) {
