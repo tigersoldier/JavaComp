@@ -1,5 +1,9 @@
 package test.data;
 
+import foo.Bar.Baz;
+import foo.bar.*;
+import foo.bar.baz.*;
+
 public class TestData {
   public static final int publicStaticIntField;
   private final boolean privateMemberBooleanField;
@@ -13,7 +17,7 @@ public class TestData {
   } // TestData constructor w/ 2 params
 
   public boolean publicIfBlockMethod() {
-    int methodScopeVar;
+    Baz methodScopeVar;
     if (a == 1) {
       int ifScopeVar;
       return true;

@@ -13,6 +13,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.javacomp.model.util.QualifiedNames;
 
 /** Represents a class, interface, enum, or annotation. */
 public class ClassSymbol extends Symbol implements SymbolIndex {
@@ -113,5 +114,12 @@ public class ClassSymbol extends Symbol implements SymbolIndex {
 
   public Map<String, ClassSymbol> getInnerClasses() {
     return ImmutableMap.copyOf(innerClasses);
+  }
+
+  @Override
+  public String toString() {
+    return "ClassSymbol<"
+        + QualifiedNames.formatQualifiedName(getQualifiers(), getSimpleName())
+        + ">";
   }
 }

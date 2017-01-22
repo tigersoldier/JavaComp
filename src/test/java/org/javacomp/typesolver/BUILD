@@ -1,7 +1,7 @@
 java_library(
     name = "tests",
     srcs = glob(["*.java"]),
-    data = glob(["testdata/*"]),
+    data = glob(["testdata/**"]),
     deps = [
         "//external:guava",
         "//external:javac",

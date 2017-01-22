@@ -246,6 +246,17 @@ public class AstScannerTest {
     assertThat(intReference.getFullName()).containsExactly("java", "util", "List").inOrder();
   }
 
+  @Test
+  public void explicitClassImport() {
+    assertThat(fileIndex.getImportedClass("Baz")).hasValue(ImmutableList.of("foo", "Bar", "Baz"));
+  }
+
+  @Test
+  public void testOnDemandClassImport() {
+    assertThat(fileIndex.getOnDemandClassImportQualifiers())
+        .containsExactly(ImmutableList.of("foo", "bar"), ImmutableList.of("foo", "bar", "baz"));
+  }
+
   private SymbolIndex getSymbolIndexAfter(String subString) {
     assertThat(testDataContent).contains(subString);
     int pos = testDataContent.indexOf(subString);

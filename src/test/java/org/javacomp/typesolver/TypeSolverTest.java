@@ -37,10 +37,16 @@ import org.junit.runners.JUnit4;
 public class TypeSolverTest {
   private static final String TEST_DATA_DIR = "src/test/java/org/javacomp/typesolver/testdata/";
   private static final String[] TEST_FILES = {
-    "BaseClass.java", "BaseInterface.java", "TestClass.java"
+    "BaseInterface.java",
+    "TestClass.java",
+    "other/BaseClass.java",
+    "other/Shadow.java",
+    "ondemand/OnDemand.java",
+    "ondemand/Shadow.java",
   };
   private static final String TEST_DATA_PACKAGE = "org.javacomp.typesolver.testdata";
   private static final String TEST_DATA_OTHER_PACKAGE = TEST_DATA_PACKAGE + ".other";
+  private static final String TEST_DATA_ONDEMAND_PACKAGE = TEST_DATA_PACKAGE + ".ondemand";
   private static final String TEST_CLASS_FULL_NAME = TEST_DATA_PACKAGE + ".TestClass";
   private static final String TEST_CLASS_FACTORY_FULL_NAME =
       TEST_CLASS_FULL_NAME + ".TestClassFactory";
@@ -48,7 +54,9 @@ public class TypeSolverTest {
   private static final String BASE_INTERFACE_FACTORY_FULL_NAME =
       BASE_INTERFACE_FULL_NAME + ".BaseInterfaceFactory";
   private static final String BASE_CLASS_FULL_NAME = TEST_DATA_OTHER_PACKAGE + ".BaseClass";
+  private static final String OTHER_SHADOW_CLASS_FULL_NAME = TEST_DATA_OTHER_PACKAGE + ".Shadow";
   private static final String BASE_INNER_CLASS_FULL_NAME = BASE_CLASS_FULL_NAME + ".BaseInnerClass";
+  private static final String ON_DEMAND_CLASS_FULL_NAME = TEST_DATA_ONDEMAND_PACKAGE + ".OnDemand";
   private static final Joiner QUALIFIER_JOINER = Joiner.on(".");
 
   private Log javacLog;
@@ -109,18 +117,8 @@ public class TypeSolverTest {
 
   @Test
   public void solveInnerClass() {
-    MethodSymbol newFactoryMethod =
-        (MethodSymbol) lookupSymbol(TEST_CLASS_FULL_NAME + ".newFactory");
-    MethodSymbol.Overload methodOverload = newFactoryMethod.getOverloads().get(0);
-    TypeReference baseInterfaceFactoryReference = methodOverload.getReturnType();
-    Optional<SolvedType> solvedType =
-        typeSolver.solve(
-            baseInterfaceFactoryReference,
-            globalIndex,
-            methodOverload.getMethodIndex().getParentClass());
-    assertThat(solvedType).isPresent();
-    assertThat(solvedType.get().getClassSymbol())
-        .isSameAs(lookupSymbol(TEST_CLASS_FACTORY_FULL_NAME));
+    SolvedType baseInterface = solveMethodReturnType(TEST_CLASS_FULL_NAME + ".newFactory");
+    assertThat(baseInterface.getClassSymbol()).isSameAs(lookupSymbol(TEST_CLASS_FACTORY_FULL_NAME));
   }
 
   @Test
@@ -141,6 +139,32 @@ public class TypeSolverTest {
     assertThat(solvedType).isPresent();
     assertThat(solvedType.get().getClassSymbol())
         .isSameAs(lookupSymbol(BASE_INNER_CLASS_FULL_NAME));
+  }
+
+  @Test
+  public void solveOnDemandClassImport() {
+    SolvedType onDemandClass = solveMethodReturnType(TEST_CLASS_FULL_NAME + ".getOnDemand");
+    assertThat(onDemandClass.getClassSymbol()).isSameAs(lookupSymbol(ON_DEMAND_CLASS_FULL_NAME));
+  }
+
+  @Test
+  public void onDemandPackageClassShouldBeShadowed() {
+    // both other and ondemand package define Shadow class. Shadow from other package should be used
+    // since it's explicitly imported.
+    SolvedType shadowClass = solveMethodReturnType(TEST_CLASS_FULL_NAME + ".getShadow");
+    assertThat(shadowClass.getClassSymbol()).isSameAs(lookupSymbol(OTHER_SHADOW_CLASS_FULL_NAME));
+  }
+
+  private SolvedType solveMethodReturnType(String qualifiedMethodName) {
+    MethodSymbol method = (MethodSymbol) lookupSymbol(qualifiedMethodName);
+    assertThat(method).isNotNull();
+    MethodSymbol.Overload methodOverload = method.getOverloads().get(0);
+    TypeReference methodReturnType = methodOverload.getReturnType();
+    Optional<SolvedType> solvedType =
+        typeSolver.solve(
+            methodReturnType, globalIndex, methodOverload.getMethodIndex().getParentClass());
+    assertThat(solvedType).isPresent();
+    return solvedType.get();
   }
 
   private Symbol lookupSymbol(String qualifiedName) {

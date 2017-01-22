@@ -50,10 +50,16 @@ public class TypeSolver {
     return Optional.absent();
   }
 
+  /**
+   * @param baseIndex the {@link SymbolIndex} to start searching from. Must be one of {@link
+   *     GlobalIndex}, {@link PackageIndex}, or {@link ClassSymbol}
+   * @return {@code null} if not found
+   */
   @Nullable
-  private ClassSymbol findClassInGlobalIndex(GlobalIndex globalIndex, List<String> fullName) {
-    SymbolIndex currentIndex = globalIndex;
-    for (String qualifier : fullName) {
+  private SymbolIndex findClassOrPackage(
+      SymbolIndex baseIndex, List<String> qualifiers, GlobalIndex globalIndex) {
+    SymbolIndex currentIndex = baseIndex;
+    for (String qualifier : qualifiers) {
       if (currentIndex instanceof GlobalIndex || currentIndex instanceof PackageIndex) {
         // All members of GlobalIndex or PackageIndex are either package or class
         Collection<Symbol> symbols = currentIndex.getMemberSymbols().get(qualifier);
@@ -69,8 +75,14 @@ public class TypeSolver {
         }
       }
     }
-    if (currentIndex instanceof ClassSymbol) {
-      return (ClassSymbol) currentIndex;
+    return currentIndex;
+  }
+
+  @Nullable
+  private ClassSymbol findClassInGlobalIndex(GlobalIndex globalIndex, List<String> qualifiers) {
+    SymbolIndex classInGlobalIndex = findClassOrPackage(globalIndex, qualifiers, globalIndex);
+    if (classInGlobalIndex instanceof ClassSymbol) {
+      return (ClassSymbol) classInGlobalIndex;
     }
     return null;
   }
@@ -191,12 +203,41 @@ public class TypeSolver {
       }
     }
     // Not declared in the file, try imported classes.
-    Optional<TypeReference> importedClass = fileIndex.getImportedClass(name);
-    ClassSymbol foundClass = null;
+    Optional<List<String>> importedClass = fileIndex.getImportedClass(name);
     if (importedClass.isPresent()) {
-      foundClass = findClassInGlobalIndex(globalIndex, importedClass.get().getFullName());
+      ClassSymbol classInGlobalIndex = findClassInGlobalIndex(globalIndex, importedClass.get());
+      if (classInGlobalIndex != null) {
+        return classInGlobalIndex;
+      }
     }
-    return foundClass;
+    // Not directly imported, try on-demand imports (e.g. import foo.bar.*).
+    for (List<String> onDemandClassQualifiers : fileIndex.getOnDemandClassImportQualifiers()) {
+      SymbolIndex classOrPackage =
+          findClassOrPackage(globalIndex /* baseIndex */, onDemandClassQualifiers, globalIndex);
+      if (classOrPackage != null) {
+        ClassSymbol classSymbol = findClass(name, classOrPackage, globalIndex);
+        if (classSymbol != null) {
+          return classSymbol;
+        }
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Finds a class with given {@code name} in the {@code baseIndex}.
+   *
+   * @param baseIndex where to find the class. Must be either a {@link PackageIndex} or a {@link
+   *     ClassSymbol}
+   */
+  @Nullable
+  private ClassSymbol findClass(String name, SymbolIndex baseIndex, GlobalIndex globalIndex) {
+    if (baseIndex instanceof PackageIndex) {
+      return findClassInPackage(name, (PackageIndex) baseIndex);
+    } else if (baseIndex instanceof ClassSymbol) {
+      return findInnerClass(name, (ClassSymbol) baseIndex, globalIndex);
+    }
+    return null;
   }
 
   @Nullable

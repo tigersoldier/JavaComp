@@ -40,6 +40,7 @@ import org.javacomp.model.util.NestedRangeMapBuilder;
 
 public class AstScanner extends TreeScanner<Void, SymbolIndex> {
   private static final List<String> UNAVAILABLE_QUALIFIERS = ImmutableList.of();
+  private static final String ON_DEMAND_IMPORT_WILDCARD = "*";
 
   private final TypeReferenceScanner typeReferenceScanner = new TypeReferenceScanner();
   private final ParameterScanner parameterScanner = new ParameterScanner(typeReferenceScanner);
@@ -71,8 +72,15 @@ public class AstScanner extends TreeScanner<Void, SymbolIndex> {
 
     // Handle imports
     for (ImportTree importTree : node.getImports()) {
-      this.fileIndex.addImportedClass(
-          typeReferenceScanner.getTypeReference(importTree.getQualifiedIdentifier()));
+      List<String> qualifiers = nameToQualifiers(importTree.getQualifiedIdentifier());
+      if (qualifiers.isEmpty()) {
+        continue;
+      }
+      if (ON_DEMAND_IMPORT_WILDCARD.equals(qualifiers.get(qualifiers.size() - 1))) {
+        this.fileIndex.addOnDemandClassImport(qualifiers.subList(0, qualifiers.size() - 1));
+      } else {
+        this.fileIndex.addImportedClass(qualifiers);
+      }
     }
 
     // Handle toplevel type declarations (class, interface, enum, annotation, etc).
@@ -203,7 +211,7 @@ public class AstScanner extends TreeScanner<Void, SymbolIndex> {
     return null;
   }
 
-  private static List<String> nameToQualifiers(ExpressionTree name) {
+  private static List<String> nameToQualifiers(Tree name) {
     Deque<String> stack = new ArrayDeque<>();
     while (name instanceof MemberSelectTree) {
       MemberSelectTree qualifiedName = (MemberSelectTree) name;
