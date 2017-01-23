@@ -15,10 +15,10 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.List;
-import org.javacomp.model.FileIndex;
+import org.javacomp.model.FileScope;
 import org.javacomp.model.MethodEntity;
 import org.javacomp.model.Entity;
-import org.javacomp.model.EntityIndex;
+import org.javacomp.model.EntityScope;
 import org.javacomp.model.TypeReference;
 import org.junit.Before;
 import org.junit.Test;
@@ -34,7 +34,7 @@ public class AstScannerTest {
 
   private JCCompilationUnit compilationUnit;
   private String testDataContent;
-  private FileIndex fileIndex;
+  private FileScope fileScope;
 
   @Before
   public void startScan() throws Exception {
@@ -55,183 +55,183 @@ public class AstScannerTest {
                 true /* keepEndPos */,
                 true /* keepLineMap */);
     compilationUnit = parser.parseCompilationUnit();
-    fileIndex = scanner.startScan(compilationUnit, TEST_DATA_PATH);
+    fileScope = scanner.startScan(compilationUnit, TEST_DATA_PATH);
   }
 
   @Test
-  public void fileIndexHasCorrectPackage() {
-    assertThat(fileIndex.getPackageQualifiers()).containsExactly("test", "data").inOrder();
+  public void fileScopeHasCorrectPackage() {
+    assertThat(fileScope.getPackageQualifiers()).containsExactly("test", "data").inOrder();
   }
 
   @Test
-  public void classIsIndexedInPackage() {
-    Entity classEntity = lookupEntity(fileIndex, "TestData");
+  public void classIsScopeedInPackage() {
+    Entity classEntity = lookupEntity(fileScope, "TestData");
     assertThat(classEntity.getKind()).isEqualTo(Entity.Kind.CLASS);
   }
 
   @Test
-  public void classIsIndexedGlobally() {
-    List<Entity> classEntity = fileIndex.getGlobalEntitiesWithName("TestData");
+  public void classIsScopeedGlobally() {
+    List<Entity> classEntity = fileScope.getGlobalEntitiesWithName("TestData");
     assertThat(classEntity).hasSize(1);
     assertThat(classEntity.get(0).getKind()).isEqualTo(Entity.Kind.CLASS);
   }
 
   @Test
-  public void methodIsIndexedInClassIndex() {
-    Entity methodEntity = lookupEntity(fileIndex, "TestData.publicIfBlockMethod");
+  public void methodIsScopeedInClassScope() {
+    Entity methodEntity = lookupEntity(fileScope, "TestData.publicIfBlockMethod");
     assertThat(methodEntity.getKind()).isEqualTo(Entity.Kind.METHOD);
   }
 
   @Test
-  public void classStaticFieldIsIndexedInClassIndex() {
-    Entity variableEntity = lookupEntity(fileIndex, "TestData.publicStaticIntField");
+  public void classStaticFieldIsScopeedInClassScope() {
+    Entity variableEntity = lookupEntity(fileScope, "TestData.publicStaticIntField");
     assertThat(variableEntity.getKind()).isEqualTo(Entity.Kind.VARIABLE);
   }
 
   @Test
-  public void innerClassIsIndexedInClassIndex() {
-    Entity classEntity = lookupEntity(fileIndex, "TestData.PrivateStaticInnerClass");
+  public void innerClassIsScopeedInClassScope() {
+    Entity classEntity = lookupEntity(fileScope, "TestData.PrivateStaticInnerClass");
     assertThat(classEntity.getKind()).isEqualTo(Entity.Kind.CLASS);
-    Entity annotationEntity = lookupEntity(fileIndex, "TestData.PublicInnerAnnotation");
+    Entity annotationEntity = lookupEntity(fileScope, "TestData.PublicInnerAnnotation");
     assertThat(annotationEntity.getKind()).isEqualTo(Entity.Kind.ANNOTATION);
-    Entity enumEntity = lookupEntity(fileIndex, "TestData.PublicInnerEnum");
+    Entity enumEntity = lookupEntity(fileScope, "TestData.PublicInnerEnum");
     assertThat(enumEntity.getKind()).isEqualTo(Entity.Kind.ENUM);
-    Entity interfaceEntity = lookupEntity(fileIndex, "TestData.PublicInnerInterface");
+    Entity interfaceEntity = lookupEntity(fileScope, "TestData.PublicInnerInterface");
     assertThat(interfaceEntity.getKind()).isEqualTo(Entity.Kind.INTERFACE);
   }
 
   @Test
-  public void enumItemIsIndexedInEnumIndex() {
-    Entity variableEntity = lookupEntity(fileIndex, "TestData.PublicInnerEnum.ENUM_VALUE1");
+  public void enumItemIsScopeedInEnumScope() {
+    Entity variableEntity = lookupEntity(fileScope, "TestData.PublicInnerEnum.ENUM_VALUE1");
     assertThat(variableEntity.getKind()).isEqualTo(Entity.Kind.VARIABLE);
   }
 
   @Test
-  public void topLevelClassIndexRange() {
-    EntityIndex indexAtStart = getEntityIndexAfter("public class TestData {");
-    EntityIndex indexAtEnd = getEntityIndexBefore("} // class TestData");
-    EntityIndex indexAtField = getEntityIndexAfter("publicStaticIntField;");
-    for (EntityIndex index : ImmutableList.of(indexAtStart, indexAtEnd, indexAtField)) {
-      assertThat(index).isEqualTo(lookupEntity(fileIndex, "TestData").getChildIndex());
+  public void topLevelClassScopeRange() {
+    EntityScope scopeAtStart = getEntityScopeAfter("public class TestData {");
+    EntityScope scopeAtEnd = getEntityScopeBefore("} // class TestData");
+    EntityScope scopeAtField = getEntityScopeAfter("publicStaticIntField;");
+    for (EntityScope scope : ImmutableList.of(scopeAtStart, scopeAtEnd, scopeAtField)) {
+      assertThat(scope).isEqualTo(lookupEntity(fileScope, "TestData").getChildScope());
     }
   }
 
   @Test
-  public void innerEnumIndexRange() {
-    EntityIndex indexAtStart = getEntityIndexAfter("public enum PublicInnerEnum {");
-    EntityIndex indexAtEnd = getEntityIndexBefore("} // PublicInnerEnum");
-    EntityIndex indexAtField = getEntityIndexAfter("ENUM_VALUE1,");
-    for (EntityIndex index : ImmutableList.of(indexAtStart, indexAtEnd, indexAtField)) {
-      assertThat(index)
-          .isEqualTo(lookupEntity(fileIndex, "TestData.PublicInnerEnum").getChildIndex());
+  public void innerEnumScopeRange() {
+    EntityScope scopeAtStart = getEntityScopeAfter("public enum PublicInnerEnum {");
+    EntityScope scopeAtEnd = getEntityScopeBefore("} // PublicInnerEnum");
+    EntityScope scopeAtField = getEntityScopeAfter("ENUM_VALUE1,");
+    for (EntityScope scope : ImmutableList.of(scopeAtStart, scopeAtEnd, scopeAtField)) {
+      assertThat(scope)
+          .isEqualTo(lookupEntity(fileScope, "TestData.PublicInnerEnum").getChildScope());
     }
   }
 
   @Test
-  public void innerInterfaceIndexRange() {
-    EntityIndex indexAtStart = getEntityIndexAfter("public interface PublicInnerInterface {");
-    EntityIndex indexAtEnd = getEntityIndexBefore("} // PublicInnerInterface");
-    EntityIndex indexAtField = getEntityIndexAfter("interfaceMethod();");
-    for (EntityIndex index : ImmutableList.of(indexAtStart, indexAtEnd, indexAtField)) {
-      assertThat(index)
-          .isEqualTo(lookupEntity(fileIndex, "TestData.PublicInnerInterface").getChildIndex());
+  public void innerInterfaceScopeRange() {
+    EntityScope scopeAtStart = getEntityScopeAfter("public interface PublicInnerInterface {");
+    EntityScope scopeAtEnd = getEntityScopeBefore("} // PublicInnerInterface");
+    EntityScope scopeAtField = getEntityScopeAfter("interfaceMethod();");
+    for (EntityScope scope : ImmutableList.of(scopeAtStart, scopeAtEnd, scopeAtField)) {
+      assertThat(scope)
+          .isEqualTo(lookupEntity(fileScope, "TestData.PublicInnerInterface").getChildScope());
     }
   }
 
   @Test
-  public void methodIndexRange() {
-    EntityIndex indexAtStart = getEntityIndexAfter("publicIfBlockMethod() {");
-    EntityIndex indexAtEnd = getEntityIndexBefore("} // publicIfBlockMethod");
-    EntityIndex indexAtField = getEntityIndexAfter("methodScopeVar");
-    for (EntityIndex index : ImmutableList.of(indexAtStart, indexAtEnd, indexAtField)) {
+  public void methodScopeRange() {
+    EntityScope scopeAtStart = getEntityScopeAfter("publicIfBlockMethod() {");
+    EntityScope scopeAtEnd = getEntityScopeBefore("} // publicIfBlockMethod");
+    EntityScope scopeAtField = getEntityScopeAfter("methodScopeVar");
+    for (EntityScope scope : ImmutableList.of(scopeAtStart, scopeAtEnd, scopeAtField)) {
       MethodEntity methodEntity =
-          (MethodEntity) lookupEntity(fileIndex, "TestData.publicIfBlockMethod");
-      assertThat(index).isEqualTo(methodEntity.getOverloads().get(0).getMethodIndex());
+          (MethodEntity) lookupEntity(fileScope, "TestData.publicIfBlockMethod");
+      assertThat(scope).isEqualTo(methodEntity.getOverloads().get(0).getMethodScope());
     }
   }
 
   @Test
-  public void ifBlockIndexRange() {
-    EntityIndex indexAtStart = getEntityIndexAfter("if (a == 1) {");
-    EntityIndex indexAtEnd = getEntityIndexBefore("} else { // end of if");
-    EntityIndex indexAtField = getEntityIndexAfter("ifScopeVar");
-    for (EntityIndex index : ImmutableList.of(indexAtStart, indexAtEnd, indexAtField)) {
-      assertThat(index.getEntityWithNameAndKind("ifScopeVar", Entity.Kind.VARIABLE)).isPresent();
-      assertThat(index.getEntitiesWithName("elseScopeVar")).isEmpty();
+  public void ifBlockScopeRange() {
+    EntityScope scopeAtStart = getEntityScopeAfter("if (a == 1) {");
+    EntityScope scopeAtEnd = getEntityScopeBefore("} else { // end of if");
+    EntityScope scopeAtField = getEntityScopeAfter("ifScopeVar");
+    for (EntityScope scope : ImmutableList.of(scopeAtStart, scopeAtEnd, scopeAtField)) {
+      assertThat(scope.getEntityWithNameAndKind("ifScopeVar", Entity.Kind.VARIABLE)).isPresent();
+      assertThat(scope.getEntitiesWithName("elseScopeVar")).isEmpty();
     }
   }
 
   @Test
-  public void elseBlockIndexRange() {
-    EntityIndex indexAtStart = getEntityIndexAfter("else {");
-    EntityIndex indexAtEnd = getEntityIndexBefore("} // else");
-    EntityIndex indexAtField = getEntityIndexAfter("elseScopeVar");
-    for (EntityIndex index : ImmutableList.of(indexAtStart, indexAtEnd, indexAtField)) {
-      assertThat(index.getEntityWithNameAndKind("elseScopeVar", Entity.Kind.VARIABLE)).isPresent();
-      assertThat(index.getEntitiesWithName("ifScopeVar")).isEmpty();
+  public void elseBlockScopeRange() {
+    EntityScope scopeAtStart = getEntityScopeAfter("else {");
+    EntityScope scopeAtEnd = getEntityScopeBefore("} // else");
+    EntityScope scopeAtField = getEntityScopeAfter("elseScopeVar");
+    for (EntityScope scope : ImmutableList.of(scopeAtStart, scopeAtEnd, scopeAtField)) {
+      assertThat(scope.getEntityWithNameAndKind("elseScopeVar", Entity.Kind.VARIABLE)).isPresent();
+      assertThat(scope.getEntitiesWithName("ifScopeVar")).isEmpty();
     }
   }
 
   @Test
-  public void whileBlockIndexRange() {
-    EntityIndex indexAtStart = getEntityIndexAfter("while (number > 0) {");
-    EntityIndex indexAtEnd = getEntityIndexBefore("} // while loop");
-    EntityIndex indexAtField = getEntityIndexAfter("whileScopeVar");
-    for (EntityIndex index : ImmutableList.of(indexAtStart, indexAtEnd, indexAtField)) {
-      assertThat(index.getEntityWithNameAndKind("whileScopeVar", Entity.Kind.VARIABLE)).isPresent();
+  public void whileBlockScopeRange() {
+    EntityScope scopeAtStart = getEntityScopeAfter("while (number > 0) {");
+    EntityScope scopeAtEnd = getEntityScopeBefore("} // while loop");
+    EntityScope scopeAtField = getEntityScopeAfter("whileScopeVar");
+    for (EntityScope scope : ImmutableList.of(scopeAtStart, scopeAtEnd, scopeAtField)) {
+      assertThat(scope.getEntityWithNameAndKind("whileScopeVar", Entity.Kind.VARIABLE)).isPresent();
     }
   }
 
   @Test
-  public void forBlockIndexRange() {
-    EntityIndex indexAtStart = getEntityIndexAfter("for (String s : input) {");
-    EntityIndex indexAtEnd = getEntityIndexBefore("} // for loop");
-    EntityIndex indexAtField = getEntityIndexAfter("forScopeVar");
-    for (EntityIndex index : ImmutableList.of(indexAtStart, indexAtEnd, indexAtField)) {
-      assertThat(index.getEntityWithNameAndKind("forScopeVar", Entity.Kind.VARIABLE)).isPresent();
+  public void forBlockScopeRange() {
+    EntityScope scopeAtStart = getEntityScopeAfter("for (String s : input) {");
+    EntityScope scopeAtEnd = getEntityScopeBefore("} // for loop");
+    EntityScope scopeAtField = getEntityScopeAfter("forScopeVar");
+    for (EntityScope scope : ImmutableList.of(scopeAtStart, scopeAtEnd, scopeAtField)) {
+      assertThat(scope.getEntityWithNameAndKind("forScopeVar", Entity.Kind.VARIABLE)).isPresent();
     }
   }
 
   @Test
-  public void switchBlockIndexRange() {
-    EntityIndex indexAtStart = getEntityIndexAfter("switch (a) {");
-    EntityIndex indexAtEnd = getEntityIndexBefore("} // switch");
-    EntityIndex indexAtField = getEntityIndexAfter("switchScopeVar");
-    for (EntityIndex index : ImmutableList.of(indexAtStart, indexAtEnd, indexAtField)) {
-      assertThat(index.getEntityWithNameAndKind("switchScopeVar", Entity.Kind.VARIABLE))
+  public void switchBlockScopeRange() {
+    EntityScope scopeAtStart = getEntityScopeAfter("switch (a) {");
+    EntityScope scopeAtEnd = getEntityScopeBefore("} // switch");
+    EntityScope scopeAtField = getEntityScopeAfter("switchScopeVar");
+    for (EntityScope scope : ImmutableList.of(scopeAtStart, scopeAtEnd, scopeAtField)) {
+      assertThat(scope.getEntityWithNameAndKind("switchScopeVar", Entity.Kind.VARIABLE))
           .isPresent();
-      assertThat(index.getEntitiesWithName("caseScopeVar")).isEmpty();
+      assertThat(scope.getEntitiesWithName("caseScopeVar")).isEmpty();
     }
   }
 
   @Test
-  public void switchCaseBlockIndexRange() {
-    EntityIndex indexAtStart = getEntityIndexBefore("{ // start of case block");
-    EntityIndex indexAtEnd = getEntityIndexBefore("} // end of case block");
-    EntityIndex indexAtField = getEntityIndexAfter("caseScopeVar");
-    for (EntityIndex index : ImmutableList.of(indexAtStart, indexAtEnd, indexAtField)) {
-      assertThat(index.getEntityWithNameAndKind("switchScopeVar", Entity.Kind.VARIABLE))
+  public void switchCaseBlockScopeRange() {
+    EntityScope scopeAtStart = getEntityScopeBefore("{ // start of case block");
+    EntityScope scopeAtEnd = getEntityScopeBefore("} // end of case block");
+    EntityScope scopeAtField = getEntityScopeAfter("caseScopeVar");
+    for (EntityScope scope : ImmutableList.of(scopeAtStart, scopeAtEnd, scopeAtField)) {
+      assertThat(scope.getEntityWithNameAndKind("switchScopeVar", Entity.Kind.VARIABLE))
           .isPresent();
-      assertThat(index.getEntityWithNameAndKind("caseScopeVar", Entity.Kind.VARIABLE)).isPresent();
+      assertThat(scope.getEntityWithNameAndKind("caseScopeVar", Entity.Kind.VARIABLE)).isPresent();
     }
   }
 
   @Test
-  public void annonymousClassIndexRange() {
-    EntityIndex indexAtStart = getEntityIndexAfter("new PublicInnerInterface() {");
-    EntityIndex indexAtEnd = getEntityIndexBefore("} /* end of new PublicInnerInterface *");
-    EntityIndex indexAtField = getEntityIndexAfter("privateAnnonymousClassMethod");
-    for (EntityIndex index : ImmutableList.of(indexAtStart, indexAtEnd, indexAtField)) {
-      assertThat(index.getEntityWithNameAndKind("privateAnnonymousClassMethod", Entity.Kind.METHOD))
+  public void annonymousClassScopeRange() {
+    EntityScope scopeAtStart = getEntityScopeAfter("new PublicInnerInterface() {");
+    EntityScope scopeAtEnd = getEntityScopeBefore("} /* end of new PublicInnerInterface *");
+    EntityScope scopeAtField = getEntityScopeAfter("privateAnnonymousClassMethod");
+    for (EntityScope scope : ImmutableList.of(scopeAtStart, scopeAtEnd, scopeAtField)) {
+      assertThat(scope.getEntityWithNameAndKind("privateAnnonymousClassMethod", Entity.Kind.METHOD))
           .isPresent();
-      assertThat(index.getEntityWithNameAndKind("interfaceMethod", Entity.Kind.METHOD)).isPresent();
+      assertThat(scope.getEntityWithNameAndKind("interfaceMethod", Entity.Kind.METHOD)).isPresent();
     }
   }
 
   @Test
   public void primitiveTypeReference() {
     MethodEntity methodEntity =
-        (MethodEntity) lookupEntity(fileIndex, "TestData.protectedWhileBlockMethod");
+        (MethodEntity) lookupEntity(fileScope, "TestData.protectedWhileBlockMethod");
     TypeReference intReference =
         methodEntity.getOverloads().get(0).getParameters().get(0).getType();
     assertThat(intReference.getFullName()).containsExactly("int").inOrder();
@@ -240,7 +240,7 @@ public class AstScannerTest {
   @Test
   public void nonPrimitiveTypeReference() {
     MethodEntity methodEntity =
-        (MethodEntity) lookupEntity(fileIndex, "TestData.privateForBlockMethod");
+        (MethodEntity) lookupEntity(fileScope, "TestData.privateForBlockMethod");
     TypeReference intReference =
         methodEntity.getOverloads().get(0).getParameters().get(0).getType();
     assertThat(intReference.getFullName()).containsExactly("java", "util", "List").inOrder();
@@ -248,36 +248,36 @@ public class AstScannerTest {
 
   @Test
   public void explicitClassImport() {
-    assertThat(fileIndex.getImportedClass("Baz")).hasValue(ImmutableList.of("foo", "Bar", "Baz"));
+    assertThat(fileScope.getImportedClass("Baz")).hasValue(ImmutableList.of("foo", "Bar", "Baz"));
   }
 
   @Test
   public void testOnDemandClassImport() {
-    assertThat(fileIndex.getOnDemandClassImportQualifiers())
+    assertThat(fileScope.getOnDemandClassImportQualifiers())
         .containsExactly(ImmutableList.of("foo", "bar"), ImmutableList.of("foo", "bar", "baz"));
   }
 
-  private EntityIndex getEntityIndexAfter(String subString) {
+  private EntityScope getEntityScopeAfter(String subString) {
     assertThat(testDataContent).contains(subString);
     int pos = testDataContent.indexOf(subString);
-    return fileIndex.getEntityIndexAt(pos + subString.length());
+    return fileScope.getEntityScopeAt(pos + subString.length());
   }
 
-  private EntityIndex getEntityIndexBefore(String subString) {
+  private EntityScope getEntityScopeBefore(String subString) {
     assertThat(testDataContent).contains(subString);
     int pos = testDataContent.indexOf(subString);
-    return fileIndex.getEntityIndexAt(pos);
+    return fileScope.getEntityScopeAt(pos);
   }
 
-  private static Entity lookupEntity(EntityIndex index, String qualifiedName) {
+  private static Entity lookupEntity(EntityScope scope, String qualifiedName) {
     String[] qualifiers = qualifiedName.split("\\.");
-    EntityIndex currentIndex = index;
+    EntityScope currentScope = scope;
     Entity entity = null;
     for (String qualifier : qualifiers) {
-      Collection<Entity> entities = currentIndex.getAllEntities().get(qualifier);
+      Collection<Entity> entities = currentScope.getAllEntities().get(qualifier);
       assertThat(entities).isNotEmpty();
       entity = Iterables.getFirst(entities, null);
-      currentIndex = entity.getChildIndex();
+      currentScope = entity.getChildScope();
     }
     return entity;
   }

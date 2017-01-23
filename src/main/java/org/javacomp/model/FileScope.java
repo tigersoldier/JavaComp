@@ -12,8 +12,8 @@ import java.util.List;
 import java.util.Map;
 import javax.annotation.Nullable;
 
-/** Index of entities in the scope of a Java source file. */
-public class FileIndex implements EntityIndex {
+/** Scope of entities in the scope of a Java source file. */
+public class FileScope implements EntityScope {
   private final String filename;
   // Map of simple names -> entities.
   private final Multimap<String, Entity> entities;
@@ -23,9 +23,9 @@ public class FileIndex implements EntityIndex {
   private final ImmutableList<String> packageQualifiers;
   private final Map<String, List<String>> importedClasses;
   private final List<List<String>> onDemandClassImportQualifiers;
-  private RangeMap<Integer, EntityIndex> indexRangeMap = null;
+  private RangeMap<Integer, EntityScope> scopeRangeMap = null;
 
-  public FileIndex(String filename, List<String> packageQualifiers) {
+  public FileScope(String filename, List<String> packageQualifiers) {
     this.filename = filename;
     this.entities = HashMultimap.create();
     this.packageQualifiers = ImmutableList.copyOf(packageQualifiers);
@@ -99,17 +99,17 @@ public class FileIndex implements EntityIndex {
     entities.put(entity.getSimpleName(), entity);
   }
 
-  public void setIndexRangeMap(RangeMap<Integer, EntityIndex> indexRangeMap) {
-    this.indexRangeMap = indexRangeMap;
+  public void setScopeRangeMap(RangeMap<Integer, EntityScope> scopeRangeMap) {
+    this.scopeRangeMap = scopeRangeMap;
   }
 
-  public RangeMap<Integer, EntityIndex> getIndexRangeMap() {
-    return indexRangeMap;
+  public RangeMap<Integer, EntityScope> getScopeRangeMap() {
+    return scopeRangeMap;
   }
 
   @Nullable
-  public EntityIndex getEntityIndexAt(int position) {
-    return indexRangeMap.get(position);
+  public EntityScope getEntityScopeAt(int position) {
+    return scopeRangeMap.get(position);
   }
 
   public void addGlobalEntity(Entity entity) {
@@ -130,7 +130,7 @@ public class FileIndex implements EntityIndex {
   }
 
   @Override
-  public Optional<EntityIndex> getParentIndex() {
+  public Optional<EntityScope> getParentScope() {
     return Optional.absent();
   }
 

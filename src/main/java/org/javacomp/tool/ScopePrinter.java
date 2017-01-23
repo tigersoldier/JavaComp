@@ -5,23 +5,23 @@ import com.google.common.base.Optional;
 import org.javacomp.model.ClassEntity;
 import org.javacomp.model.MethodEntity;
 import org.javacomp.model.Entity;
-import org.javacomp.model.EntityIndex;
+import org.javacomp.model.EntityScope;
 import org.javacomp.model.TypeReference;
 import org.javacomp.project.Project;
 
-public class IndexPrinter {
+public class ScopePrinter {
   private static final Joiner QUALIFIER_JOINER = Joiner.on(".");
   private final String filename;
   private final Project project;
 
-  public IndexPrinter(String filename) {
+  public ScopePrinter(String filename) {
     this.filename = filename;
     this.project = new Project();
   }
 
   public void parse() {
     project.addFile(filename);
-    printIndex(project.getGlobalIndex(), 0 /* index */);
+    printScope(project.getGlobalScope(), 0 /* scope */);
   }
 
   private static String formatEntity(Entity entity, int indent) {
@@ -80,11 +80,11 @@ public class IndexPrinter {
     return sb;
   }
 
-  private static void printIndex(EntityIndex index, int indent) {
+  private static void printScope(EntityScope scope, int indent) {
     Joiner joiner = Joiner.on(".");
-    for (Entity entity : index.getMemberEntities().values()) {
+    for (Entity entity : scope.getMemberEntities().values()) {
       System.out.println(formatEntity(entity, indent));
-      printIndex(entity.getChildIndex(), indent + 2);
+      printScope(entity.getChildScope(), indent + 2);
     }
   }
 
@@ -97,6 +97,6 @@ public class IndexPrinter {
       System.out.println("Need at least one param.");
       System.exit(1);
     }
-    new IndexPrinter(args[0]).parse();
+    new ScopePrinter(args[0]).parse();
   }
 }

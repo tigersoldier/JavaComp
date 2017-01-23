@@ -8,16 +8,16 @@ import java.util.Set;
 
 /** Represents a package. */
 public class PackageEntity extends Entity {
-  private final PackageIndex packageIndex;
+  private final PackageScope packageScope;
 
   public PackageEntity(
-      String simpleName, List<String> qualifiers, PackageIndex packageIndex) {
+      String simpleName, List<String> qualifiers, PackageScope packageScope) {
     super(simpleName, Entity.Kind.QUALIFIER, qualifiers);
-    this.packageIndex = packageIndex;
+    this.packageScope = packageScope;
   }
 
   @Override
-  public PackageIndex getChildIndex() {
-    return packageIndex;
+  public PackageScope getChildScope() {
+    return packageScope;
   }
 }

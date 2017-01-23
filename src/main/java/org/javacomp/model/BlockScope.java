@@ -7,22 +7,22 @@ import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
 import java.util.List;
 
-/** Index of entities in a unnamed block of statements, such as if, while, or switch. */
-public class BlockIndex implements EntityIndex {
+/** Scope of entities in a unnamed block of statements, such as if, while, or switch. */
+public class BlockScope implements EntityScope {
   // Map of simple names -> entities.
   private final Multimap<String, Entity> entities;
-  private final EntityIndex parentIndex;
+  private final EntityScope parentScope;
 
-  public BlockIndex(EntityIndex parentIndex) {
+  public BlockScope(EntityScope parentScope) {
     this.entities = HashMultimap.create();
-    this.parentIndex = parentIndex;
+    this.parentScope = parentScope;
   }
 
   @Override
   public List<Entity> getEntitiesWithName(String simpleName) {
     ImmutableList.Builder<Entity> builder = new ImmutableList.Builder<>();
     builder.addAll(entities.get(simpleName));
-    builder.addAll(parentIndex.getEntitiesWithName(simpleName));
+    builder.addAll(parentScope.getEntitiesWithName(simpleName));
     return builder.build();
   }
 
@@ -33,14 +33,14 @@ public class BlockIndex implements EntityIndex {
         return Optional.of(entity);
       }
     }
-    return parentIndex.getEntityWithNameAndKind(simpleName, entityKind);
+    return parentScope.getEntityWithNameAndKind(simpleName, entityKind);
   }
 
   @Override
   public Multimap<String, Entity> getAllEntities() {
     ImmutableMultimap.Builder<String, Entity> builder = new ImmutableMultimap.Builder<>();
     builder.putAll(entities);
-    builder.putAll(parentIndex.getAllEntities());
+    builder.putAll(parentScope.getAllEntities());
     return builder.build();
   }
 
@@ -55,7 +55,7 @@ public class BlockIndex implements EntityIndex {
   }
 
   @Override
-  public Optional<EntityIndex> getParentIndex() {
-    return Optional.of(parentIndex);
+  public Optional<EntityScope> getParentScope() {
+    return Optional.of(parentScope);
   }
 }

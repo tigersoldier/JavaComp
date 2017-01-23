@@ -10,7 +10,7 @@ public class VariableEntity extends Entity {
   }
 
   @Override
-  public LeafIndex getChildIndex() {
-    return LeafIndex.INSTANCE;
+  public EmptyScope getChildScope() {
+    return EmptyScope.INSTANCE;
   }
 }

@@ -54,8 +54,8 @@ public abstract class Entity {
   }
 
   /**
-   * @return a {@link EntityIndex} that can be used to find entities visible to the scope of the
+   * @return a {@link EntityScope} that can be used to find entities visible to the scope of the
    *     entity.
    */
-  public abstract EntityIndex getChildIndex();
+  public abstract EntityScope getChildScope();
 }

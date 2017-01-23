@@ -4,7 +4,7 @@ import com.google.common.base.Optional;
 import com.google.common.collect.Multimap;
 import java.util.List;
 
-public interface EntityIndex {
+public interface EntityScope {
   List<Entity> getEntitiesWithName(String simpleName);
 
   Optional<Entity> getEntityWithNameAndKind(String simpleName, Entity.Kind entityKind);
@@ -13,7 +13,7 @@ public interface EntityIndex {
 
   Multimap<String, Entity> getMemberEntities();
 
-  Optional<EntityIndex> getParentIndex();
+  Optional<EntityScope> getParentScope();
 
   void addEntity(Entity entity);
 }

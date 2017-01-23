@@ -16,14 +16,14 @@ import java.util.Set;
 import org.javacomp.model.util.QualifiedNames;
 
 /** Represents a class, interface, enum, or annotation. */
-public class ClassEntity extends Entity implements EntityIndex {
+public class ClassEntity extends Entity implements EntityScope {
   private static final Set<Entity.Kind> ALLOWED_KINDS =
       EnumSet.of(
           Entity.Kind.CLASS, Entity.Kind.INTERFACE, Entity.Kind.ANNOTATION, Entity.Kind.ENUM);
 
   // Map of simple names -> entities.
   private final Multimap<String, Entity> entities;
-  private final EntityIndex parentIndex;
+  private final EntityScope parentScope;
   private final Optional<TypeReference> superClass;
   private final ImmutableList<TypeReference> interfaces;
   private final Map<String, ClassEntity> innerClasses;
@@ -32,7 +32,7 @@ public class ClassEntity extends Entity implements EntityIndex {
       String simpleName,
       Entity.Kind kind,
       List<String> qualifiers,
-      EntityIndex parentIndex,
+      EntityScope parentScope,
       Optional<TypeReference> superClass,
       ImmutableList<TypeReference> interfaces) {
     super(simpleName, kind, qualifiers);
@@ -42,14 +42,14 @@ public class ClassEntity extends Entity implements EntityIndex {
         kind,
         ALLOWED_KINDS);
     this.entities = HashMultimap.create();
-    this.parentIndex = parentIndex;
+    this.parentScope = parentScope;
     this.superClass = superClass;
     this.interfaces = ImmutableList.copyOf(interfaces);
     this.innerClasses = new HashMap<>();
   }
 
   @Override
-  public ClassEntity getChildIndex() {
+  public ClassEntity getChildScope() {
     return this;
   }
 
@@ -59,7 +59,7 @@ public class ClassEntity extends Entity implements EntityIndex {
     // TODO: check super class and interfaces
     ImmutableList.Builder<Entity> builder = new ImmutableList.Builder<>();
     builder.addAll(entities.get(simpleName));
-    builder.addAll(parentIndex.getEntitiesWithName(simpleName));
+    builder.addAll(parentScope.getEntitiesWithName(simpleName));
     return builder.build();
   }
 
@@ -72,13 +72,13 @@ public class ClassEntity extends Entity implements EntityIndex {
     }
     // TODO: check imports.
     // TODO: check super class and interfaces
-    return parentIndex.getEntityWithNameAndKind(simpleName, entityKind);
+    return parentScope.getEntityWithNameAndKind(simpleName, entityKind);
   }
 
   @Override
   public Multimap<String, Entity> getAllEntities() {
     ImmutableMultimap.Builder<String, Entity> builder = new ImmutableMultimap.Builder<>();
-    builder.putAll(entities).putAll(innerClasses.entrySet()).putAll(parentIndex.getAllEntities());
+    builder.putAll(entities).putAll(innerClasses.entrySet()).putAll(parentScope.getAllEntities());
     // TODO: check imports.
     // TODO: check super class and interfaces
     return builder.build();
@@ -108,8 +108,8 @@ public class ClassEntity extends Entity implements EntityIndex {
   }
 
   @Override
-  public Optional<EntityIndex> getParentIndex() {
-    return Optional.of(parentIndex);
+  public Optional<EntityScope> getParentScope() {
+    return Optional.of(parentScope);
   }
 
   public Map<String, ClassEntity> getInnerClasses() {

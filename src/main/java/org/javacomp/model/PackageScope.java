@@ -11,13 +11,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-/** Index of sub packages and files in a package. */
-public class PackageIndex implements EntityIndex {
+/** Scope of sub packages and files in a package. */
+public class PackageScope implements EntityScope {
   // Map of simple names -> subPackages.
   private final Multimap<String, PackageEntity> subPackages;
-  private final Set<FileIndex> files;
+  private final Set<FileScope> files;
 
-  public PackageIndex() {
+  public PackageScope() {
     this.subPackages = HashMultimap.create();
     this.files = new HashSet<>();
   }
@@ -26,8 +26,8 @@ public class PackageIndex implements EntityIndex {
   public List<Entity> getEntitiesWithName(String simpleName) {
     ImmutableList.Builder<Entity> builder = new ImmutableList.Builder<>();
     builder.addAll(subPackages.get(simpleName));
-    for (FileIndex fileIndex : files) {
-      builder.addAll(fileIndex.getEntitiesWithName(simpleName));
+    for (FileScope fileScope : files) {
+      builder.addAll(fileScope.getEntitiesWithName(simpleName));
     }
     return builder.build();
   }
@@ -39,8 +39,8 @@ public class PackageIndex implements EntityIndex {
         return Optional.of(entity);
       }
     }
-    for (FileIndex fileIndex : files) {
-      Optional<Entity> entity = fileIndex.getEntityWithNameAndKind(simpleName, entityKind);
+    for (FileScope fileScope : files) {
+      Optional<Entity> entity = fileScope.getEntityWithNameAndKind(simpleName, entityKind);
       if (entity.isPresent()) {
         return entity;
       }
@@ -52,8 +52,8 @@ public class PackageIndex implements EntityIndex {
   public Multimap<String, Entity> getAllEntities() {
     ImmutableMultimap.Builder<String, Entity> builder = new ImmutableMultimap.Builder<>();
     builder.putAll(subPackages);
-    for (FileIndex fileIndex : files) {
-      builder.putAll(fileIndex.getAllEntities());
+    for (FileScope fileScope : files) {
+      builder.putAll(fileScope.getAllEntities());
     }
     return builder.build();
   }
@@ -62,8 +62,8 @@ public class PackageIndex implements EntityIndex {
   public Multimap<String, Entity> getMemberEntities() {
     ImmutableMultimap.Builder<String, Entity> builder = new ImmutableMultimap.Builder<>();
     builder.putAll(subPackages);
-    for (FileIndex fileIndex : files) {
-      builder.putAll(fileIndex.getMemberEntities());
+    for (FileScope fileScope : files) {
+      builder.putAll(fileScope.getMemberEntities());
     }
     return builder.build();
   }
@@ -80,12 +80,12 @@ public class PackageIndex implements EntityIndex {
     subPackages.remove(entity.getSimpleName(), entity);
   }
 
-  public void addFile(FileIndex fileIndex) {
-    files.add(fileIndex);
+  public void addFile(FileScope fileScope) {
+    files.add(fileScope);
   }
 
-  public void removeFile(FileIndex fileIndex) {
-    files.remove(fileIndex);
+  public void removeFile(FileScope fileScope) {
+    files.remove(fileScope);
   }
 
   /** @return whether the package has sub packages or files. */
@@ -94,7 +94,7 @@ public class PackageIndex implements EntityIndex {
   }
 
   @Override
-  public Optional<EntityIndex> getParentIndex() {
+  public Optional<EntityScope> getParentScope() {
     return Optional.absent();
   }
 }

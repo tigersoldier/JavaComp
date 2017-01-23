@@ -16,21 +16,21 @@ import java.util.Arrays;
 import java.util.List;
 import org.javacomp.completion.CompletionCandidate;
 import org.javacomp.completion.Completor;
-import org.javacomp.model.FileIndex;
-import org.javacomp.model.GlobalIndex;
+import org.javacomp.model.FileScope;
+import org.javacomp.model.GlobalScope;
 import org.javacomp.parser.AstScanner;
 import org.javacomp.parser.SourceFileObject;
 
 /** Handles all files in a project. */
 public class Project {
-  private final GlobalIndex globalIndex;
+  private final GlobalScope globalScope;
   private final Context javacContext;
   private final JavacFileManager fileManager;
   private final AstScanner astScanner;
   private final Completor completor;
 
   public Project() {
-    globalIndex = new GlobalIndex();
+    globalScope = new GlobalScope();
     javacContext = new Context();
     fileManager = new JavacFileManager(javacContext, true /* register */, UTF_8);
     astScanner = new AstScanner();
@@ -43,8 +43,8 @@ public class Project {
 
       // Set source file of the log before parsing. If not set, IllegalArgumentException will be
       // thrown if the parser enconters errors.
-      FileIndex fileIndex = astScanner.startScan(parseFile(filename, input), filename);
-      globalIndex.addOrReplaceFileIndex(fileIndex);
+      FileScope fileScope = astScanner.startScan(parseFile(filename, input), filename);
+      globalScope.addOrReplaceFileScope(fileScope);
     } catch (IOException e) {
       System.exit(1);
     }
@@ -79,9 +79,9 @@ public class Project {
     inputBuilder.append(targetLine);
 
     JCCompilationUnit completionUnit = parseFile(filename, inputBuilder.toString());
-    FileIndex inputFileIndex = astScanner.startScan(completionUnit, filename);
+    FileScope inputFileScope = astScanner.startScan(completionUnit, filename);
     return completor.getCompletionCandidates(
-        globalIndex, inputFileIndex, completionUnit, filename, inputBuilder.toString());
+        globalScope, inputFileScope, completionUnit, filename, inputBuilder.toString());
   }
 
   private JCCompilationUnit parseFile(String filename, String content) {
@@ -97,7 +97,7 @@ public class Project {
     return parser.parseCompilationUnit();
   }
 
-  public GlobalIndex getGlobalIndex() {
-    return globalIndex;
+  public GlobalScope getGlobalScope() {
+    return globalScope;
   }
 }

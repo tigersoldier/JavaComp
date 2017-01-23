@@ -13,8 +13,8 @@ import com.sun.tools.javac.util.Log;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
-import org.javacomp.model.FileIndex;
-import org.javacomp.model.GlobalIndex;
+import org.javacomp.model.FileScope;
+import org.javacomp.model.GlobalScope;
 import org.javacomp.parser.AstScanner;
 import org.javacomp.parser.SourceFileObject;
 import org.junit.Test;
@@ -45,14 +45,14 @@ public class CompletorTest {
             .newParser(
                 input, true /* keepDocComments */, true /* keepEndPos */, true /* keepLineMap */);
     JCCompilationUnit compilationUnit = parser.parseCompilationUnit();
-    FileIndex inputFileIndex = new AstScanner().startScan(compilationUnit, inputFilePath);
-    GlobalIndex globalIndex = new GlobalIndex();
+    FileScope inputFileScope = new AstScanner().startScan(compilationUnit, inputFilePath);
+    GlobalScope globalScope = new GlobalScope();
 
-    // throw new RuntimeException(String.format("input length: %s, ranges: %s", input.length(), inputFileIndex.getIndexRangeMap()));
+    // throw new RuntimeException(String.format("input length: %s, ranges: %s", input.length(), inputFileScope.getScopeRangeMap()));
 
     return new Completor()
         .getCompletionCandidates(
-            globalIndex, inputFileIndex, compilationUnit, inputFilePath, input);
+            globalScope, inputFileScope, compilationUnit, inputFilePath, input);
   }
 
   private static List<String> getCandidateNames(List<CompletionCandidate> candidates) {

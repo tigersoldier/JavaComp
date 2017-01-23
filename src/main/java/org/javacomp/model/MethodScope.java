@@ -7,13 +7,13 @@ import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
 import java.util.List;
 
-/** Index of entities in the scope of a method. */
-public class MethodIndex implements EntityIndex {
+/** Scope of entities declared in a method. */
+public class MethodScope implements EntityScope {
   // Map of simple names -> entities.
   private final Multimap<String, Entity> entities;
   private final ClassEntity classEntity;
 
-  public MethodIndex(ClassEntity classEntity) {
+  public MethodScope(ClassEntity classEntity) {
     this.entities = HashMultimap.create();
     this.classEntity = classEntity;
   }
@@ -58,7 +58,7 @@ public class MethodIndex implements EntityIndex {
   }
 
   @Override
-  public Optional<EntityIndex> getParentIndex() {
+  public Optional<EntityScope> getParentScope() {
     return Optional.of(classEntity);
   }
 

@@ -14,7 +14,7 @@ java_library(
 )
 
 java_test(
-    name = "GlobalIndexTest",
+    name = "GlobalScopeTest",
     size = "small",
     runtime_deps = [
         ":tests",

@@ -27,47 +27,47 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
-import org.javacomp.model.BlockIndex;
+import org.javacomp.model.BlockScope;
 import org.javacomp.model.ClassEntity;
-import org.javacomp.model.FileIndex;
-import org.javacomp.model.MethodIndex;
+import org.javacomp.model.FileScope;
+import org.javacomp.model.MethodScope;
 import org.javacomp.model.MethodEntity;
 import org.javacomp.model.Entity;
-import org.javacomp.model.EntityIndex;
+import org.javacomp.model.EntityScope;
 import org.javacomp.model.TypeReference;
 import org.javacomp.model.VariableEntity;
 import org.javacomp.model.util.NestedRangeMapBuilder;
 
-public class AstScanner extends TreeScanner<Void, EntityIndex> {
+public class AstScanner extends TreeScanner<Void, EntityScope> {
   private static final List<String> UNAVAILABLE_QUALIFIERS = ImmutableList.of();
   private static final String ON_DEMAND_IMPORT_WILDCARD = "*";
 
   private final TypeReferenceScanner typeReferenceScanner = new TypeReferenceScanner();
   private final ParameterScanner parameterScanner = new ParameterScanner(typeReferenceScanner);
 
-  private FileIndex fileIndex = null;
+  private FileScope fileScope = null;
   private List<String> currentQualifiers = new ArrayList<>();
   private EndPosTable endPosTable = null;
-  private NestedRangeMapBuilder<EntityIndex> indexRangeBuilder = null;
+  private NestedRangeMapBuilder<EntityScope> scopeRangeBuilder = null;
   private String filename = null;
 
-  public FileIndex startScan(JCCompilationUnit node, String filename) {
+  public FileScope startScan(JCCompilationUnit node, String filename) {
     this.filename = filename;
     super.scan(node, null);
     this.filename = null;
-    return this.fileIndex;
+    return this.fileScope;
   }
 
   @Override
-  public Void visitCompilationUnit(CompilationUnitTree node, EntityIndex unused) {
-    // Find or create package index
+  public Void visitCompilationUnit(CompilationUnitTree node, EntityScope unused) {
+    // Find or create package scope
     if (node.getPackageName() != null) {
       List<String> qualifiers = nameToQualifiers(node.getPackageName());
       this.currentQualifiers.addAll(qualifiers);
     }
 
-    this.fileIndex = new FileIndex(filename, this.currentQualifiers);
-    this.indexRangeBuilder = new NestedRangeMapBuilder<>();
+    this.fileScope = new FileScope(filename, this.currentQualifiers);
+    this.scopeRangeBuilder = new NestedRangeMapBuilder<>();
     this.endPosTable = ((JCCompilationUnit) node).endPositions;
 
     // Handle imports
@@ -77,27 +77,27 @@ public class AstScanner extends TreeScanner<Void, EntityIndex> {
         continue;
       }
       if (ON_DEMAND_IMPORT_WILDCARD.equals(qualifiers.get(qualifiers.size() - 1))) {
-        this.fileIndex.addOnDemandClassImport(qualifiers.subList(0, qualifiers.size() - 1));
+        this.fileScope.addOnDemandClassImport(qualifiers.subList(0, qualifiers.size() - 1));
       } else {
-        this.fileIndex.addImportedClass(qualifiers);
+        this.fileScope.addImportedClass(qualifiers);
       }
     }
 
     // Handle toplevel type declarations (class, interface, enum, annotation, etc).
     for (Tree decl : node.getTypeDecls()) {
-      this.scan(decl, this.fileIndex);
+      this.scan(decl, this.fileScope);
     }
-    this.fileIndex.setIndexRangeMap(indexRangeBuilder.build());
+    this.fileScope.setScopeRangeMap(scopeRangeBuilder.build());
 
     // Cleanup
     this.currentQualifiers.clear();
-    this.indexRangeBuilder = null;
+    this.scopeRangeBuilder = null;
     this.endPosTable = null;
     return null;
   }
 
   @Override
-  public Void visitClass(ClassTree node, EntityIndex currentIndex) {
+  public Void visitClass(ClassTree node, EntityScope currentScope) {
     Entity.Kind entityKind;
     switch (node.getKind()) {
       case CLASS:
@@ -128,15 +128,15 @@ public class AstScanner extends TreeScanner<Void, EntityIndex> {
             node.getSimpleName().toString(),
             entityKind,
             this.currentQualifiers,
-            currentIndex,
+            currentScope,
             superClass,
             interfaceBuilder.build());
-    currentIndex.addEntity(classEntity);
-    addIndexRange((JCTree) node, classEntity);
+    currentScope.addEntity(classEntity);
+    addScopeRange((JCTree) node, classEntity);
     if (this.currentQualifiers != UNAVAILABLE_QUALIFIERS) {
       // Not in a method, can be reached globally.
       this.currentQualifiers.add(classEntity.getSimpleName());
-      this.fileIndex.addGlobalEntity(classEntity);
+      this.fileScope.addGlobalEntity(classEntity);
     }
 
     for (Tree member : node.getMembers()) {
@@ -150,19 +150,19 @@ public class AstScanner extends TreeScanner<Void, EntityIndex> {
   }
 
   @Override
-  public Void visitMethod(MethodTree node, EntityIndex currentIndex) {
+  public Void visitMethod(MethodTree node, EntityScope currentScope) {
     checkArgument(
-        currentIndex instanceof ClassEntity, "Method's parent index must be a class entity");
+        currentScope instanceof ClassEntity, "Method's parent scope must be a class entity");
     MethodEntity methodEntity =
         (MethodEntity)
-            currentIndex
+            currentScope
                 .getEntityWithNameAndKind(node.getName().toString(), Entity.Kind.METHOD)
                 .orNull();
     if (methodEntity == null) {
       methodEntity = new MethodEntity(node.getName().toString(), this.currentQualifiers);
     }
 
-    MethodIndex methodIndex = new MethodIndex((ClassEntity) currentIndex);
+    MethodScope methodScope = new MethodScope((ClassEntity) currentScope);
     TypeReference returnType;
     if (node.getReturnType() == null) {
       // Constructor doesn't have return type.
@@ -177,37 +177,37 @@ public class AstScanner extends TreeScanner<Void, EntityIndex> {
     }
 
     methodEntity.addOverload(
-        MethodEntity.Overload.create(methodIndex, returnType, parameterListBuilder.build()));
+        MethodEntity.Overload.create(methodScope, returnType, parameterListBuilder.build()));
     // TODO: distinguish between static and non-static methods.
-    currentIndex.addEntity(methodEntity);
+    currentScope.addEntity(methodEntity);
     List<String> previousQualifiers = this.currentQualifiers;
     // No entity defined inside method scope is qualified.
     this.currentQualifiers = UNAVAILABLE_QUALIFIERS;
     if (node.getBody() != null) {
-      // Use user.visitBlock because it doesn't create extra BlockIndex.
-      super.visitBlock(node.getBody(), methodIndex);
-      addIndexRange((JCTree) node, methodIndex);
+      // Use user.visitBlock because it doesn't create extra BlockScope.
+      super.visitBlock(node.getBody(), methodScope);
+      addScopeRange((JCTree) node, methodScope);
     }
     this.currentQualifiers = previousQualifiers;
     return null;
   }
 
   @Override
-  public Void visitVariable(VariableTree node, EntityIndex currentIndex) {
+  public Void visitVariable(VariableTree node, EntityScope currentScope) {
     VariableEntity variableEntity =
         new VariableEntity(node.getName().toString(), this.currentQualifiers);
-    currentIndex.addEntity(variableEntity);
-    // TODO: add entity to global index if it's a non-private static entity.
+    currentScope.addEntity(variableEntity);
+    // TODO: add entity to global scope if it's a non-private static entity.
     return null;
   }
 
   @Override
-  public Void visitBlock(BlockTree node, EntityIndex currentIndex) {
-    BlockIndex blockIndex = new BlockIndex(currentIndex);
+  public Void visitBlock(BlockTree node, EntityScope currentScope) {
+    BlockScope blockScope = new BlockScope(currentScope);
     for (StatementTree statement : node.getStatements()) {
-      this.scan(statement, blockIndex);
+      this.scan(statement, blockScope);
     }
-    addIndexRange((JCTree) node, blockIndex);
+    addScopeRange((JCTree) node, blockScope);
     return null;
   }
 
@@ -222,9 +222,9 @@ public class AstScanner extends TreeScanner<Void, EntityIndex> {
     return ImmutableList.copyOf(stack);
   }
 
-  private void addIndexRange(JCTree node, EntityIndex index) {
+  private void addScopeRange(JCTree node, EntityScope scope) {
     Range<Integer> range = Range.closed(node.getStartPosition(), node.getEndPosition(endPosTable));
-    indexRangeBuilder.put(range, index);
+    scopeRangeBuilder.put(range, scope);
   }
 
   private static class TypeReferenceScanner extends TreeScanner<Void, Void> {

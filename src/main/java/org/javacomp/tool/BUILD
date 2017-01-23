@@ -10,9 +10,9 @@ java_binary(
 )
 
 java_binary(
-    name = "IndexPrinter",
-    srcs = ["IndexPrinter.java"],
-    main_class = "org.javacomp.tool.IndexPrinter",
+    name = "ScopePrinter",
+    srcs = ["ScopePrinter.java"],
+    main_class = "org.javacomp.tool.ScopePrinter",
     deps = [
         "//external:guava",
         "//external:javac",

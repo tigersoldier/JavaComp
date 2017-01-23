@@ -15,9 +15,9 @@ public class MethodEntity extends Entity {
   }
 
   @Override
-  public EntityIndex getChildIndex() {
-    // Unknown index until we know the overloading.
-    return LeafIndex.INSTANCE;
+  public EntityScope getChildScope() {
+    // Unknown scope until we know the overloading.
+    return EmptyScope.INSTANCE;
   }
 
   public ImmutableList<Overload> getOverloads() {
@@ -30,16 +30,16 @@ public class MethodEntity extends Entity {
 
   @AutoValue
   public abstract static class Overload {
-    public abstract MethodIndex getMethodIndex();
+    public abstract MethodScope getMethodScope();
 
     public abstract TypeReference getReturnType();
 
     public abstract ImmutableList<Parameter> getParameters();
 
     public static Overload create(
-        MethodIndex methodIndex, TypeReference returnType, List<Parameter> parameters) {
+        MethodScope methodScope, TypeReference returnType, List<Parameter> parameters) {
       return new AutoValue_MethodEntity_Overload(
-          methodIndex, returnType, ImmutableList.copyOf(parameters));
+          methodScope, returnType, ImmutableList.copyOf(parameters));
     }
   }
 

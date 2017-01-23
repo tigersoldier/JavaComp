@@ -6,11 +6,11 @@ import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
 import java.util.List;
 
-/** An index containing no entity. */
-public class LeafIndex implements EntityIndex {
-  public static final LeafIndex INSTANCE = new LeafIndex();
+/** An scope containing no entity. */
+public class EmptyScope implements EntityScope {
+  public static final EmptyScope INSTANCE = new EmptyScope();
 
-  private LeafIndex() {}
+  private EmptyScope() {}
 
   @Override
   public List<Entity> getEntitiesWithName(String simpleName) {
@@ -34,11 +34,11 @@ public class LeafIndex implements EntityIndex {
 
   @Override
   public void addEntity(Entity entity) {
-    throw new UnsupportedOperationException("No entity is allowed to be added to a LeafIndex.");
+    throw new UnsupportedOperationException("No entity is allowed to be added to a EmptyScope.");
   }
 
   @Override
-  public Optional<EntityIndex> getParentIndex() {
+  public Optional<EntityScope> getParentScope() {
     return Optional.absent();
   }
 }

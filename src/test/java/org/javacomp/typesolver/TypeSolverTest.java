@@ -19,12 +19,12 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import org.javacomp.model.ClassEntity;
-import org.javacomp.model.FileIndex;
-import org.javacomp.model.GlobalIndex;
+import org.javacomp.model.FileScope;
+import org.javacomp.model.GlobalScope;
 import org.javacomp.model.MethodEntity;
 import org.javacomp.model.SolvedType;
 import org.javacomp.model.Entity;
-import org.javacomp.model.EntityIndex;
+import org.javacomp.model.EntityScope;
 import org.javacomp.model.TypeReference;
 import org.javacomp.parser.AstScanner;
 import org.javacomp.parser.SourceFileObject;
@@ -60,23 +60,23 @@ public class TypeSolverTest {
   private static final Joiner QUALIFIER_JOINER = Joiner.on(".");
 
   private Log javacLog;
-  private GlobalIndex globalIndex;
+  private GlobalScope globalScope;
   private Context javacContext;
   private final TypeSolver typeSolver = new TypeSolver();
 
   @Before
-  public void setUpTestIndex() throws Exception {
+  public void setUpTestScope() throws Exception {
     javacContext = new Context();
     javacLog = Log.instance(javacContext);
     JavacFileManager fileManager = new JavacFileManager(javacContext, true /* register */, UTF_8);
-    globalIndex = new GlobalIndex();
+    globalScope = new GlobalScope();
     for (String filename : TEST_FILES) {
       String inputFilePath = TEST_DATA_DIR + filename;
-      globalIndex.addOrReplaceFileIndex(parseTestFile(inputFilePath));
+      globalScope.addOrReplaceFileScope(parseTestFile(inputFilePath));
     }
   }
 
-  private FileIndex parseTestFile(String filePath) throws Exception {
+  private FileScope parseTestFile(String filePath) throws Exception {
     String fileContent = new String(Files.readAllBytes(Paths.get(filePath)), UTF_8);
 
     // If source file not set, parser will throw IllegalArgumentException when errors occur.
@@ -99,7 +99,7 @@ public class TypeSolverTest {
     ClassEntity testClass = (ClassEntity) lookupEntity(TEST_CLASS_FULL_NAME);
     TypeReference baseInterfaceReference = testClass.getInterfaces().get(0);
     Optional<SolvedType> solvedType =
-        typeSolver.solve(baseInterfaceReference, globalIndex, testClass);
+        typeSolver.solve(baseInterfaceReference, globalScope, testClass);
     assertThat(solvedType).isPresent();
     assertThat(solvedType.get().getClassEntity()).isSameAs(lookupEntity(BASE_INTERFACE_FULL_NAME));
   }
@@ -109,7 +109,7 @@ public class TypeSolverTest {
     ClassEntity testClass = (ClassEntity) lookupEntity(TEST_CLASS_FACTORY_FULL_NAME);
     TypeReference baseInterfaceReference = testClass.getInterfaces().get(0);
     Optional<SolvedType> solvedType =
-        typeSolver.solve(baseInterfaceReference, globalIndex, testClass);
+        typeSolver.solve(baseInterfaceReference, globalScope, testClass);
     assertThat(solvedType).isPresent();
     assertThat(solvedType.get().getClassEntity())
         .isSameAs(lookupEntity(BASE_INTERFACE_FACTORY_FULL_NAME));
@@ -125,7 +125,7 @@ public class TypeSolverTest {
   public void solveBaseClassInOtherPackage() {
     ClassEntity testClass = (ClassEntity) lookupEntity(TEST_CLASS_FULL_NAME);
     TypeReference baseClassReference = testClass.getSuperClass().get();
-    Optional<SolvedType> solvedType = typeSolver.solve(baseClassReference, globalIndex, testClass);
+    Optional<SolvedType> solvedType = typeSolver.solve(baseClassReference, globalScope, testClass);
     assertThat(solvedType).isPresent();
     assertThat(solvedType.get().getClassEntity()).isSameAs(lookupEntity(BASE_CLASS_FULL_NAME));
   }
@@ -135,7 +135,7 @@ public class TypeSolverTest {
     ClassEntity testClass = (ClassEntity) lookupEntity(TEST_CLASS_FACTORY_FULL_NAME);
     TypeReference baseInnerClassReference = testClass.getSuperClass().get();
     Optional<SolvedType> solvedType =
-        typeSolver.solve(baseInnerClassReference, globalIndex, testClass);
+        typeSolver.solve(baseInnerClassReference, globalScope, testClass);
     assertThat(solvedType).isPresent();
     assertThat(solvedType.get().getClassEntity())
         .isSameAs(lookupEntity(BASE_INNER_CLASS_FULL_NAME));
@@ -162,22 +162,22 @@ public class TypeSolverTest {
     TypeReference methodReturnType = methodOverload.getReturnType();
     Optional<SolvedType> solvedType =
         typeSolver.solve(
-            methodReturnType, globalIndex, methodOverload.getMethodIndex().getParentClass());
+            methodReturnType, globalScope, methodOverload.getMethodScope().getParentClass());
     assertThat(solvedType).isPresent();
     return solvedType.get();
   }
 
   private Entity lookupEntity(String qualifiedName) {
     String[] qualifiers = qualifiedName.split("\\.");
-    EntityIndex currentIndex = globalIndex;
+    EntityScope currentScope = globalScope;
     Entity entity = null;
     List<String> currentQualifiers = new ArrayList<>();
     for (String qualifier : qualifiers) {
       currentQualifiers.add(qualifier);
-      Collection<Entity> entities = currentIndex.getAllEntities().get(qualifier);
+      Collection<Entity> entities = currentScope.getAllEntities().get(qualifier);
       assertWithMessage(QUALIFIER_JOINER.join(currentQualifiers)).that(entities).isNotEmpty();
       entity = Iterables.getFirst(entities, null);
-      currentIndex = entity.getChildIndex();
+      currentScope = entity.getChildScope();
     }
     return entity;
   }

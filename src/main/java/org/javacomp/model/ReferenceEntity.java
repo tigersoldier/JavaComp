@@ -12,15 +12,15 @@ public class ReferenceEntity extends Entity {
   }
 
   /**
-   * @return If reference is resolved, return the child index of the referenced entity. Otherwise
-   *     return a {@Link LeafIndex}.
+   * @return If reference is resolved, return the child scope of the referenced entity. Otherwise
+   *     return a {@Link EmptyScope}.
    */
   @Override
-  public EntityIndex getChildIndex() {
+  public EntityScope getChildScope() {
     if (reference == null) {
-      return LeafIndex.INSTANCE;
+      return EmptyScope.INSTANCE;
     } else {
-      return reference.getChildIndex();
+      return reference.getChildScope();
     }
   }
 }

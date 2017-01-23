@@ -9,13 +9,13 @@ import java.util.Map;
 import java.util.Objects;
 import javax.annotation.Nullable;
 import org.javacomp.model.ClassEntity;
-import org.javacomp.model.FileIndex;
-import org.javacomp.model.GlobalIndex;
-import org.javacomp.model.PackageIndex;
+import org.javacomp.model.FileScope;
+import org.javacomp.model.GlobalScope;
+import org.javacomp.model.PackageScope;
 import org.javacomp.model.PackageEntity;
 import org.javacomp.model.SolvedType;
 import org.javacomp.model.Entity;
-import org.javacomp.model.EntityIndex;
+import org.javacomp.model.EntityScope;
 import org.javacomp.model.TypeReference;
 
 /** Logic for solving the type of a given entity. */
@@ -23,16 +23,16 @@ public class TypeSolver {
   private static final Optional<SolvedType> UNSOLVED = Optional.absent();
 
   public Optional<SolvedType> solve(
-      TypeReference typeReference, GlobalIndex globalIndex, EntityIndex parentIndex) {
+      TypeReference typeReference, GlobalScope globalScope, EntityScope parentScope) {
     List<String> fullName = typeReference.getFullName();
-    ClassEntity currentClass = findVisibleClass(fullName.get(0), globalIndex, parentIndex);
+    ClassEntity currentClass = findVisibleClass(fullName.get(0), globalScope, parentScope);
     if (currentClass == null) {
       return Optional.absent();
     }
     // Find the rest of the name parts, if exist.
     for (int i = 1; currentClass != null && i < fullName.size(); i++) {
       String innerClassName = fullName.get(i);
-      currentClass = findInnerClass(innerClassName, currentClass, globalIndex);
+      currentClass = findInnerClass(innerClassName, currentClass, globalScope);
       if (currentClass == null) {
         return Optional.absent();
       }
@@ -42,82 +42,82 @@ public class TypeSolver {
     }
 
     // The first part of the type full name is not known class inside the package. Try to find in global package.
-    ClassEntity classInGlobalIndex =
-        findClassInGlobalIndex(globalIndex, typeReference.getFullName());
-    if (classInGlobalIndex != null) {
-      return Optional.of(new SolvedType(classInGlobalIndex));
+    ClassEntity classInGlobalScope =
+        findClassInGlobalScope(globalScope, typeReference.getFullName());
+    if (classInGlobalScope != null) {
+      return Optional.of(new SolvedType(classInGlobalScope));
     }
     return Optional.absent();
   }
 
   /**
-   * @param baseIndex the {@link EntityIndex} to start searching from. Must be one of {@link
-   *     GlobalIndex}, {@link PackageIndex}, or {@link ClassEntity}
+   * @param baseScope the {@link EntityScope} to start searching from. Must be one of {@link
+   *     GlobalScope}, {@link PackageScope}, or {@link ClassEntity}
    * @return {@code null} if not found
    */
   @Nullable
-  private EntityIndex findClassOrPackage(
-      EntityIndex baseIndex, List<String> qualifiers, GlobalIndex globalIndex) {
-    EntityIndex currentIndex = baseIndex;
+  private EntityScope findClassOrPackage(
+      EntityScope baseScope, List<String> qualifiers, GlobalScope globalScope) {
+    EntityScope currentScope = baseScope;
     for (String qualifier : qualifiers) {
-      if (currentIndex instanceof GlobalIndex || currentIndex instanceof PackageIndex) {
-        // All members of GlobalIndex or PackageIndex are either package or class
-        Collection<Entity> entities = currentIndex.getMemberEntities().get(qualifier);
+      if (currentScope instanceof GlobalScope || currentScope instanceof PackageScope) {
+        // All members of GlobalScope or PackageScope are either package or class
+        Collection<Entity> entities = currentScope.getMemberEntities().get(qualifier);
         if (entities.size() != 1) {
           // Either not found, or is ambiguous.
           return null;
         }
-        currentIndex = Iterables.getOnlyElement(entities).getChildIndex();
-      } else if (currentIndex instanceof ClassEntity) {
-        currentIndex = findInnerClass(qualifier, (ClassEntity) currentIndex, globalIndex);
-        if (currentIndex == null) {
+        currentScope = Iterables.getOnlyElement(entities).getChildScope();
+      } else if (currentScope instanceof ClassEntity) {
+        currentScope = findInnerClass(qualifier, (ClassEntity) currentScope, globalScope);
+        if (currentScope == null) {
           return null;
         }
       }
     }
-    return currentIndex;
+    return currentScope;
   }
 
   @Nullable
-  private ClassEntity findClassInGlobalIndex(GlobalIndex globalIndex, List<String> qualifiers) {
-    EntityIndex classInGlobalIndex = findClassOrPackage(globalIndex, qualifiers, globalIndex);
-    if (classInGlobalIndex instanceof ClassEntity) {
-      return (ClassEntity) classInGlobalIndex;
+  private ClassEntity findClassInGlobalScope(GlobalScope globalScope, List<String> qualifiers) {
+    EntityScope classInGlobalScope = findClassOrPackage(globalScope, qualifiers, globalScope);
+    if (classInGlobalScope instanceof ClassEntity) {
+      return (ClassEntity) classInGlobalScope;
     }
     return null;
   }
 
   @Nullable
-  private ClassEntity findClassInGlobalIndex(GlobalIndex globalIndex, ClassEntity classEntity) {
+  private ClassEntity findClassInGlobalScope(GlobalScope globalScope, ClassEntity classEntity) {
     List<String> fullName = new ArrayList<>();
     fullName.addAll(classEntity.getQualifiers());
     fullName.add(classEntity.getSimpleName());
-    return findClassInGlobalIndex(globalIndex, fullName);
+    return findClassInGlobalScope(globalScope, fullName);
   }
 
   @Nullable
-  private Optional<FileIndex> findFileInGlobalIndex(GlobalIndex globalIndex, FileIndex fileIndex) {
-    return globalIndex.getFileIndex(fileIndex.getFilename());
+  private Optional<FileScope> findFileInGlobalScope(GlobalScope globalScope, FileScope fileScope) {
+    return globalScope.getFileScope(fileScope.getFilename());
   }
 
   @Nullable
   private ClassEntity findVisibleClass(
-      String name, GlobalIndex globalIndex, EntityIndex parentIndex) {
+      String name, GlobalScope globalScope, EntityScope parentScope) {
     // Search class from the narrowest scope to wider scope.
-    FileIndex fileIndex = null;
+    FileScope fileScope = null;
     ClassEntity foundClass = null;
-    for (Optional<EntityIndex> currentIndex = Optional.of(parentIndex);
-        currentIndex.isPresent();
-        currentIndex = currentIndex.get().getParentIndex()) {
-      if (currentIndex.get() instanceof ClassEntity) {
-        ClassEntity classEntity = (ClassEntity) currentIndex.get();
-        foundClass = findInnerClass(name, classEntity, globalIndex);
+    for (Optional<EntityScope> currentScope = Optional.of(parentScope);
+        currentScope.isPresent();
+        currentScope = currentScope.get().getParentScope()) {
+      if (currentScope.get() instanceof ClassEntity) {
+        ClassEntity classEntity = (ClassEntity) currentScope.get();
+        foundClass = findInnerClass(name, classEntity, globalScope);
         if (foundClass != null) {
           return foundClass;
         }
-        ClassEntity classInGlobalIndex = findClassInGlobalIndex(globalIndex, classEntity);
-        if (classInGlobalIndex != null && classInGlobalIndex != classEntity) {
-          foundClass = findInnerClass(name, classInGlobalIndex, globalIndex);
+        ClassEntity classInGlobalScope = findClassInGlobalScope(globalScope, classEntity);
+        if (classInGlobalScope != null && classInGlobalScope != classEntity) {
+          foundClass = findInnerClass(name, classInGlobalScope, globalScope);
           if (foundClass != null) {
             return foundClass;
           }
@@ -125,15 +125,15 @@ public class TypeSolver {
         if (Objects.equals(name, classEntity.getSimpleName())) {
           return classEntity;
         }
-      } else if (currentIndex.get() instanceof FileIndex) {
-        fileIndex = (FileIndex) currentIndex.get();
-        foundClass = findClassInFile(name, fileIndex, globalIndex);
+      } else if (currentScope.get() instanceof FileScope) {
+        fileScope = (FileScope) currentScope.get();
+        foundClass = findClassInFile(name, fileScope, globalScope);
         if (foundClass != null) {
           return foundClass;
         }
-        Optional<FileIndex> fileInGlobalIndex = findFileInGlobalIndex(globalIndex, fileIndex);
-        if (fileInGlobalIndex.isPresent() && fileInGlobalIndex.get() != fileIndex) {
-          foundClass = findClassInFile(name, fileInGlobalIndex.get(), globalIndex);
+        Optional<FileScope> fileInGlobalScope = findFileInGlobalScope(globalScope, fileScope);
+        if (fileInGlobalScope.isPresent() && fileInGlobalScope.get() != fileScope) {
+          foundClass = findClassInFile(name, fileInGlobalScope.get(), globalScope);
         }
         if (foundClass != null) {
           return foundClass;
@@ -143,11 +143,11 @@ public class TypeSolver {
     }
 
     // Not found in current file. Try to find in the same package.
-    if (fileIndex != null) {
-      List<String> packageQualifiers = fileIndex.getPackageQualifiers();
-      PackageIndex packageIndex = findPackage(globalIndex, packageQualifiers);
-      if (packageIndex != null) {
-        foundClass = findClassInPackage(name, packageIndex);
+    if (fileScope != null) {
+      List<String> packageQualifiers = fileScope.getPackageQualifiers();
+      PackageScope packageScope = findPackage(globalScope, packageQualifiers);
+      if (packageScope != null) {
+        foundClass = findClassInPackage(name, packageScope);
         if (foundClass != null) {
           return foundClass;
         }
@@ -158,25 +158,25 @@ public class TypeSolver {
 
   @Nullable
   private ClassEntity findInnerClass(
-      String name, ClassEntity classEntity, GlobalIndex globalIndex) {
+      String name, ClassEntity classEntity, GlobalScope globalScope) {
     Map<String, ClassEntity> innerClasses = classEntity.getInnerClasses();
     if (innerClasses.containsKey(name)) {
       return innerClasses.get(name);
     }
-    if (classEntity.getSuperClass().isPresent() && classEntity.getParentIndex().isPresent()) {
+    if (classEntity.getSuperClass().isPresent() && classEntity.getParentScope().isPresent()) {
       ClassEntity classInSuperClass =
           findInnerClass(
               name,
               classEntity.getSuperClass().get(),
-              globalIndex,
-              classEntity.getParentIndex().get());
+              globalScope,
+              classEntity.getParentScope().get());
       if (classInSuperClass != null) {
         return classInSuperClass;
       }
     }
     for (TypeReference iface : classEntity.getInterfaces()) {
       ClassEntity classInInterface =
-          findInnerClass(name, iface, globalIndex, classEntity.getParentIndex().get());
+          findInnerClass(name, iface, globalScope, classEntity.getParentScope().get());
       if (classInInterface != null) {
         return classInInterface;
       }
@@ -186,36 +186,36 @@ public class TypeSolver {
 
   @Nullable
   private ClassEntity findInnerClass(
-      String name, TypeReference typeReference, GlobalIndex globalIndex, EntityIndex parentIndex) {
-    Optional<SolvedType> solvedType = solve(typeReference, globalIndex, parentIndex);
+      String name, TypeReference typeReference, GlobalScope globalScope, EntityScope parentScope) {
+    Optional<SolvedType> solvedType = solve(typeReference, globalScope, parentScope);
     if (!solvedType.isPresent()) {
       return null;
     }
-    return findInnerClass(name, solvedType.get().getClassEntity(), globalIndex);
+    return findInnerClass(name, solvedType.get().getClassEntity(), globalScope);
   }
 
   @Nullable
-  private ClassEntity findClassInFile(String name, FileIndex fileIndex, GlobalIndex globalIndex) {
-    Collection<Entity> entities = fileIndex.getMemberEntities().get(name);
+  private ClassEntity findClassInFile(String name, FileScope fileScope, GlobalScope globalScope) {
+    Collection<Entity> entities = fileScope.getMemberEntities().get(name);
     for (Entity entity : entities) {
       if (entity instanceof ClassEntity) {
         return (ClassEntity) entity;
       }
     }
     // Not declared in the file, try imported classes.
-    Optional<List<String>> importedClass = fileIndex.getImportedClass(name);
+    Optional<List<String>> importedClass = fileScope.getImportedClass(name);
     if (importedClass.isPresent()) {
-      ClassEntity classInGlobalIndex = findClassInGlobalIndex(globalIndex, importedClass.get());
-      if (classInGlobalIndex != null) {
-        return classInGlobalIndex;
+      ClassEntity classInGlobalScope = findClassInGlobalScope(globalScope, importedClass.get());
+      if (classInGlobalScope != null) {
+        return classInGlobalScope;
       }
     }
     // Not directly imported, try on-demand imports (e.g. import foo.bar.*).
-    for (List<String> onDemandClassQualifiers : fileIndex.getOnDemandClassImportQualifiers()) {
-      EntityIndex classOrPackage =
-          findClassOrPackage(globalIndex /* baseIndex */, onDemandClassQualifiers, globalIndex);
+    for (List<String> onDemandClassQualifiers : fileScope.getOnDemandClassImportQualifiers()) {
+      EntityScope classOrPackage =
+          findClassOrPackage(globalScope /* baseScope */, onDemandClassQualifiers, globalScope);
       if (classOrPackage != null) {
-        ClassEntity classEntity = findClass(name, classOrPackage, globalIndex);
+        ClassEntity classEntity = findClass(name, classOrPackage, globalScope);
         if (classEntity != null) {
           return classEntity;
         }
@@ -225,24 +225,24 @@ public class TypeSolver {
   }
 
   /**
-   * Finds a class with given {@code name} in the {@code baseIndex}.
+   * Finds a class with given {@code name} in the {@code baseScope}.
    *
-   * @param baseIndex where to find the class. Must be either a {@link PackageIndex} or a {@link
+   * @param baseScope where to find the class. Must be either a {@link PackageScope} or a {@link
    *     ClassEntity}
    */
   @Nullable
-  private ClassEntity findClass(String name, EntityIndex baseIndex, GlobalIndex globalIndex) {
-    if (baseIndex instanceof PackageIndex) {
-      return findClassInPackage(name, (PackageIndex) baseIndex);
-    } else if (baseIndex instanceof ClassEntity) {
-      return findInnerClass(name, (ClassEntity) baseIndex, globalIndex);
+  private ClassEntity findClass(String name, EntityScope baseScope, GlobalScope globalScope) {
+    if (baseScope instanceof PackageScope) {
+      return findClassInPackage(name, (PackageScope) baseScope);
+    } else if (baseScope instanceof ClassEntity) {
+      return findInnerClass(name, (ClassEntity) baseScope, globalScope);
     }
     return null;
   }
 
   @Nullable
-  private ClassEntity findClassInPackage(String name, PackageIndex packageIndex) {
-    for (Entity entity : packageIndex.getMemberEntities().get(name)) {
+  private ClassEntity findClassInPackage(String name, PackageScope packageScope) {
+    for (Entity entity : packageScope.getMemberEntities().get(name)) {
       if (entity instanceof ClassEntity) {
         return (ClassEntity) entity;
       }
@@ -251,21 +251,21 @@ public class TypeSolver {
   }
 
   @Nullable
-  private PackageIndex findPackage(GlobalIndex globalIndex, List<String> packageQualifiers) {
-    PackageIndex currentIndex = globalIndex.getRootPackage();
+  private PackageScope findPackage(GlobalScope globalScope, List<String> packageQualifiers) {
+    PackageScope currentScope = globalScope.getRootPackage();
     for (String qualifier : packageQualifiers) {
-      PackageIndex nextIndex = null;
-      for (Entity entity : currentIndex.getMemberEntities().get(qualifier)) {
+      PackageScope nextScope = null;
+      for (Entity entity : currentScope.getMemberEntities().get(qualifier)) {
         if (entity instanceof PackageEntity) {
-          nextIndex = (PackageIndex) entity.getChildIndex();
+          nextScope = (PackageScope) entity.getChildScope();
           break;
         }
       }
-      if (nextIndex == null) {
+      if (nextScope == null) {
         return null;
       }
-      currentIndex = nextIndex;
+      currentScope = nextScope;
     }
-    return currentIndex;
+    return currentScope;
   }
 }
