@@ -4,12 +4,12 @@ import com.google.common.collect.ImmutableList;
 import java.util.List;
 
 /**
- * Represents an index node with a name.
+ * A Java entity declared in the source code.
  *
- * <p>A symbol can be a leaf node (e.g variables) or a scope with more symbols within it (e.g.
+ * <p>A entity can be a leaf node (e.g variables) or a scope with more entities within it (e.g.
  * class, method).
  */
-public abstract class Symbol {
+public abstract class Entity {
 
   public enum Kind {
     CLASS,
@@ -21,7 +21,7 @@ public abstract class Symbol {
     // Each part of a pacakage qualifier
     // e.g org.javacomp has 2 qualifiers: org and javacomp
     QUALIFIER,
-    // A psuedo symbol kind. Represents the a reference to a symbol by name. May be resolved to its referencing symbol.
+    // A psuedo entity kind. Represents the a reference to a entity by name. May be resolved to its referencing entity.
     REFERENCE,
     ;
   }
@@ -30,21 +30,21 @@ public abstract class Symbol {
   private final List<String> qualifiers;
   private final Kind kind;
 
-  protected Symbol(String simpleName, Kind kind, List<String> qualifiers) {
+  protected Entity(String simpleName, Kind kind, List<String> qualifiers) {
     this.simpleName = simpleName;
     this.kind = kind;
     this.qualifiers = ImmutableList.copyOf(qualifiers);
   }
 
   /**
-   * Gets the name of a symbol without qualifiers. For example the simple name of foo.bar.ClassName
+   * Gets the name of a entity without qualifiers. For example the simple name of foo.bar.ClassName
    * is ClassName.
    */
   public String getSimpleName() {
     return simpleName;
   }
 
-  /** Gets the qualifiers of the name of the symbol. */
+  /** Gets the qualifiers of the name of the entity. */
   public List<String> getQualifiers() {
     return qualifiers;
   }
@@ -54,8 +54,8 @@ public abstract class Symbol {
   }
 
   /**
-   * @return a {@link SymbolIndex} that can be used to find symbols visible to the scope of the
-   *     symbol.
+   * @return a {@link EntityIndex} that can be used to find entities visible to the scope of the
+   *     entity.
    */
-  public abstract SymbolIndex getChildIndex();
+  public abstract EntityIndex getChildIndex();
 }

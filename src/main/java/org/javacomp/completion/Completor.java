@@ -6,8 +6,8 @@ import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import java.util.List;
 import org.javacomp.model.FileIndex;
 import org.javacomp.model.GlobalIndex;
-import org.javacomp.model.Symbol;
-import org.javacomp.model.SymbolIndex;
+import org.javacomp.model.Entity;
+import org.javacomp.model.EntityIndex;
 
 /** Entry point of completion logic. */
 public class Completor {
@@ -27,11 +27,11 @@ public class Completor {
       JCCompilationUnit compilationUnit,
       String filename,
       String input) {
-    SymbolIndex completionPointIndex = inputFileIndex.getSymbolIndexAt(input.length() - 1);
+    EntityIndex completionPointIndex = inputFileIndex.getEntityIndexAt(input.length() - 1);
     CompletionAction action = new CompletionAst().getCompletionAction(compilationUnit);
-    Multimap<String, Symbol> symbols = action.getVisibleSymbols(globalIndex, completionPointIndex);
+    Multimap<String, Entity> entities = action.getVisibleEntities(globalIndex, completionPointIndex);
     // TODO: filter and sort candidates by query.
-    return FluentIterable.from(symbols.entries())
+    return FluentIterable.from(entities.entries())
         .transform(
             entry -> {
               return CompletionCandidate.builder().setName(entry.getKey()).build();

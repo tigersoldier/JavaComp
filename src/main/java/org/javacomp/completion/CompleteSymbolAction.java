@@ -3,17 +3,17 @@ package org.javacomp.completion;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
 import org.javacomp.model.GlobalIndex;
-import org.javacomp.model.Symbol;
-import org.javacomp.model.SymbolIndex;
+import org.javacomp.model.Entity;
+import org.javacomp.model.EntityIndex;
 
-/** An action that returns any visible symbols as completion candidates. */
-class CompleteSymbolAction implements CompletionAction {
+/** An action that returns any visible entities as completion candidates. */
+class CompleteEntityAction implements CompletionAction {
   @Override
-  public Multimap<String, Symbol> getVisibleSymbols(
-      GlobalIndex globalIndex, SymbolIndex completionPointIndex) {
-    ImmutableMultimap.Builder<String, Symbol> symbolMapBuilder = new ImmutableMultimap.Builder<>();
-    symbolMapBuilder.putAll(globalIndex.getAllSymbols());
-    symbolMapBuilder.putAll(completionPointIndex.getAllSymbols());
-    return symbolMapBuilder.build();
+  public Multimap<String, Entity> getVisibleEntities(
+      GlobalIndex globalIndex, EntityIndex completionPointIndex) {
+    ImmutableMultimap.Builder<String, Entity> entityMapBuilder = new ImmutableMultimap.Builder<>();
+    entityMapBuilder.putAll(globalIndex.getAllEntities());
+    entityMapBuilder.putAll(completionPointIndex.getAllEntities());
+    return entityMapBuilder.build();
   }
 }

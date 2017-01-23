@@ -6,16 +6,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 /** Represents a method. */
-public class MethodSymbol extends Symbol {
+public class MethodEntity extends Entity {
   private final List<Overload> overloads;
 
-  public MethodSymbol(String simpleName, List<String> qualifiers) {
-    super(simpleName, Symbol.Kind.METHOD, qualifiers);
+  public MethodEntity(String simpleName, List<String> qualifiers) {
+    super(simpleName, Entity.Kind.METHOD, qualifiers);
     this.overloads = new ArrayList<>();
   }
 
   @Override
-  public SymbolIndex getChildIndex() {
+  public EntityIndex getChildIndex() {
     // Unknown index until we know the overloading.
     return LeafIndex.INSTANCE;
   }
@@ -38,7 +38,7 @@ public class MethodSymbol extends Symbol {
 
     public static Overload create(
         MethodIndex methodIndex, TypeReference returnType, List<Parameter> parameters) {
-      return new AutoValue_MethodSymbol_Overload(
+      return new AutoValue_MethodEntity_Overload(
           methodIndex, returnType, ImmutableList.copyOf(parameters));
     }
   }
@@ -50,7 +50,7 @@ public class MethodSymbol extends Symbol {
     public abstract String getName();
 
     public static Parameter create(TypeReference type, String name) {
-      return new AutoValue_MethodSymbol_Parameter(type, name);
+      return new AutoValue_MethodEntity_Parameter(type, name);
     }
   }
 }

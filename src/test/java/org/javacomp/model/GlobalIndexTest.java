@@ -18,17 +18,17 @@ import org.mockito.junit.MockitoRule;
 public class GlobalIndexTest {
   @Rule public MockitoRule mrule = MockitoJUnit.rule();
 
-  @Mock private Symbol symbol1;
-  @Mock private Symbol symbol2;
-  @Mock private Symbol symbol3;
-  @Mock private Symbol symbol4;
+  @Mock private Entity entity1;
+  @Mock private Entity entity2;
+  @Mock private Entity entity3;
+  @Mock private Entity entity4;
 
   @Before
   public void setUpMocks() {
-    when(symbol1.getSimpleName()).thenReturn("symbol1");
-    when(symbol2.getSimpleName()).thenReturn("symbol2");
-    when(symbol3.getSimpleName()).thenReturn("symbol3");
-    when(symbol4.getSimpleName()).thenReturn("symbol4");
+    when(entity1.getSimpleName()).thenReturn("entity1");
+    when(entity2.getSimpleName()).thenReturn("entity2");
+    when(entity3.getSimpleName()).thenReturn("entity3");
+    when(entity4.getSimpleName()).thenReturn("entity4");
   }
 
   private GlobalIndex globalIndex = new GlobalIndex();
@@ -39,17 +39,17 @@ public class GlobalIndexTest {
     FileIndex fileIndex2 = new FileIndex("filename2", ImmutableList.of("foo", "bar", "baz"));
     FileIndex fileIndex3 = new FileIndex("filename3", ImmutableList.of("foo", "baz"));
     FileIndex fileIndex4 = new FileIndex("filename4", ImmutableList.of("fxx"));
-    fileIndex1.addSymbol(symbol1);
-    fileIndex2.addSymbol(symbol2);
-    fileIndex3.addSymbol(symbol3);
-    fileIndex4.addSymbol(symbol4);
+    fileIndex1.addEntity(entity1);
+    fileIndex2.addEntity(entity2);
+    fileIndex3.addEntity(entity3);
+    fileIndex4.addEntity(entity4);
 
     globalIndex.addOrReplaceFileIndex(fileIndex1);
     globalIndex.addOrReplaceFileIndex(fileIndex2);
     globalIndex.addOrReplaceFileIndex(fileIndex3);
     globalIndex.addOrReplaceFileIndex(fileIndex4);
 
-    assertThat(globalIndex.getAllSymbols().keys()).containsExactly("foo", "fxx");
+    assertThat(globalIndex.getAllEntities().keys()).containsExactly("foo", "fxx");
 
     PackageIndex foo = getPackage(globalIndex, "foo").getChildIndex();
     PackageIndex fooBar = getPackage(foo, "bar").getChildIndex();
@@ -57,11 +57,11 @@ public class GlobalIndexTest {
     PackageIndex fooBaz = getPackage(foo, "baz").getChildIndex();
     PackageIndex fxx = getPackage(globalIndex, "fxx").getChildIndex();
 
-    assertThat(foo.getAllSymbols().keys()).containsExactly("bar", "baz");
-    assertThat(fooBar.getAllSymbols().keys()).containsExactly("baz", "symbol1");
-    assertThat(fooBarBaz.getAllSymbols().keys()).containsExactly("symbol2");
-    assertThat(fooBaz.getAllSymbols().keys()).containsExactly("symbol3");
-    assertThat(fxx.getAllSymbols().keys()).containsExactly("symbol4");
+    assertThat(foo.getAllEntities().keys()).containsExactly("bar", "baz");
+    assertThat(fooBar.getAllEntities().keys()).containsExactly("baz", "entity1");
+    assertThat(fooBarBaz.getAllEntities().keys()).containsExactly("entity2");
+    assertThat(fooBaz.getAllEntities().keys()).containsExactly("entity3");
+    assertThat(fxx.getAllEntities().keys()).containsExactly("entity4");
   }
 
   @Test
@@ -69,15 +69,15 @@ public class GlobalIndexTest {
     FileIndex fileIndex1 = new FileIndex("foobar", ImmutableList.of("foo", "bar"));
     FileIndex fileIndex2 = new FileIndex("foobar", ImmutableList.of("foo", "bar"));
 
-    fileIndex1.addSymbol(symbol1);
-    fileIndex2.addSymbol(symbol2);
+    fileIndex1.addEntity(entity1);
+    fileIndex2.addEntity(entity2);
 
     globalIndex.addOrReplaceFileIndex(fileIndex1);
     globalIndex.addOrReplaceFileIndex(fileIndex2);
 
     PackageIndex foo = getPackage(globalIndex, "foo").getChildIndex();
     PackageIndex fooBar = getPackage(foo, "bar").getChildIndex();
-    assertThat(fooBar.getAllSymbols().keys()).containsExactly("symbol2");
+    assertThat(fooBar.getAllEntities().keys()).containsExactly("entity2");
   }
 
   @Test
@@ -86,39 +86,39 @@ public class GlobalIndexTest {
     FileIndex fileIndex2 = new FileIndex("foobar", ImmutableList.of("foo", "bar"));
     FileIndex fileIndex3 = new FileIndex("foobar", ImmutableList.of("fxx"));
 
-    fileIndex1.addSymbol(symbol1);
-    fileIndex2.addSymbol(symbol2);
-    fileIndex3.addSymbol(symbol3);
+    fileIndex1.addEntity(entity1);
+    fileIndex2.addEntity(entity2);
+    fileIndex3.addEntity(entity3);
 
     globalIndex.addOrReplaceFileIndex(fileIndex1);
 
     PackageIndex foo = getPackage(globalIndex, "foo").getChildIndex();
     PackageIndex fooBar = getPackage(foo, "bar").getChildIndex();
     PackageIndex fooBarBaz = getPackage(fooBar, "baz").getChildIndex();
-    assertThat(fooBarBaz.getAllSymbols().keys()).containsExactly("symbol1");
+    assertThat(fooBarBaz.getAllEntities().keys()).containsExactly("entity1");
 
-    // Replace with fileIndex2. baz is removed from foo.bar. symbol2 from fileIndex2 is indexed.
+    // Replace with fileIndex2. baz is removed from foo.bar. entity2 from fileIndex2 is indexed.
     globalIndex.addOrReplaceFileIndex(fileIndex2);
-    assertThat(fooBar.getAllSymbols().keys()).containsExactly("symbol2");
+    assertThat(fooBar.getAllEntities().keys()).containsExactly("entity2");
 
-    // Replace with fileIndex3. foo package is removed. fxx is added with symbol3 from fileIndex3
+    // Replace with fileIndex3. foo package is removed. fxx is added with entity3 from fileIndex3
     globalIndex.addOrReplaceFileIndex(fileIndex3);
-    assertThat(globalIndex.getAllSymbols().keys()).containsExactly("fxx");
+    assertThat(globalIndex.getAllEntities().keys()).containsExactly("fxx");
     PackageIndex fxx = getPackage(globalIndex, "fxx").getChildIndex();
-    assertThat(fxx.getAllSymbols().keys()).containsExactly("symbol3");
+    assertThat(fxx.getAllEntities().keys()).containsExactly("entity3");
   }
 
-  private PackageSymbol getPackage(SymbolIndex index, String simpleName) {
-    return getOnlySymbol(index, simpleName, PackageSymbol.class);
+  private PackageEntity getPackage(EntityIndex index, String simpleName) {
+    return getOnlyEntity(index, simpleName, PackageEntity.class);
   }
 
-  private <T> T getOnlySymbol(SymbolIndex index, String simpleName, Class<T> symbolClass) {
-    List<Symbol> symbols = index.getSymbolsWithName(simpleName);
-    assertThat(symbols).hasSize(1);
-    Symbol symbol = symbols.get(0);
-    assertThat(symbol).isInstanceOf(symbolClass);
+  private <T> T getOnlyEntity(EntityIndex index, String simpleName, Class<T> entityClass) {
+    List<Entity> entities = index.getEntitiesWithName(simpleName);
+    assertThat(entities).hasSize(1);
+    Entity entity = entities.get(0);
+    assertThat(entity).isInstanceOf(entityClass);
     @SuppressWarnings("unchecked")
-    T typedSymbol = (T) symbol;
-    return typedSymbol;
+    T typedEntity = (T) entity;
+    return typedEntity;
   }
 }

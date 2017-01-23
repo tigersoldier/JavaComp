@@ -22,7 +22,7 @@ class CompletionAst {
     if (lastCompletionTree instanceof MemberSelectTree) {
       return new CompleteMemberAction();
     }
-    return new CompleteSymbolAction();
+    return new CompleteEntityAction();
   }
 
   /** An AST scanner that returns the last meaningful sub tree for completion. */

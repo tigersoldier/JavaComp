@@ -28,17 +28,17 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 import org.javacomp.model.BlockIndex;
-import org.javacomp.model.ClassSymbol;
+import org.javacomp.model.ClassEntity;
 import org.javacomp.model.FileIndex;
 import org.javacomp.model.MethodIndex;
-import org.javacomp.model.MethodSymbol;
-import org.javacomp.model.Symbol;
-import org.javacomp.model.SymbolIndex;
+import org.javacomp.model.MethodEntity;
+import org.javacomp.model.Entity;
+import org.javacomp.model.EntityIndex;
 import org.javacomp.model.TypeReference;
-import org.javacomp.model.VariableSymbol;
+import org.javacomp.model.VariableEntity;
 import org.javacomp.model.util.NestedRangeMapBuilder;
 
-public class AstScanner extends TreeScanner<Void, SymbolIndex> {
+public class AstScanner extends TreeScanner<Void, EntityIndex> {
   private static final List<String> UNAVAILABLE_QUALIFIERS = ImmutableList.of();
   private static final String ON_DEMAND_IMPORT_WILDCARD = "*";
 
@@ -48,7 +48,7 @@ public class AstScanner extends TreeScanner<Void, SymbolIndex> {
   private FileIndex fileIndex = null;
   private List<String> currentQualifiers = new ArrayList<>();
   private EndPosTable endPosTable = null;
-  private NestedRangeMapBuilder<SymbolIndex> indexRangeBuilder = null;
+  private NestedRangeMapBuilder<EntityIndex> indexRangeBuilder = null;
   private String filename = null;
 
   public FileIndex startScan(JCCompilationUnit node, String filename) {
@@ -59,7 +59,7 @@ public class AstScanner extends TreeScanner<Void, SymbolIndex> {
   }
 
   @Override
-  public Void visitCompilationUnit(CompilationUnitTree node, SymbolIndex unused) {
+  public Void visitCompilationUnit(CompilationUnitTree node, EntityIndex unused) {
     // Find or create package index
     if (node.getPackageName() != null) {
       List<String> qualifiers = nameToQualifiers(node.getPackageName());
@@ -97,23 +97,23 @@ public class AstScanner extends TreeScanner<Void, SymbolIndex> {
   }
 
   @Override
-  public Void visitClass(ClassTree node, SymbolIndex currentIndex) {
-    Symbol.Kind symbolKind;
+  public Void visitClass(ClassTree node, EntityIndex currentIndex) {
+    Entity.Kind entityKind;
     switch (node.getKind()) {
       case CLASS:
-        symbolKind = Symbol.Kind.CLASS;
+        entityKind = Entity.Kind.CLASS;
         break;
       case INTERFACE:
-        symbolKind = Symbol.Kind.INTERFACE;
+        entityKind = Entity.Kind.INTERFACE;
         break;
       case ENUM:
-        symbolKind = Symbol.Kind.ENUM;
+        entityKind = Entity.Kind.ENUM;
         break;
       case ANNOTATION_TYPE:
-        symbolKind = Symbol.Kind.ANNOTATION;
+        entityKind = Entity.Kind.ANNOTATION;
         break;
       default:
-        throw new IllegalArgumentException("Unknown symbol kind for class: " + node.getKind());
+        throw new IllegalArgumentException("Unknown entity kind for class: " + node.getKind());
     }
     ImmutableList.Builder<TypeReference> interfaceBuilder = new ImmutableList.Builder<>();
     Optional<TypeReference> superClass = Optional.absent();
@@ -123,24 +123,24 @@ public class AstScanner extends TreeScanner<Void, SymbolIndex> {
     for (Tree implementClause : node.getImplementsClause()) {
       interfaceBuilder.add(typeReferenceScanner.getTypeReference(implementClause));
     }
-    ClassSymbol classSymbol =
-        new ClassSymbol(
+    ClassEntity classEntity =
+        new ClassEntity(
             node.getSimpleName().toString(),
-            symbolKind,
+            entityKind,
             this.currentQualifiers,
             currentIndex,
             superClass,
             interfaceBuilder.build());
-    currentIndex.addSymbol(classSymbol);
-    addIndexRange((JCTree) node, classSymbol);
+    currentIndex.addEntity(classEntity);
+    addIndexRange((JCTree) node, classEntity);
     if (this.currentQualifiers != UNAVAILABLE_QUALIFIERS) {
       // Not in a method, can be reached globally.
-      this.currentQualifiers.add(classSymbol.getSimpleName());
-      this.fileIndex.addGlobalSymbol(classSymbol);
+      this.currentQualifiers.add(classEntity.getSimpleName());
+      this.fileIndex.addGlobalEntity(classEntity);
     }
 
     for (Tree member : node.getMembers()) {
-      scan(member, classSymbol);
+      scan(member, classEntity);
     }
 
     if (this.currentQualifiers != UNAVAILABLE_QUALIFIERS) {
@@ -150,19 +150,19 @@ public class AstScanner extends TreeScanner<Void, SymbolIndex> {
   }
 
   @Override
-  public Void visitMethod(MethodTree node, SymbolIndex currentIndex) {
+  public Void visitMethod(MethodTree node, EntityIndex currentIndex) {
     checkArgument(
-        currentIndex instanceof ClassSymbol, "Method's parent index must be a class symbol");
-    MethodSymbol methodSymbol =
-        (MethodSymbol)
+        currentIndex instanceof ClassEntity, "Method's parent index must be a class entity");
+    MethodEntity methodEntity =
+        (MethodEntity)
             currentIndex
-                .getSymbolWithNameAndKind(node.getName().toString(), Symbol.Kind.METHOD)
+                .getEntityWithNameAndKind(node.getName().toString(), Entity.Kind.METHOD)
                 .orNull();
-    if (methodSymbol == null) {
-      methodSymbol = new MethodSymbol(node.getName().toString(), this.currentQualifiers);
+    if (methodEntity == null) {
+      methodEntity = new MethodEntity(node.getName().toString(), this.currentQualifiers);
     }
 
-    MethodIndex methodIndex = new MethodIndex((ClassSymbol) currentIndex);
+    MethodIndex methodIndex = new MethodIndex((ClassEntity) currentIndex);
     TypeReference returnType;
     if (node.getReturnType() == null) {
       // Constructor doesn't have return type.
@@ -170,18 +170,18 @@ public class AstScanner extends TreeScanner<Void, SymbolIndex> {
     } else {
       returnType = typeReferenceScanner.getTypeReference(node.getReturnType());
     }
-    ImmutableList.Builder<MethodSymbol.Parameter> parameterListBuilder =
+    ImmutableList.Builder<MethodEntity.Parameter> parameterListBuilder =
         new ImmutableList.Builder<>();
     for (Tree parameter : node.getParameters()) {
       parameterListBuilder.add(parameterScanner.getParameter(parameter));
     }
 
-    methodSymbol.addOverload(
-        MethodSymbol.Overload.create(methodIndex, returnType, parameterListBuilder.build()));
+    methodEntity.addOverload(
+        MethodEntity.Overload.create(methodIndex, returnType, parameterListBuilder.build()));
     // TODO: distinguish between static and non-static methods.
-    currentIndex.addSymbol(methodSymbol);
+    currentIndex.addEntity(methodEntity);
     List<String> previousQualifiers = this.currentQualifiers;
-    // No symbol defined inside method scope is qualified.
+    // No entity defined inside method scope is qualified.
     this.currentQualifiers = UNAVAILABLE_QUALIFIERS;
     if (node.getBody() != null) {
       // Use user.visitBlock because it doesn't create extra BlockIndex.
@@ -193,16 +193,16 @@ public class AstScanner extends TreeScanner<Void, SymbolIndex> {
   }
 
   @Override
-  public Void visitVariable(VariableTree node, SymbolIndex currentIndex) {
-    VariableSymbol variableSymbol =
-        new VariableSymbol(node.getName().toString(), this.currentQualifiers);
-    currentIndex.addSymbol(variableSymbol);
-    // TODO: add symbol to global index if it's a non-private static symbol.
+  public Void visitVariable(VariableTree node, EntityIndex currentIndex) {
+    VariableEntity variableEntity =
+        new VariableEntity(node.getName().toString(), this.currentQualifiers);
+    currentIndex.addEntity(variableEntity);
+    // TODO: add entity to global index if it's a non-private static entity.
     return null;
   }
 
   @Override
-  public Void visitBlock(BlockTree node, SymbolIndex currentIndex) {
+  public Void visitBlock(BlockTree node, EntityIndex currentIndex) {
     BlockIndex blockIndex = new BlockIndex(currentIndex);
     for (StatementTree statement : node.getStatements()) {
       this.scan(statement, blockIndex);
@@ -222,7 +222,7 @@ public class AstScanner extends TreeScanner<Void, SymbolIndex> {
     return ImmutableList.copyOf(stack);
   }
 
-  private void addIndexRange(JCTree node, SymbolIndex index) {
+  private void addIndexRange(JCTree node, EntityIndex index) {
     Range<Integer> range = Range.closed(node.getStartPosition(), node.getEndPosition(endPosTable));
     indexRangeBuilder.put(range, index);
   }
@@ -283,11 +283,11 @@ public class AstScanner extends TreeScanner<Void, SymbolIndex> {
       this.typeReferenceScanner = typeReferenceScanner;
     }
 
-    private MethodSymbol.Parameter getParameter(Tree node) {
+    private MethodEntity.Parameter getParameter(Tree node) {
       name = "";
       type = TypeReference.VOID_TYPE;
       scan(node, null);
-      return MethodSymbol.Parameter.create(type, name);
+      return MethodEntity.Parameter.create(type, name);
     }
 
     @Override

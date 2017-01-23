@@ -6,39 +6,39 @@ import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
 import java.util.List;
 
-/** An index containing no symbol. */
-public class LeafIndex implements SymbolIndex {
+/** An index containing no entity. */
+public class LeafIndex implements EntityIndex {
   public static final LeafIndex INSTANCE = new LeafIndex();
 
   private LeafIndex() {}
 
   @Override
-  public List<Symbol> getSymbolsWithName(String simpleName) {
+  public List<Entity> getEntitiesWithName(String simpleName) {
     return ImmutableList.of();
   }
 
   @Override
-  public Optional<Symbol> getSymbolWithNameAndKind(String simpleName, Symbol.Kind symbolKind) {
+  public Optional<Entity> getEntityWithNameAndKind(String simpleName, Entity.Kind entityKind) {
     return Optional.absent();
   }
 
   @Override
-  public Multimap<String, Symbol> getAllSymbols() {
+  public Multimap<String, Entity> getAllEntities() {
     return ImmutableMultimap.of();
   }
 
   @Override
-  public Multimap<String, Symbol> getMemberSymbols() {
+  public Multimap<String, Entity> getMemberEntities() {
     return ImmutableMultimap.of();
   }
 
   @Override
-  public void addSymbol(Symbol symbol) {
-    throw new UnsupportedOperationException("No symbol is allowed to be added to a LeafIndex.");
+  public void addEntity(Entity entity) {
+    throw new UnsupportedOperationException("No entity is allowed to be added to a LeafIndex.");
   }
 
   @Override
-  public Optional<SymbolIndex> getParentIndex() {
+  public Optional<EntityIndex> getParentIndex() {
     return Optional.absent();
   }
 }

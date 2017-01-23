@@ -16,9 +16,9 @@ import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.List;
 import org.javacomp.model.FileIndex;
-import org.javacomp.model.MethodSymbol;
-import org.javacomp.model.Symbol;
-import org.javacomp.model.SymbolIndex;
+import org.javacomp.model.MethodEntity;
+import org.javacomp.model.Entity;
+import org.javacomp.model.EntityIndex;
 import org.javacomp.model.TypeReference;
 import org.junit.Before;
 import org.junit.Test;
@@ -65,184 +65,184 @@ public class AstScannerTest {
 
   @Test
   public void classIsIndexedInPackage() {
-    Symbol classSymbol = lookupSymbol(fileIndex, "TestData");
-    assertThat(classSymbol.getKind()).isEqualTo(Symbol.Kind.CLASS);
+    Entity classEntity = lookupEntity(fileIndex, "TestData");
+    assertThat(classEntity.getKind()).isEqualTo(Entity.Kind.CLASS);
   }
 
   @Test
   public void classIsIndexedGlobally() {
-    List<Symbol> classSymbol = fileIndex.getGlobalSymbolsWithName("TestData");
-    assertThat(classSymbol).hasSize(1);
-    assertThat(classSymbol.get(0).getKind()).isEqualTo(Symbol.Kind.CLASS);
+    List<Entity> classEntity = fileIndex.getGlobalEntitiesWithName("TestData");
+    assertThat(classEntity).hasSize(1);
+    assertThat(classEntity.get(0).getKind()).isEqualTo(Entity.Kind.CLASS);
   }
 
   @Test
   public void methodIsIndexedInClassIndex() {
-    Symbol methodSymbol = lookupSymbol(fileIndex, "TestData.publicIfBlockMethod");
-    assertThat(methodSymbol.getKind()).isEqualTo(Symbol.Kind.METHOD);
+    Entity methodEntity = lookupEntity(fileIndex, "TestData.publicIfBlockMethod");
+    assertThat(methodEntity.getKind()).isEqualTo(Entity.Kind.METHOD);
   }
 
   @Test
   public void classStaticFieldIsIndexedInClassIndex() {
-    Symbol variableSymbol = lookupSymbol(fileIndex, "TestData.publicStaticIntField");
-    assertThat(variableSymbol.getKind()).isEqualTo(Symbol.Kind.VARIABLE);
+    Entity variableEntity = lookupEntity(fileIndex, "TestData.publicStaticIntField");
+    assertThat(variableEntity.getKind()).isEqualTo(Entity.Kind.VARIABLE);
   }
 
   @Test
   public void innerClassIsIndexedInClassIndex() {
-    Symbol classSymbol = lookupSymbol(fileIndex, "TestData.PrivateStaticInnerClass");
-    assertThat(classSymbol.getKind()).isEqualTo(Symbol.Kind.CLASS);
-    Symbol annotationSymbol = lookupSymbol(fileIndex, "TestData.PublicInnerAnnotation");
-    assertThat(annotationSymbol.getKind()).isEqualTo(Symbol.Kind.ANNOTATION);
-    Symbol enumSymbol = lookupSymbol(fileIndex, "TestData.PublicInnerEnum");
-    assertThat(enumSymbol.getKind()).isEqualTo(Symbol.Kind.ENUM);
-    Symbol interfaceSymbol = lookupSymbol(fileIndex, "TestData.PublicInnerInterface");
-    assertThat(interfaceSymbol.getKind()).isEqualTo(Symbol.Kind.INTERFACE);
+    Entity classEntity = lookupEntity(fileIndex, "TestData.PrivateStaticInnerClass");
+    assertThat(classEntity.getKind()).isEqualTo(Entity.Kind.CLASS);
+    Entity annotationEntity = lookupEntity(fileIndex, "TestData.PublicInnerAnnotation");
+    assertThat(annotationEntity.getKind()).isEqualTo(Entity.Kind.ANNOTATION);
+    Entity enumEntity = lookupEntity(fileIndex, "TestData.PublicInnerEnum");
+    assertThat(enumEntity.getKind()).isEqualTo(Entity.Kind.ENUM);
+    Entity interfaceEntity = lookupEntity(fileIndex, "TestData.PublicInnerInterface");
+    assertThat(interfaceEntity.getKind()).isEqualTo(Entity.Kind.INTERFACE);
   }
 
   @Test
   public void enumItemIsIndexedInEnumIndex() {
-    Symbol variableSymbol = lookupSymbol(fileIndex, "TestData.PublicInnerEnum.ENUM_VALUE1");
-    assertThat(variableSymbol.getKind()).isEqualTo(Symbol.Kind.VARIABLE);
+    Entity variableEntity = lookupEntity(fileIndex, "TestData.PublicInnerEnum.ENUM_VALUE1");
+    assertThat(variableEntity.getKind()).isEqualTo(Entity.Kind.VARIABLE);
   }
 
   @Test
   public void topLevelClassIndexRange() {
-    SymbolIndex indexAtStart = getSymbolIndexAfter("public class TestData {");
-    SymbolIndex indexAtEnd = getSymbolIndexBefore("} // class TestData");
-    SymbolIndex indexAtField = getSymbolIndexAfter("publicStaticIntField;");
-    for (SymbolIndex index : ImmutableList.of(indexAtStart, indexAtEnd, indexAtField)) {
-      assertThat(index).isEqualTo(lookupSymbol(fileIndex, "TestData").getChildIndex());
+    EntityIndex indexAtStart = getEntityIndexAfter("public class TestData {");
+    EntityIndex indexAtEnd = getEntityIndexBefore("} // class TestData");
+    EntityIndex indexAtField = getEntityIndexAfter("publicStaticIntField;");
+    for (EntityIndex index : ImmutableList.of(indexAtStart, indexAtEnd, indexAtField)) {
+      assertThat(index).isEqualTo(lookupEntity(fileIndex, "TestData").getChildIndex());
     }
   }
 
   @Test
   public void innerEnumIndexRange() {
-    SymbolIndex indexAtStart = getSymbolIndexAfter("public enum PublicInnerEnum {");
-    SymbolIndex indexAtEnd = getSymbolIndexBefore("} // PublicInnerEnum");
-    SymbolIndex indexAtField = getSymbolIndexAfter("ENUM_VALUE1,");
-    for (SymbolIndex index : ImmutableList.of(indexAtStart, indexAtEnd, indexAtField)) {
+    EntityIndex indexAtStart = getEntityIndexAfter("public enum PublicInnerEnum {");
+    EntityIndex indexAtEnd = getEntityIndexBefore("} // PublicInnerEnum");
+    EntityIndex indexAtField = getEntityIndexAfter("ENUM_VALUE1,");
+    for (EntityIndex index : ImmutableList.of(indexAtStart, indexAtEnd, indexAtField)) {
       assertThat(index)
-          .isEqualTo(lookupSymbol(fileIndex, "TestData.PublicInnerEnum").getChildIndex());
+          .isEqualTo(lookupEntity(fileIndex, "TestData.PublicInnerEnum").getChildIndex());
     }
   }
 
   @Test
   public void innerInterfaceIndexRange() {
-    SymbolIndex indexAtStart = getSymbolIndexAfter("public interface PublicInnerInterface {");
-    SymbolIndex indexAtEnd = getSymbolIndexBefore("} // PublicInnerInterface");
-    SymbolIndex indexAtField = getSymbolIndexAfter("interfaceMethod();");
-    for (SymbolIndex index : ImmutableList.of(indexAtStart, indexAtEnd, indexAtField)) {
+    EntityIndex indexAtStart = getEntityIndexAfter("public interface PublicInnerInterface {");
+    EntityIndex indexAtEnd = getEntityIndexBefore("} // PublicInnerInterface");
+    EntityIndex indexAtField = getEntityIndexAfter("interfaceMethod();");
+    for (EntityIndex index : ImmutableList.of(indexAtStart, indexAtEnd, indexAtField)) {
       assertThat(index)
-          .isEqualTo(lookupSymbol(fileIndex, "TestData.PublicInnerInterface").getChildIndex());
+          .isEqualTo(lookupEntity(fileIndex, "TestData.PublicInnerInterface").getChildIndex());
     }
   }
 
   @Test
   public void methodIndexRange() {
-    SymbolIndex indexAtStart = getSymbolIndexAfter("publicIfBlockMethod() {");
-    SymbolIndex indexAtEnd = getSymbolIndexBefore("} // publicIfBlockMethod");
-    SymbolIndex indexAtField = getSymbolIndexAfter("methodScopeVar");
-    for (SymbolIndex index : ImmutableList.of(indexAtStart, indexAtEnd, indexAtField)) {
-      MethodSymbol methodSymbol =
-          (MethodSymbol) lookupSymbol(fileIndex, "TestData.publicIfBlockMethod");
-      assertThat(index).isEqualTo(methodSymbol.getOverloads().get(0).getMethodIndex());
+    EntityIndex indexAtStart = getEntityIndexAfter("publicIfBlockMethod() {");
+    EntityIndex indexAtEnd = getEntityIndexBefore("} // publicIfBlockMethod");
+    EntityIndex indexAtField = getEntityIndexAfter("methodScopeVar");
+    for (EntityIndex index : ImmutableList.of(indexAtStart, indexAtEnd, indexAtField)) {
+      MethodEntity methodEntity =
+          (MethodEntity) lookupEntity(fileIndex, "TestData.publicIfBlockMethod");
+      assertThat(index).isEqualTo(methodEntity.getOverloads().get(0).getMethodIndex());
     }
   }
 
   @Test
   public void ifBlockIndexRange() {
-    SymbolIndex indexAtStart = getSymbolIndexAfter("if (a == 1) {");
-    SymbolIndex indexAtEnd = getSymbolIndexBefore("} else { // end of if");
-    SymbolIndex indexAtField = getSymbolIndexAfter("ifScopeVar");
-    for (SymbolIndex index : ImmutableList.of(indexAtStart, indexAtEnd, indexAtField)) {
-      assertThat(index.getSymbolWithNameAndKind("ifScopeVar", Symbol.Kind.VARIABLE)).isPresent();
-      assertThat(index.getSymbolsWithName("elseScopeVar")).isEmpty();
+    EntityIndex indexAtStart = getEntityIndexAfter("if (a == 1) {");
+    EntityIndex indexAtEnd = getEntityIndexBefore("} else { // end of if");
+    EntityIndex indexAtField = getEntityIndexAfter("ifScopeVar");
+    for (EntityIndex index : ImmutableList.of(indexAtStart, indexAtEnd, indexAtField)) {
+      assertThat(index.getEntityWithNameAndKind("ifScopeVar", Entity.Kind.VARIABLE)).isPresent();
+      assertThat(index.getEntitiesWithName("elseScopeVar")).isEmpty();
     }
   }
 
   @Test
   public void elseBlockIndexRange() {
-    SymbolIndex indexAtStart = getSymbolIndexAfter("else {");
-    SymbolIndex indexAtEnd = getSymbolIndexBefore("} // else");
-    SymbolIndex indexAtField = getSymbolIndexAfter("elseScopeVar");
-    for (SymbolIndex index : ImmutableList.of(indexAtStart, indexAtEnd, indexAtField)) {
-      assertThat(index.getSymbolWithNameAndKind("elseScopeVar", Symbol.Kind.VARIABLE)).isPresent();
-      assertThat(index.getSymbolsWithName("ifScopeVar")).isEmpty();
+    EntityIndex indexAtStart = getEntityIndexAfter("else {");
+    EntityIndex indexAtEnd = getEntityIndexBefore("} // else");
+    EntityIndex indexAtField = getEntityIndexAfter("elseScopeVar");
+    for (EntityIndex index : ImmutableList.of(indexAtStart, indexAtEnd, indexAtField)) {
+      assertThat(index.getEntityWithNameAndKind("elseScopeVar", Entity.Kind.VARIABLE)).isPresent();
+      assertThat(index.getEntitiesWithName("ifScopeVar")).isEmpty();
     }
   }
 
   @Test
   public void whileBlockIndexRange() {
-    SymbolIndex indexAtStart = getSymbolIndexAfter("while (number > 0) {");
-    SymbolIndex indexAtEnd = getSymbolIndexBefore("} // while loop");
-    SymbolIndex indexAtField = getSymbolIndexAfter("whileScopeVar");
-    for (SymbolIndex index : ImmutableList.of(indexAtStart, indexAtEnd, indexAtField)) {
-      assertThat(index.getSymbolWithNameAndKind("whileScopeVar", Symbol.Kind.VARIABLE)).isPresent();
+    EntityIndex indexAtStart = getEntityIndexAfter("while (number > 0) {");
+    EntityIndex indexAtEnd = getEntityIndexBefore("} // while loop");
+    EntityIndex indexAtField = getEntityIndexAfter("whileScopeVar");
+    for (EntityIndex index : ImmutableList.of(indexAtStart, indexAtEnd, indexAtField)) {
+      assertThat(index.getEntityWithNameAndKind("whileScopeVar", Entity.Kind.VARIABLE)).isPresent();
     }
   }
 
   @Test
   public void forBlockIndexRange() {
-    SymbolIndex indexAtStart = getSymbolIndexAfter("for (String s : input) {");
-    SymbolIndex indexAtEnd = getSymbolIndexBefore("} // for loop");
-    SymbolIndex indexAtField = getSymbolIndexAfter("forScopeVar");
-    for (SymbolIndex index : ImmutableList.of(indexAtStart, indexAtEnd, indexAtField)) {
-      assertThat(index.getSymbolWithNameAndKind("forScopeVar", Symbol.Kind.VARIABLE)).isPresent();
+    EntityIndex indexAtStart = getEntityIndexAfter("for (String s : input) {");
+    EntityIndex indexAtEnd = getEntityIndexBefore("} // for loop");
+    EntityIndex indexAtField = getEntityIndexAfter("forScopeVar");
+    for (EntityIndex index : ImmutableList.of(indexAtStart, indexAtEnd, indexAtField)) {
+      assertThat(index.getEntityWithNameAndKind("forScopeVar", Entity.Kind.VARIABLE)).isPresent();
     }
   }
 
   @Test
   public void switchBlockIndexRange() {
-    SymbolIndex indexAtStart = getSymbolIndexAfter("switch (a) {");
-    SymbolIndex indexAtEnd = getSymbolIndexBefore("} // switch");
-    SymbolIndex indexAtField = getSymbolIndexAfter("switchScopeVar");
-    for (SymbolIndex index : ImmutableList.of(indexAtStart, indexAtEnd, indexAtField)) {
-      assertThat(index.getSymbolWithNameAndKind("switchScopeVar", Symbol.Kind.VARIABLE))
+    EntityIndex indexAtStart = getEntityIndexAfter("switch (a) {");
+    EntityIndex indexAtEnd = getEntityIndexBefore("} // switch");
+    EntityIndex indexAtField = getEntityIndexAfter("switchScopeVar");
+    for (EntityIndex index : ImmutableList.of(indexAtStart, indexAtEnd, indexAtField)) {
+      assertThat(index.getEntityWithNameAndKind("switchScopeVar", Entity.Kind.VARIABLE))
           .isPresent();
-      assertThat(index.getSymbolsWithName("caseScopeVar")).isEmpty();
+      assertThat(index.getEntitiesWithName("caseScopeVar")).isEmpty();
     }
   }
 
   @Test
   public void switchCaseBlockIndexRange() {
-    SymbolIndex indexAtStart = getSymbolIndexBefore("{ // start of case block");
-    SymbolIndex indexAtEnd = getSymbolIndexBefore("} // end of case block");
-    SymbolIndex indexAtField = getSymbolIndexAfter("caseScopeVar");
-    for (SymbolIndex index : ImmutableList.of(indexAtStart, indexAtEnd, indexAtField)) {
-      assertThat(index.getSymbolWithNameAndKind("switchScopeVar", Symbol.Kind.VARIABLE))
+    EntityIndex indexAtStart = getEntityIndexBefore("{ // start of case block");
+    EntityIndex indexAtEnd = getEntityIndexBefore("} // end of case block");
+    EntityIndex indexAtField = getEntityIndexAfter("caseScopeVar");
+    for (EntityIndex index : ImmutableList.of(indexAtStart, indexAtEnd, indexAtField)) {
+      assertThat(index.getEntityWithNameAndKind("switchScopeVar", Entity.Kind.VARIABLE))
           .isPresent();
-      assertThat(index.getSymbolWithNameAndKind("caseScopeVar", Symbol.Kind.VARIABLE)).isPresent();
+      assertThat(index.getEntityWithNameAndKind("caseScopeVar", Entity.Kind.VARIABLE)).isPresent();
     }
   }
 
   @Test
   public void annonymousClassIndexRange() {
-    SymbolIndex indexAtStart = getSymbolIndexAfter("new PublicInnerInterface() {");
-    SymbolIndex indexAtEnd = getSymbolIndexBefore("} /* end of new PublicInnerInterface *");
-    SymbolIndex indexAtField = getSymbolIndexAfter("privateAnnonymousClassMethod");
-    for (SymbolIndex index : ImmutableList.of(indexAtStart, indexAtEnd, indexAtField)) {
-      assertThat(index.getSymbolWithNameAndKind("privateAnnonymousClassMethod", Symbol.Kind.METHOD))
+    EntityIndex indexAtStart = getEntityIndexAfter("new PublicInnerInterface() {");
+    EntityIndex indexAtEnd = getEntityIndexBefore("} /* end of new PublicInnerInterface *");
+    EntityIndex indexAtField = getEntityIndexAfter("privateAnnonymousClassMethod");
+    for (EntityIndex index : ImmutableList.of(indexAtStart, indexAtEnd, indexAtField)) {
+      assertThat(index.getEntityWithNameAndKind("privateAnnonymousClassMethod", Entity.Kind.METHOD))
           .isPresent();
-      assertThat(index.getSymbolWithNameAndKind("interfaceMethod", Symbol.Kind.METHOD)).isPresent();
+      assertThat(index.getEntityWithNameAndKind("interfaceMethod", Entity.Kind.METHOD)).isPresent();
     }
   }
 
   @Test
   public void primitiveTypeReference() {
-    MethodSymbol methodSymbol =
-        (MethodSymbol) lookupSymbol(fileIndex, "TestData.protectedWhileBlockMethod");
+    MethodEntity methodEntity =
+        (MethodEntity) lookupEntity(fileIndex, "TestData.protectedWhileBlockMethod");
     TypeReference intReference =
-        methodSymbol.getOverloads().get(0).getParameters().get(0).getType();
+        methodEntity.getOverloads().get(0).getParameters().get(0).getType();
     assertThat(intReference.getFullName()).containsExactly("int").inOrder();
   }
 
   @Test
   public void nonPrimitiveTypeReference() {
-    MethodSymbol methodSymbol =
-        (MethodSymbol) lookupSymbol(fileIndex, "TestData.privateForBlockMethod");
+    MethodEntity methodEntity =
+        (MethodEntity) lookupEntity(fileIndex, "TestData.privateForBlockMethod");
     TypeReference intReference =
-        methodSymbol.getOverloads().get(0).getParameters().get(0).getType();
+        methodEntity.getOverloads().get(0).getParameters().get(0).getType();
     assertThat(intReference.getFullName()).containsExactly("java", "util", "List").inOrder();
   }
 
@@ -257,28 +257,28 @@ public class AstScannerTest {
         .containsExactly(ImmutableList.of("foo", "bar"), ImmutableList.of("foo", "bar", "baz"));
   }
 
-  private SymbolIndex getSymbolIndexAfter(String subString) {
+  private EntityIndex getEntityIndexAfter(String subString) {
     assertThat(testDataContent).contains(subString);
     int pos = testDataContent.indexOf(subString);
-    return fileIndex.getSymbolIndexAt(pos + subString.length());
+    return fileIndex.getEntityIndexAt(pos + subString.length());
   }
 
-  private SymbolIndex getSymbolIndexBefore(String subString) {
+  private EntityIndex getEntityIndexBefore(String subString) {
     assertThat(testDataContent).contains(subString);
     int pos = testDataContent.indexOf(subString);
-    return fileIndex.getSymbolIndexAt(pos);
+    return fileIndex.getEntityIndexAt(pos);
   }
 
-  private static Symbol lookupSymbol(SymbolIndex index, String qualifiedName) {
+  private static Entity lookupEntity(EntityIndex index, String qualifiedName) {
     String[] qualifiers = qualifiedName.split("\\.");
-    SymbolIndex currentIndex = index;
-    Symbol symbol = null;
+    EntityIndex currentIndex = index;
+    Entity entity = null;
     for (String qualifier : qualifiers) {
-      Collection<Symbol> symbols = currentIndex.getAllSymbols().get(qualifier);
-      assertThat(symbols).isNotEmpty();
-      symbol = Iterables.getFirst(symbols, null);
-      currentIndex = symbol.getChildIndex();
+      Collection<Entity> entities = currentIndex.getAllEntities().get(qualifier);
+      assertThat(entities).isNotEmpty();
+      entity = Iterables.getFirst(entities, null);
+      currentIndex = entity.getChildIndex();
     }
-    return symbol;
+    return entity;
   }
 }

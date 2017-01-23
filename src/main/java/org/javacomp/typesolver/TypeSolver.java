@@ -8,14 +8,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import javax.annotation.Nullable;
-import org.javacomp.model.ClassSymbol;
+import org.javacomp.model.ClassEntity;
 import org.javacomp.model.FileIndex;
 import org.javacomp.model.GlobalIndex;
 import org.javacomp.model.PackageIndex;
-import org.javacomp.model.PackageSymbol;
+import org.javacomp.model.PackageEntity;
 import org.javacomp.model.SolvedType;
-import org.javacomp.model.Symbol;
-import org.javacomp.model.SymbolIndex;
+import org.javacomp.model.Entity;
+import org.javacomp.model.EntityIndex;
 import org.javacomp.model.TypeReference;
 
 /** Logic for solving the type of a given entity. */
@@ -23,9 +23,9 @@ public class TypeSolver {
   private static final Optional<SolvedType> UNSOLVED = Optional.absent();
 
   public Optional<SolvedType> solve(
-      TypeReference typeReference, GlobalIndex globalIndex, SymbolIndex parentIndex) {
+      TypeReference typeReference, GlobalIndex globalIndex, EntityIndex parentIndex) {
     List<String> fullName = typeReference.getFullName();
-    ClassSymbol currentClass = findVisibleClass(fullName.get(0), globalIndex, parentIndex);
+    ClassEntity currentClass = findVisibleClass(fullName.get(0), globalIndex, parentIndex);
     if (currentClass == null) {
       return Optional.absent();
     }
@@ -42,7 +42,7 @@ public class TypeSolver {
     }
 
     // The first part of the type full name is not known class inside the package. Try to find in global package.
-    ClassSymbol classInGlobalIndex =
+    ClassEntity classInGlobalIndex =
         findClassInGlobalIndex(globalIndex, typeReference.getFullName());
     if (classInGlobalIndex != null) {
       return Optional.of(new SolvedType(classInGlobalIndex));
@@ -51,25 +51,25 @@ public class TypeSolver {
   }
 
   /**
-   * @param baseIndex the {@link SymbolIndex} to start searching from. Must be one of {@link
-   *     GlobalIndex}, {@link PackageIndex}, or {@link ClassSymbol}
+   * @param baseIndex the {@link EntityIndex} to start searching from. Must be one of {@link
+   *     GlobalIndex}, {@link PackageIndex}, or {@link ClassEntity}
    * @return {@code null} if not found
    */
   @Nullable
-  private SymbolIndex findClassOrPackage(
-      SymbolIndex baseIndex, List<String> qualifiers, GlobalIndex globalIndex) {
-    SymbolIndex currentIndex = baseIndex;
+  private EntityIndex findClassOrPackage(
+      EntityIndex baseIndex, List<String> qualifiers, GlobalIndex globalIndex) {
+    EntityIndex currentIndex = baseIndex;
     for (String qualifier : qualifiers) {
       if (currentIndex instanceof GlobalIndex || currentIndex instanceof PackageIndex) {
         // All members of GlobalIndex or PackageIndex are either package or class
-        Collection<Symbol> symbols = currentIndex.getMemberSymbols().get(qualifier);
-        if (symbols.size() != 1) {
+        Collection<Entity> entities = currentIndex.getMemberEntities().get(qualifier);
+        if (entities.size() != 1) {
           // Either not found, or is ambiguous.
           return null;
         }
-        currentIndex = Iterables.getOnlyElement(symbols).getChildIndex();
-      } else if (currentIndex instanceof ClassSymbol) {
-        currentIndex = findInnerClass(qualifier, (ClassSymbol) currentIndex, globalIndex);
+        currentIndex = Iterables.getOnlyElement(entities).getChildIndex();
+      } else if (currentIndex instanceof ClassEntity) {
+        currentIndex = findInnerClass(qualifier, (ClassEntity) currentIndex, globalIndex);
         if (currentIndex == null) {
           return null;
         }
@@ -79,19 +79,19 @@ public class TypeSolver {
   }
 
   @Nullable
-  private ClassSymbol findClassInGlobalIndex(GlobalIndex globalIndex, List<String> qualifiers) {
-    SymbolIndex classInGlobalIndex = findClassOrPackage(globalIndex, qualifiers, globalIndex);
-    if (classInGlobalIndex instanceof ClassSymbol) {
-      return (ClassSymbol) classInGlobalIndex;
+  private ClassEntity findClassInGlobalIndex(GlobalIndex globalIndex, List<String> qualifiers) {
+    EntityIndex classInGlobalIndex = findClassOrPackage(globalIndex, qualifiers, globalIndex);
+    if (classInGlobalIndex instanceof ClassEntity) {
+      return (ClassEntity) classInGlobalIndex;
     }
     return null;
   }
 
   @Nullable
-  private ClassSymbol findClassInGlobalIndex(GlobalIndex globalIndex, ClassSymbol classSymbol) {
+  private ClassEntity findClassInGlobalIndex(GlobalIndex globalIndex, ClassEntity classEntity) {
     List<String> fullName = new ArrayList<>();
-    fullName.addAll(classSymbol.getQualifiers());
-    fullName.add(classSymbol.getSimpleName());
+    fullName.addAll(classEntity.getQualifiers());
+    fullName.add(classEntity.getSimpleName());
     return findClassInGlobalIndex(globalIndex, fullName);
   }
 
@@ -101,29 +101,29 @@ public class TypeSolver {
   }
 
   @Nullable
-  private ClassSymbol findVisibleClass(
-      String name, GlobalIndex globalIndex, SymbolIndex parentIndex) {
+  private ClassEntity findVisibleClass(
+      String name, GlobalIndex globalIndex, EntityIndex parentIndex) {
     // Search class from the narrowest scope to wider scope.
     FileIndex fileIndex = null;
-    ClassSymbol foundClass = null;
-    for (Optional<SymbolIndex> currentIndex = Optional.of(parentIndex);
+    ClassEntity foundClass = null;
+    for (Optional<EntityIndex> currentIndex = Optional.of(parentIndex);
         currentIndex.isPresent();
         currentIndex = currentIndex.get().getParentIndex()) {
-      if (currentIndex.get() instanceof ClassSymbol) {
-        ClassSymbol classSymbol = (ClassSymbol) currentIndex.get();
-        foundClass = findInnerClass(name, classSymbol, globalIndex);
+      if (currentIndex.get() instanceof ClassEntity) {
+        ClassEntity classEntity = (ClassEntity) currentIndex.get();
+        foundClass = findInnerClass(name, classEntity, globalIndex);
         if (foundClass != null) {
           return foundClass;
         }
-        ClassSymbol classInGlobalIndex = findClassInGlobalIndex(globalIndex, classSymbol);
-        if (classInGlobalIndex != null && classInGlobalIndex != classSymbol) {
+        ClassEntity classInGlobalIndex = findClassInGlobalIndex(globalIndex, classEntity);
+        if (classInGlobalIndex != null && classInGlobalIndex != classEntity) {
           foundClass = findInnerClass(name, classInGlobalIndex, globalIndex);
           if (foundClass != null) {
             return foundClass;
           }
         }
-        if (Objects.equals(name, classSymbol.getSimpleName())) {
-          return classSymbol;
+        if (Objects.equals(name, classEntity.getSimpleName())) {
+          return classEntity;
         }
       } else if (currentIndex.get() instanceof FileIndex) {
         fileIndex = (FileIndex) currentIndex.get();
@@ -157,26 +157,26 @@ public class TypeSolver {
   }
 
   @Nullable
-  private ClassSymbol findInnerClass(
-      String name, ClassSymbol classSymbol, GlobalIndex globalIndex) {
-    Map<String, ClassSymbol> innerClasses = classSymbol.getInnerClasses();
+  private ClassEntity findInnerClass(
+      String name, ClassEntity classEntity, GlobalIndex globalIndex) {
+    Map<String, ClassEntity> innerClasses = classEntity.getInnerClasses();
     if (innerClasses.containsKey(name)) {
       return innerClasses.get(name);
     }
-    if (classSymbol.getSuperClass().isPresent() && classSymbol.getParentIndex().isPresent()) {
-      ClassSymbol classInSuperClass =
+    if (classEntity.getSuperClass().isPresent() && classEntity.getParentIndex().isPresent()) {
+      ClassEntity classInSuperClass =
           findInnerClass(
               name,
-              classSymbol.getSuperClass().get(),
+              classEntity.getSuperClass().get(),
               globalIndex,
-              classSymbol.getParentIndex().get());
+              classEntity.getParentIndex().get());
       if (classInSuperClass != null) {
         return classInSuperClass;
       }
     }
-    for (TypeReference iface : classSymbol.getInterfaces()) {
-      ClassSymbol classInInterface =
-          findInnerClass(name, iface, globalIndex, classSymbol.getParentIndex().get());
+    for (TypeReference iface : classEntity.getInterfaces()) {
+      ClassEntity classInInterface =
+          findInnerClass(name, iface, globalIndex, classEntity.getParentIndex().get());
       if (classInInterface != null) {
         return classInInterface;
       }
@@ -185,39 +185,39 @@ public class TypeSolver {
   }
 
   @Nullable
-  private ClassSymbol findInnerClass(
-      String name, TypeReference typeReference, GlobalIndex globalIndex, SymbolIndex parentIndex) {
+  private ClassEntity findInnerClass(
+      String name, TypeReference typeReference, GlobalIndex globalIndex, EntityIndex parentIndex) {
     Optional<SolvedType> solvedType = solve(typeReference, globalIndex, parentIndex);
     if (!solvedType.isPresent()) {
       return null;
     }
-    return findInnerClass(name, solvedType.get().getClassSymbol(), globalIndex);
+    return findInnerClass(name, solvedType.get().getClassEntity(), globalIndex);
   }
 
   @Nullable
-  private ClassSymbol findClassInFile(String name, FileIndex fileIndex, GlobalIndex globalIndex) {
-    Collection<Symbol> symbols = fileIndex.getMemberSymbols().get(name);
-    for (Symbol symbol : symbols) {
-      if (symbol instanceof ClassSymbol) {
-        return (ClassSymbol) symbol;
+  private ClassEntity findClassInFile(String name, FileIndex fileIndex, GlobalIndex globalIndex) {
+    Collection<Entity> entities = fileIndex.getMemberEntities().get(name);
+    for (Entity entity : entities) {
+      if (entity instanceof ClassEntity) {
+        return (ClassEntity) entity;
       }
     }
     // Not declared in the file, try imported classes.
     Optional<List<String>> importedClass = fileIndex.getImportedClass(name);
     if (importedClass.isPresent()) {
-      ClassSymbol classInGlobalIndex = findClassInGlobalIndex(globalIndex, importedClass.get());
+      ClassEntity classInGlobalIndex = findClassInGlobalIndex(globalIndex, importedClass.get());
       if (classInGlobalIndex != null) {
         return classInGlobalIndex;
       }
     }
     // Not directly imported, try on-demand imports (e.g. import foo.bar.*).
     for (List<String> onDemandClassQualifiers : fileIndex.getOnDemandClassImportQualifiers()) {
-      SymbolIndex classOrPackage =
+      EntityIndex classOrPackage =
           findClassOrPackage(globalIndex /* baseIndex */, onDemandClassQualifiers, globalIndex);
       if (classOrPackage != null) {
-        ClassSymbol classSymbol = findClass(name, classOrPackage, globalIndex);
-        if (classSymbol != null) {
-          return classSymbol;
+        ClassEntity classEntity = findClass(name, classOrPackage, globalIndex);
+        if (classEntity != null) {
+          return classEntity;
         }
       }
     }
@@ -228,23 +228,23 @@ public class TypeSolver {
    * Finds a class with given {@code name} in the {@code baseIndex}.
    *
    * @param baseIndex where to find the class. Must be either a {@link PackageIndex} or a {@link
-   *     ClassSymbol}
+   *     ClassEntity}
    */
   @Nullable
-  private ClassSymbol findClass(String name, SymbolIndex baseIndex, GlobalIndex globalIndex) {
+  private ClassEntity findClass(String name, EntityIndex baseIndex, GlobalIndex globalIndex) {
     if (baseIndex instanceof PackageIndex) {
       return findClassInPackage(name, (PackageIndex) baseIndex);
-    } else if (baseIndex instanceof ClassSymbol) {
-      return findInnerClass(name, (ClassSymbol) baseIndex, globalIndex);
+    } else if (baseIndex instanceof ClassEntity) {
+      return findInnerClass(name, (ClassEntity) baseIndex, globalIndex);
     }
     return null;
   }
 
   @Nullable
-  private ClassSymbol findClassInPackage(String name, PackageIndex packageIndex) {
-    for (Symbol symbol : packageIndex.getMemberSymbols().get(name)) {
-      if (symbol instanceof ClassSymbol) {
-        return (ClassSymbol) symbol;
+  private ClassEntity findClassInPackage(String name, PackageIndex packageIndex) {
+    for (Entity entity : packageIndex.getMemberEntities().get(name)) {
+      if (entity instanceof ClassEntity) {
+        return (ClassEntity) entity;
       }
     }
     return null;
@@ -255,9 +255,9 @@ public class TypeSolver {
     PackageIndex currentIndex = globalIndex.getRootPackage();
     for (String qualifier : packageQualifiers) {
       PackageIndex nextIndex = null;
-      for (Symbol symbol : currentIndex.getMemberSymbols().get(qualifier)) {
-        if (symbol instanceof PackageSymbol) {
-          nextIndex = (PackageIndex) symbol.getChildIndex();
+      for (Entity entity : currentIndex.getMemberEntities().get(qualifier)) {
+        if (entity instanceof PackageEntity) {
+          nextIndex = (PackageIndex) entity.getChildIndex();
           break;
         }
       }

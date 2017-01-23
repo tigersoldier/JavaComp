@@ -7,55 +7,55 @@ import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
 import java.util.List;
 
-/** Index of symbols in a unnamed block of statements, such as if, while, or switch. */
-public class BlockIndex implements SymbolIndex {
-  // Map of simple names -> symbols.
-  private final Multimap<String, Symbol> symbols;
-  private final SymbolIndex parentIndex;
+/** Index of entities in a unnamed block of statements, such as if, while, or switch. */
+public class BlockIndex implements EntityIndex {
+  // Map of simple names -> entities.
+  private final Multimap<String, Entity> entities;
+  private final EntityIndex parentIndex;
 
-  public BlockIndex(SymbolIndex parentIndex) {
-    this.symbols = HashMultimap.create();
+  public BlockIndex(EntityIndex parentIndex) {
+    this.entities = HashMultimap.create();
     this.parentIndex = parentIndex;
   }
 
   @Override
-  public List<Symbol> getSymbolsWithName(String simpleName) {
-    ImmutableList.Builder<Symbol> builder = new ImmutableList.Builder<>();
-    builder.addAll(symbols.get(simpleName));
-    builder.addAll(parentIndex.getSymbolsWithName(simpleName));
+  public List<Entity> getEntitiesWithName(String simpleName) {
+    ImmutableList.Builder<Entity> builder = new ImmutableList.Builder<>();
+    builder.addAll(entities.get(simpleName));
+    builder.addAll(parentIndex.getEntitiesWithName(simpleName));
     return builder.build();
   }
 
   @Override
-  public Optional<Symbol> getSymbolWithNameAndKind(String simpleName, Symbol.Kind symbolKind) {
-    for (Symbol symbol : symbols.get(simpleName)) {
-      if (symbol.getKind() == symbolKind) {
-        return Optional.of(symbol);
+  public Optional<Entity> getEntityWithNameAndKind(String simpleName, Entity.Kind entityKind) {
+    for (Entity entity : entities.get(simpleName)) {
+      if (entity.getKind() == entityKind) {
+        return Optional.of(entity);
       }
     }
-    return parentIndex.getSymbolWithNameAndKind(simpleName, symbolKind);
+    return parentIndex.getEntityWithNameAndKind(simpleName, entityKind);
   }
 
   @Override
-  public Multimap<String, Symbol> getAllSymbols() {
-    ImmutableMultimap.Builder<String, Symbol> builder = new ImmutableMultimap.Builder<>();
-    builder.putAll(symbols);
-    builder.putAll(parentIndex.getAllSymbols());
+  public Multimap<String, Entity> getAllEntities() {
+    ImmutableMultimap.Builder<String, Entity> builder = new ImmutableMultimap.Builder<>();
+    builder.putAll(entities);
+    builder.putAll(parentIndex.getAllEntities());
     return builder.build();
   }
 
   @Override
-  public Multimap<String, Symbol> getMemberSymbols() {
+  public Multimap<String, Entity> getMemberEntities() {
     return ImmutableMultimap.of();
   }
 
   @Override
-  public void addSymbol(Symbol symbol) {
-    symbols.put(symbol.getSimpleName(), symbol);
+  public void addEntity(Entity entity) {
+    entities.put(entity.getSimpleName(), entity);
   }
 
   @Override
-  public Optional<SymbolIndex> getParentIndex() {
+  public Optional<EntityIndex> getParentIndex() {
     return Optional.of(parentIndex);
   }
 }

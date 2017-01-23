@@ -18,13 +18,13 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import org.javacomp.model.ClassSymbol;
+import org.javacomp.model.ClassEntity;
 import org.javacomp.model.FileIndex;
 import org.javacomp.model.GlobalIndex;
-import org.javacomp.model.MethodSymbol;
+import org.javacomp.model.MethodEntity;
 import org.javacomp.model.SolvedType;
-import org.javacomp.model.Symbol;
-import org.javacomp.model.SymbolIndex;
+import org.javacomp.model.Entity;
+import org.javacomp.model.EntityIndex;
 import org.javacomp.model.TypeReference;
 import org.javacomp.parser.AstScanner;
 import org.javacomp.parser.SourceFileObject;
@@ -96,55 +96,55 @@ public class TypeSolverTest {
 
   @Test
   public void solveBaseInterfaceInTheSamePackage() {
-    ClassSymbol testClass = (ClassSymbol) lookupSymbol(TEST_CLASS_FULL_NAME);
+    ClassEntity testClass = (ClassEntity) lookupEntity(TEST_CLASS_FULL_NAME);
     TypeReference baseInterfaceReference = testClass.getInterfaces().get(0);
     Optional<SolvedType> solvedType =
         typeSolver.solve(baseInterfaceReference, globalIndex, testClass);
     assertThat(solvedType).isPresent();
-    assertThat(solvedType.get().getClassSymbol()).isSameAs(lookupSymbol(BASE_INTERFACE_FULL_NAME));
+    assertThat(solvedType.get().getClassEntity()).isSameAs(lookupEntity(BASE_INTERFACE_FULL_NAME));
   }
 
   @Test
   public void solveClassDefinedInSuperInterface() {
-    ClassSymbol testClass = (ClassSymbol) lookupSymbol(TEST_CLASS_FACTORY_FULL_NAME);
+    ClassEntity testClass = (ClassEntity) lookupEntity(TEST_CLASS_FACTORY_FULL_NAME);
     TypeReference baseInterfaceReference = testClass.getInterfaces().get(0);
     Optional<SolvedType> solvedType =
         typeSolver.solve(baseInterfaceReference, globalIndex, testClass);
     assertThat(solvedType).isPresent();
-    assertThat(solvedType.get().getClassSymbol())
-        .isSameAs(lookupSymbol(BASE_INTERFACE_FACTORY_FULL_NAME));
+    assertThat(solvedType.get().getClassEntity())
+        .isSameAs(lookupEntity(BASE_INTERFACE_FACTORY_FULL_NAME));
   }
 
   @Test
   public void solveInnerClass() {
     SolvedType baseInterface = solveMethodReturnType(TEST_CLASS_FULL_NAME + ".newFactory");
-    assertThat(baseInterface.getClassSymbol()).isSameAs(lookupSymbol(TEST_CLASS_FACTORY_FULL_NAME));
+    assertThat(baseInterface.getClassEntity()).isSameAs(lookupEntity(TEST_CLASS_FACTORY_FULL_NAME));
   }
 
   @Test
   public void solveBaseClassInOtherPackage() {
-    ClassSymbol testClass = (ClassSymbol) lookupSymbol(TEST_CLASS_FULL_NAME);
+    ClassEntity testClass = (ClassEntity) lookupEntity(TEST_CLASS_FULL_NAME);
     TypeReference baseClassReference = testClass.getSuperClass().get();
     Optional<SolvedType> solvedType = typeSolver.solve(baseClassReference, globalIndex, testClass);
     assertThat(solvedType).isPresent();
-    assertThat(solvedType.get().getClassSymbol()).isSameAs(lookupSymbol(BASE_CLASS_FULL_NAME));
+    assertThat(solvedType.get().getClassEntity()).isSameAs(lookupEntity(BASE_CLASS_FULL_NAME));
   }
 
   @Test
   public void solveInnerClassInBaseClassFromOtherPackage() {
-    ClassSymbol testClass = (ClassSymbol) lookupSymbol(TEST_CLASS_FACTORY_FULL_NAME);
+    ClassEntity testClass = (ClassEntity) lookupEntity(TEST_CLASS_FACTORY_FULL_NAME);
     TypeReference baseInnerClassReference = testClass.getSuperClass().get();
     Optional<SolvedType> solvedType =
         typeSolver.solve(baseInnerClassReference, globalIndex, testClass);
     assertThat(solvedType).isPresent();
-    assertThat(solvedType.get().getClassSymbol())
-        .isSameAs(lookupSymbol(BASE_INNER_CLASS_FULL_NAME));
+    assertThat(solvedType.get().getClassEntity())
+        .isSameAs(lookupEntity(BASE_INNER_CLASS_FULL_NAME));
   }
 
   @Test
   public void solveOnDemandClassImport() {
     SolvedType onDemandClass = solveMethodReturnType(TEST_CLASS_FULL_NAME + ".getOnDemand");
-    assertThat(onDemandClass.getClassSymbol()).isSameAs(lookupSymbol(ON_DEMAND_CLASS_FULL_NAME));
+    assertThat(onDemandClass.getClassEntity()).isSameAs(lookupEntity(ON_DEMAND_CLASS_FULL_NAME));
   }
 
   @Test
@@ -152,13 +152,13 @@ public class TypeSolverTest {
     // both other and ondemand package define Shadow class. Shadow from other package should be used
     // since it's explicitly imported.
     SolvedType shadowClass = solveMethodReturnType(TEST_CLASS_FULL_NAME + ".getShadow");
-    assertThat(shadowClass.getClassSymbol()).isSameAs(lookupSymbol(OTHER_SHADOW_CLASS_FULL_NAME));
+    assertThat(shadowClass.getClassEntity()).isSameAs(lookupEntity(OTHER_SHADOW_CLASS_FULL_NAME));
   }
 
   private SolvedType solveMethodReturnType(String qualifiedMethodName) {
-    MethodSymbol method = (MethodSymbol) lookupSymbol(qualifiedMethodName);
+    MethodEntity method = (MethodEntity) lookupEntity(qualifiedMethodName);
     assertThat(method).isNotNull();
-    MethodSymbol.Overload methodOverload = method.getOverloads().get(0);
+    MethodEntity.Overload methodOverload = method.getOverloads().get(0);
     TypeReference methodReturnType = methodOverload.getReturnType();
     Optional<SolvedType> solvedType =
         typeSolver.solve(
@@ -167,18 +167,18 @@ public class TypeSolverTest {
     return solvedType.get();
   }
 
-  private Symbol lookupSymbol(String qualifiedName) {
+  private Entity lookupEntity(String qualifiedName) {
     String[] qualifiers = qualifiedName.split("\\.");
-    SymbolIndex currentIndex = globalIndex;
-    Symbol symbol = null;
+    EntityIndex currentIndex = globalIndex;
+    Entity entity = null;
     List<String> currentQualifiers = new ArrayList<>();
     for (String qualifier : qualifiers) {
       currentQualifiers.add(qualifier);
-      Collection<Symbol> symbols = currentIndex.getAllSymbols().get(qualifier);
-      assertWithMessage(QUALIFIER_JOINER.join(currentQualifiers)).that(symbols).isNotEmpty();
-      symbol = Iterables.getFirst(symbols, null);
-      currentIndex = symbol.getChildIndex();
+      Collection<Entity> entities = currentIndex.getAllEntities().get(qualifier);
+      assertWithMessage(QUALIFIER_JOINER.join(currentQualifiers)).that(entities).isNotEmpty();
+      entity = Iterables.getFirst(entities, null);
+      currentIndex = entity.getChildIndex();
     }
-    return symbol;
+    return entity;
   }
 }

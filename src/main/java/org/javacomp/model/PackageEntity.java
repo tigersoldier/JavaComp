@@ -7,12 +7,12 @@ import java.util.List;
 import java.util.Set;
 
 /** Represents a package. */
-public class PackageSymbol extends Symbol {
+public class PackageEntity extends Entity {
   private final PackageIndex packageIndex;
 
-  public PackageSymbol(
+  public PackageEntity(
       String simpleName, List<String> qualifiers, PackageIndex packageIndex) {
-    super(simpleName, Symbol.Kind.QUALIFIER, qualifiers);
+    super(simpleName, Entity.Kind.QUALIFIER, qualifiers);
     this.packageIndex = packageIndex;
   }
 

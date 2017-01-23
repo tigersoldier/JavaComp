@@ -7,62 +7,62 @@ import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
 import java.util.List;
 
-/** Index of symbols in the scope of a method. */
-public class MethodIndex implements SymbolIndex {
-  // Map of simple names -> symbols.
-  private final Multimap<String, Symbol> symbols;
-  private final ClassSymbol classSymbol;
+/** Index of entities in the scope of a method. */
+public class MethodIndex implements EntityIndex {
+  // Map of simple names -> entities.
+  private final Multimap<String, Entity> entities;
+  private final ClassEntity classEntity;
 
-  public MethodIndex(ClassSymbol classSymbol) {
-    this.symbols = HashMultimap.create();
-    this.classSymbol = classSymbol;
+  public MethodIndex(ClassEntity classEntity) {
+    this.entities = HashMultimap.create();
+    this.classEntity = classEntity;
   }
 
   @Override
-  public List<Symbol> getSymbolsWithName(String simpleName) {
-    ImmutableList.Builder<Symbol> builder = new ImmutableList.Builder<>();
-    builder.addAll(symbols.get(simpleName));
-    builder.addAll(classSymbol.getSymbolsWithName(simpleName));
+  public List<Entity> getEntitiesWithName(String simpleName) {
+    ImmutableList.Builder<Entity> builder = new ImmutableList.Builder<>();
+    builder.addAll(entities.get(simpleName));
+    builder.addAll(classEntity.getEntitiesWithName(simpleName));
     // TODO: distinguish between static method and instance method
     return builder.build();
   }
 
   @Override
-  public Optional<Symbol> getSymbolWithNameAndKind(String simpleName, Symbol.Kind symbolKind) {
-    for (Symbol symbol : symbols.get(simpleName)) {
-      if (symbol.getKind() == symbolKind) {
-        return Optional.of(symbol);
+  public Optional<Entity> getEntityWithNameAndKind(String simpleName, Entity.Kind entityKind) {
+    for (Entity entity : entities.get(simpleName)) {
+      if (entity.getKind() == entityKind) {
+        return Optional.of(entity);
       }
     }
     // TODO: distinguish between static method and instance method
-    return classSymbol.getSymbolWithNameAndKind(simpleName, symbolKind);
+    return classEntity.getEntityWithNameAndKind(simpleName, entityKind);
   }
 
   @Override
-  public Multimap<String, Symbol> getAllSymbols() {
-    ImmutableMultimap.Builder<String, Symbol> builder = new ImmutableMultimap.Builder<>();
-    builder.putAll(symbols);
-    builder.putAll(classSymbol.getAllSymbols());
+  public Multimap<String, Entity> getAllEntities() {
+    ImmutableMultimap.Builder<String, Entity> builder = new ImmutableMultimap.Builder<>();
+    builder.putAll(entities);
+    builder.putAll(classEntity.getAllEntities());
     // TODO: distinguish between static method and instance method
     return builder.build();
   }
 
   @Override
-  public Multimap<String, Symbol> getMemberSymbols() {
+  public Multimap<String, Entity> getMemberEntities() {
     return ImmutableMultimap.of();
   }
 
   @Override
-  public void addSymbol(Symbol symbol) {
-    symbols.put(symbol.getSimpleName(), symbol);
+  public void addEntity(Entity entity) {
+    entities.put(entity.getSimpleName(), entity);
   }
 
   @Override
-  public Optional<SymbolIndex> getParentIndex() {
-    return Optional.of(classSymbol);
+  public Optional<EntityIndex> getParentIndex() {
+    return Optional.of(classEntity);
   }
 
-  public ClassSymbol getParentClass() {
-    return classSymbol;
+  public ClassEntity getParentClass() {
+    return classEntity;
   }
 }

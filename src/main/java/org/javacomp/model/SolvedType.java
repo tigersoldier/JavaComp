@@ -2,13 +2,13 @@ package org.javacomp.model;
 
 /** The actual type solved for {@link TypeReference}. */
 public class SolvedType {
-  private final ClassSymbol classSymbol;
+  private final ClassEntity classEntity;
 
-  public SolvedType(ClassSymbol classSymbol) {
-    this.classSymbol = classSymbol;
+  public SolvedType(ClassEntity classEntity) {
+    this.classEntity = classEntity;
   }
 
-  public ClassSymbol getClassSymbol() {
-    return classSymbol;
+  public ClassEntity getClassEntity() {
+    return classEntity;
   }
 }

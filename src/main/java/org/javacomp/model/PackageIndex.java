@@ -12,9 +12,9 @@ import java.util.List;
 import java.util.Set;
 
 /** Index of sub packages and files in a package. */
-public class PackageIndex implements SymbolIndex {
+public class PackageIndex implements EntityIndex {
   // Map of simple names -> subPackages.
-  private final Multimap<String, PackageSymbol> subPackages;
+  private final Multimap<String, PackageEntity> subPackages;
   private final Set<FileIndex> files;
 
   public PackageIndex() {
@@ -23,61 +23,61 @@ public class PackageIndex implements SymbolIndex {
   }
 
   @Override
-  public List<Symbol> getSymbolsWithName(String simpleName) {
-    ImmutableList.Builder<Symbol> builder = new ImmutableList.Builder<>();
+  public List<Entity> getEntitiesWithName(String simpleName) {
+    ImmutableList.Builder<Entity> builder = new ImmutableList.Builder<>();
     builder.addAll(subPackages.get(simpleName));
     for (FileIndex fileIndex : files) {
-      builder.addAll(fileIndex.getSymbolsWithName(simpleName));
+      builder.addAll(fileIndex.getEntitiesWithName(simpleName));
     }
     return builder.build();
   }
 
   @Override
-  public Optional<Symbol> getSymbolWithNameAndKind(String simpleName, Symbol.Kind symbolKind) {
-    for (Symbol symbol : subPackages.get(simpleName)) {
-      if (symbol.getKind() == symbolKind) {
-        return Optional.of(symbol);
+  public Optional<Entity> getEntityWithNameAndKind(String simpleName, Entity.Kind entityKind) {
+    for (Entity entity : subPackages.get(simpleName)) {
+      if (entity.getKind() == entityKind) {
+        return Optional.of(entity);
       }
     }
     for (FileIndex fileIndex : files) {
-      Optional<Symbol> symbol = fileIndex.getSymbolWithNameAndKind(simpleName, symbolKind);
-      if (symbol.isPresent()) {
-        return symbol;
+      Optional<Entity> entity = fileIndex.getEntityWithNameAndKind(simpleName, entityKind);
+      if (entity.isPresent()) {
+        return entity;
       }
     }
     return Optional.absent();
   }
 
   @Override
-  public Multimap<String, Symbol> getAllSymbols() {
-    ImmutableMultimap.Builder<String, Symbol> builder = new ImmutableMultimap.Builder<>();
+  public Multimap<String, Entity> getAllEntities() {
+    ImmutableMultimap.Builder<String, Entity> builder = new ImmutableMultimap.Builder<>();
     builder.putAll(subPackages);
     for (FileIndex fileIndex : files) {
-      builder.putAll(fileIndex.getAllSymbols());
+      builder.putAll(fileIndex.getAllEntities());
     }
     return builder.build();
   }
 
   @Override
-  public Multimap<String, Symbol> getMemberSymbols() {
-    ImmutableMultimap.Builder<String, Symbol> builder = new ImmutableMultimap.Builder<>();
+  public Multimap<String, Entity> getMemberEntities() {
+    ImmutableMultimap.Builder<String, Entity> builder = new ImmutableMultimap.Builder<>();
     builder.putAll(subPackages);
     for (FileIndex fileIndex : files) {
-      builder.putAll(fileIndex.getMemberSymbols());
+      builder.putAll(fileIndex.getMemberEntities());
     }
     return builder.build();
   }
 
   @Override
-  public void addSymbol(Symbol symbol) {
+  public void addEntity(Entity entity) {
     checkArgument(
-        symbol instanceof PackageSymbol,
-        "Only sub package can be added to a package. Found " + symbol.getClass().getSimpleName());
-    subPackages.put(symbol.getSimpleName(), (PackageSymbol) symbol);
+        entity instanceof PackageEntity,
+        "Only sub package can be added to a package. Found " + entity.getClass().getSimpleName());
+    subPackages.put(entity.getSimpleName(), (PackageEntity) entity);
   }
 
-  public void removePackage(PackageSymbol symbol) {
-    subPackages.remove(symbol.getSimpleName(), symbol);
+  public void removePackage(PackageEntity entity) {
+    subPackages.remove(entity.getSimpleName(), entity);
   }
 
   public void addFile(FileIndex fileIndex) {
@@ -94,7 +94,7 @@ public class PackageIndex implements SymbolIndex {
   }
 
   @Override
-  public Optional<SymbolIndex> getParentIndex() {
+  public Optional<EntityIndex> getParentIndex() {
     return Optional.absent();
   }
 }

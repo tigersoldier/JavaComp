@@ -12,51 +12,51 @@ import java.util.List;
 import java.util.Map;
 import javax.annotation.Nullable;
 
-/** Index of symbols in the scope of a Java source file. */
-public class FileIndex implements SymbolIndex {
+/** Index of entities in the scope of a Java source file. */
+public class FileIndex implements EntityIndex {
   private final String filename;
-  // Map of simple names -> symbols.
-  private final Multimap<String, Symbol> symbols;
+  // Map of simple names -> entities.
+  private final Multimap<String, Entity> entities;
   // Simples that can be reached globally.
-  // Map of simple names -> symbols.
-  private final Multimap<String, Symbol> globalSymbols;
+  // Map of simple names -> entities.
+  private final Multimap<String, Entity> globalEntities;
   private final ImmutableList<String> packageQualifiers;
   private final Map<String, List<String>> importedClasses;
   private final List<List<String>> onDemandClassImportQualifiers;
-  private RangeMap<Integer, SymbolIndex> indexRangeMap = null;
+  private RangeMap<Integer, EntityIndex> indexRangeMap = null;
 
   public FileIndex(String filename, List<String> packageQualifiers) {
     this.filename = filename;
-    this.symbols = HashMultimap.create();
+    this.entities = HashMultimap.create();
     this.packageQualifiers = ImmutableList.copyOf(packageQualifiers);
-    this.globalSymbols = HashMultimap.create();
+    this.globalEntities = HashMultimap.create();
     this.importedClasses = new HashMap<>();
     this.onDemandClassImportQualifiers = new ArrayList<>();
   }
 
   @Override
-  public List<Symbol> getSymbolsWithName(String simpleName) {
-    return ImmutableList.copyOf(symbols.get(simpleName));
+  public List<Entity> getEntitiesWithName(String simpleName) {
+    return ImmutableList.copyOf(entities.get(simpleName));
   }
 
   @Override
-  public Optional<Symbol> getSymbolWithNameAndKind(String simpleName, Symbol.Kind symbolKind) {
-    for (Symbol symbol : symbols.get(simpleName)) {
-      if (symbol.getKind() == symbolKind) {
-        return Optional.of(symbol);
+  public Optional<Entity> getEntityWithNameAndKind(String simpleName, Entity.Kind entityKind) {
+    for (Entity entity : entities.get(simpleName)) {
+      if (entity.getKind() == entityKind) {
+        return Optional.of(entity);
       }
     }
     return Optional.absent();
   }
 
   @Override
-  public Multimap<String, Symbol> getAllSymbols() {
-    return ImmutableMultimap.copyOf(symbols);
+  public Multimap<String, Entity> getAllEntities() {
+    return ImmutableMultimap.copyOf(entities);
   }
 
   @Override
-  public Multimap<String, Symbol> getMemberSymbols() {
-    return ImmutableMultimap.copyOf(symbols);
+  public Multimap<String, Entity> getMemberEntities() {
+    return ImmutableMultimap.copyOf(entities);
   }
 
   public Optional<List<String>> getImportedClass(String simpleName) {
@@ -95,34 +95,34 @@ public class FileIndex implements SymbolIndex {
   }
 
   @Override
-  public void addSymbol(Symbol symbol) {
-    symbols.put(symbol.getSimpleName(), symbol);
+  public void addEntity(Entity entity) {
+    entities.put(entity.getSimpleName(), entity);
   }
 
-  public void setIndexRangeMap(RangeMap<Integer, SymbolIndex> indexRangeMap) {
+  public void setIndexRangeMap(RangeMap<Integer, EntityIndex> indexRangeMap) {
     this.indexRangeMap = indexRangeMap;
   }
 
-  public RangeMap<Integer, SymbolIndex> getIndexRangeMap() {
+  public RangeMap<Integer, EntityIndex> getIndexRangeMap() {
     return indexRangeMap;
   }
 
   @Nullable
-  public SymbolIndex getSymbolIndexAt(int position) {
+  public EntityIndex getEntityIndexAt(int position) {
     return indexRangeMap.get(position);
   }
 
-  public void addGlobalSymbol(Symbol symbol) {
-    globalSymbols.put(symbol.getSimpleName(), symbol);
+  public void addGlobalEntity(Entity entity) {
+    globalEntities.put(entity.getSimpleName(), entity);
   }
 
-  /** @return a multimap of symbol simple name to symbols */
-  public Multimap<String, Symbol> getGlobalSymbols() {
-    return ImmutableMultimap.copyOf(globalSymbols);
+  /** @return a multimap of entity simple name to entities */
+  public Multimap<String, Entity> getGlobalEntities() {
+    return ImmutableMultimap.copyOf(globalEntities);
   }
 
-  public List<Symbol> getGlobalSymbolsWithName(String simpleName) {
-    return ImmutableList.copyOf(globalSymbols.get(simpleName));
+  public List<Entity> getGlobalEntitiesWithName(String simpleName) {
+    return ImmutableList.copyOf(globalEntities.get(simpleName));
   }
 
   public List<String> getPackageQualifiers() {
@@ -130,7 +130,7 @@ public class FileIndex implements SymbolIndex {
   }
 
   @Override
-  public Optional<SymbolIndex> getParentIndex() {
+  public Optional<EntityIndex> getParentIndex() {
     return Optional.absent();
   }
 

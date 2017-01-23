@@ -3,10 +3,10 @@ package org.javacomp.model;
 import java.util.List;
 
 /** Represents a variable. */
-public class VariableSymbol extends Symbol {
+public class VariableEntity extends Entity {
 
-  public VariableSymbol(String simpleName, List<String> qualifiers) {
-    super(simpleName, Symbol.Kind.VARIABLE, qualifiers);
+  public VariableEntity(String simpleName, List<String> qualifiers) {
+    super(simpleName, Entity.Kind.VARIABLE, qualifiers);
   }
 
   @Override

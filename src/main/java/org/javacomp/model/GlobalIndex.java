@@ -12,10 +12,10 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * The index of the whole project. Can reach all scoped symbols (e.g. packages, classes) defined in
+ * The index of the whole project. Can reach all scoped entities (e.g. packages, classes) defined in
  * the project.
  */
-public class GlobalIndex implements SymbolIndex {
+public class GlobalIndex implements EntityIndex {
   // Map of simple names -> FileIndex that defines the name.
   private final Multimap<String, FileIndex> nameToFileMap;
   // Map of filename -> FileIndex.
@@ -29,38 +29,38 @@ public class GlobalIndex implements SymbolIndex {
   }
 
   @Override
-  public List<Symbol> getSymbolsWithName(final String simpleName) {
+  public List<Entity> getEntitiesWithName(final String simpleName) {
     return FluentIterable.from(nameToFileMap.get(simpleName))
-        .transformAndConcat(fileIndex -> fileIndex.getGlobalSymbolsWithName(simpleName))
-        .append(rootPackage.getSymbolsWithName(simpleName))
+        .transformAndConcat(fileIndex -> fileIndex.getGlobalEntitiesWithName(simpleName))
+        .append(rootPackage.getEntitiesWithName(simpleName))
         .toList();
   }
 
   @Override
-  public Optional<Symbol> getSymbolWithNameAndKind(String simpleName, Symbol.Kind symbolKind) {
-    for (Symbol symbol : getSymbolsWithName(simpleName)) {
-      if (symbol.getKind() == symbolKind) {
-        return Optional.of(symbol);
+  public Optional<Entity> getEntityWithNameAndKind(String simpleName, Entity.Kind entityKind) {
+    for (Entity entity : getEntitiesWithName(simpleName)) {
+      if (entity.getKind() == entityKind) {
+        return Optional.of(entity);
       }
     }
     return Optional.absent();
   }
 
   @Override
-  public Multimap<String, Symbol> getAllSymbols() {
+  public Multimap<String, Entity> getAllEntities() {
     return FluentIterable.from(fileIndexMap.values())
-        .transformAndConcat(fileIndex -> fileIndex.getGlobalSymbols().values())
-        .append(rootPackage.getAllSymbols().values())
-        .index(symbol -> symbol.getSimpleName());
+        .transformAndConcat(fileIndex -> fileIndex.getGlobalEntities().values())
+        .append(rootPackage.getAllEntities().values())
+        .index(entity -> entity.getSimpleName());
   }
 
   @Override
-  public Multimap<String, Symbol> getMemberSymbols() {
-    return rootPackage.getMemberSymbols();
+  public Multimap<String, Entity> getMemberEntities() {
+    return rootPackage.getMemberEntities();
   }
 
   @Override
-  public void addSymbol(Symbol symbol) {
+  public void addEntity(Entity entity) {
     throw new UnsupportedOperationException();
   }
 
@@ -71,15 +71,15 @@ public class GlobalIndex implements SymbolIndex {
     addFileToPackage(fileIndex);
 
     if (existingFileIndex != null) {
-      // Remove old symbol indexes.
-      for (String symbolName : existingFileIndex.getGlobalSymbols().keys()) {
-        nameToFileMap.remove(symbolName, existingFileIndex);
+      // Remove old entity indexes.
+      for (String entityName : existingFileIndex.getGlobalEntities().keys()) {
+        nameToFileMap.remove(entityName, existingFileIndex);
       }
       removeFileFromPacakge(existingFileIndex);
     }
     fileIndexMap.put(fileIndex.getFilename(), fileIndex);
-    for (String symbolName : fileIndex.getGlobalSymbols().keys()) {
-      nameToFileMap.put(symbolName, fileIndex);
+    for (String entityName : fileIndex.getGlobalEntities().keys()) {
+      nameToFileMap.put(entityName, fileIndex);
     }
   }
 
@@ -95,13 +95,13 @@ public class GlobalIndex implements SymbolIndex {
     List<String> currentQualifiers = new ArrayList<>();
     PackageIndex currentPackage = rootPackage;
     for (String qualifier : fileIndex.getPackageQualifiers()) {
-      Optional<Symbol> packageSymbol =
-          currentPackage.getSymbolWithNameAndKind(qualifier, Symbol.Kind.QUALIFIER);
-      if (packageSymbol.isPresent()) {
-        currentPackage = ((PackageSymbol) packageSymbol.get()).getChildIndex();
+      Optional<Entity> packageEntity =
+          currentPackage.getEntityWithNameAndKind(qualifier, Entity.Kind.QUALIFIER);
+      if (packageEntity.isPresent()) {
+        currentPackage = ((PackageEntity) packageEntity.get()).getChildIndex();
       } else {
         PackageIndex packageIndex = new PackageIndex();
-        currentPackage.addSymbol(new PackageSymbol(qualifier, currentQualifiers, packageIndex));
+        currentPackage.addEntity(new PackageEntity(qualifier, currentQualifiers, packageIndex));
         currentPackage = packageIndex;
       }
       currentQualifiers.add(qualifier);
@@ -110,28 +110,28 @@ public class GlobalIndex implements SymbolIndex {
   }
 
   private void removeFileFromPacakge(FileIndex fileIndex) {
-    Deque<PackageSymbol> stack = new ArrayDeque<>();
+    Deque<PackageEntity> stack = new ArrayDeque<>();
     PackageIndex currentPackage = rootPackage;
     for (String qualifier : fileIndex.getPackageQualifiers()) {
-      Optional<Symbol> optionalPackageSymbol =
-          currentPackage.getSymbolWithNameAndKind(qualifier, Symbol.Kind.QUALIFIER);
-      if (!optionalPackageSymbol.isPresent()) {
+      Optional<Entity> optionalPackageEntity =
+          currentPackage.getEntityWithNameAndKind(qualifier, Entity.Kind.QUALIFIER);
+      if (!optionalPackageEntity.isPresent()) {
         throw new RuntimeException("Package " + qualifier + " not found");
       }
-      PackageSymbol packageSymbol = (PackageSymbol) optionalPackageSymbol.get();
-      stack.addFirst(packageSymbol);
-      currentPackage = packageSymbol.getChildIndex();
+      PackageEntity packageEntity = (PackageEntity) optionalPackageEntity.get();
+      stack.addFirst(packageEntity);
+      currentPackage = packageEntity.getChildIndex();
     }
     currentPackage.removeFile(fileIndex);
     while (!currentPackage.hasChildren() && !stack.isEmpty()) {
-      PackageSymbol packageSymbol = stack.removeFirst();
+      PackageEntity packageEntity = stack.removeFirst();
       currentPackage = stack.isEmpty() ? rootPackage : stack.peekFirst().getChildIndex();
-      currentPackage.removePackage(packageSymbol);
+      currentPackage.removePackage(packageEntity);
     }
   }
 
   @Override
-  public Optional<SymbolIndex> getParentIndex() {
+  public Optional<EntityIndex> getParentIndex() {
     return Optional.absent();
   }
 }

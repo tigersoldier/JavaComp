@@ -12,7 +12,7 @@ public class TypeReference {
 
   private final ImmutableList<String> fullName;
 
-  private Symbol resolvedSymbol = null;
+  private Entity resolvedEntity = null;
 
   public TypeReference(String... fullName) {
     this(ImmutableList.copyOf(fullName));
@@ -22,8 +22,8 @@ public class TypeReference {
     this.fullName = ImmutableList.copyOf(fullName);
   }
 
-  public void setResolvedSymbol(Symbol resolvedSymbol) {
-    this.resolvedSymbol = resolvedSymbol;
+  public void setResolvedEntity(Entity resolvedEntity) {
+    this.resolvedEntity = resolvedEntity;
   }
 
   public String getSimpleName() {

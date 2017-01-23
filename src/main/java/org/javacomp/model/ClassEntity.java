@@ -16,32 +16,32 @@ import java.util.Set;
 import org.javacomp.model.util.QualifiedNames;
 
 /** Represents a class, interface, enum, or annotation. */
-public class ClassSymbol extends Symbol implements SymbolIndex {
-  private static final Set<Symbol.Kind> ALLOWED_KINDS =
+public class ClassEntity extends Entity implements EntityIndex {
+  private static final Set<Entity.Kind> ALLOWED_KINDS =
       EnumSet.of(
-          Symbol.Kind.CLASS, Symbol.Kind.INTERFACE, Symbol.Kind.ANNOTATION, Symbol.Kind.ENUM);
+          Entity.Kind.CLASS, Entity.Kind.INTERFACE, Entity.Kind.ANNOTATION, Entity.Kind.ENUM);
 
-  // Map of simple names -> symbols.
-  private final Multimap<String, Symbol> symbols;
-  private final SymbolIndex parentIndex;
+  // Map of simple names -> entities.
+  private final Multimap<String, Entity> entities;
+  private final EntityIndex parentIndex;
   private final Optional<TypeReference> superClass;
   private final ImmutableList<TypeReference> interfaces;
-  private final Map<String, ClassSymbol> innerClasses;
+  private final Map<String, ClassEntity> innerClasses;
 
-  public ClassSymbol(
+  public ClassEntity(
       String simpleName,
-      Symbol.Kind kind,
+      Entity.Kind kind,
       List<String> qualifiers,
-      SymbolIndex parentIndex,
+      EntityIndex parentIndex,
       Optional<TypeReference> superClass,
       ImmutableList<TypeReference> interfaces) {
     super(simpleName, kind, qualifiers);
     checkArgument(
         ALLOWED_KINDS.contains(kind),
-        "Invalid symbol kind %s, allowed kinds are %s",
+        "Invalid entity kind %s, allowed kinds are %s",
         kind,
         ALLOWED_KINDS);
-    this.symbols = HashMultimap.create();
+    this.entities = HashMultimap.create();
     this.parentIndex = parentIndex;
     this.superClass = superClass;
     this.interfaces = ImmutableList.copyOf(interfaces);
@@ -49,53 +49,53 @@ public class ClassSymbol extends Symbol implements SymbolIndex {
   }
 
   @Override
-  public ClassSymbol getChildIndex() {
+  public ClassEntity getChildIndex() {
     return this;
   }
 
   @Override
-  public List<Symbol> getSymbolsWithName(String simpleName) {
+  public List<Entity> getEntitiesWithName(String simpleName) {
     // TODO: check imports.
     // TODO: check super class and interfaces
-    ImmutableList.Builder<Symbol> builder = new ImmutableList.Builder<>();
-    builder.addAll(symbols.get(simpleName));
-    builder.addAll(parentIndex.getSymbolsWithName(simpleName));
+    ImmutableList.Builder<Entity> builder = new ImmutableList.Builder<>();
+    builder.addAll(entities.get(simpleName));
+    builder.addAll(parentIndex.getEntitiesWithName(simpleName));
     return builder.build();
   }
 
   @Override
-  public Optional<Symbol> getSymbolWithNameAndKind(String simpleName, Symbol.Kind symbolKind) {
-    for (Symbol symbol : symbols.get(simpleName)) {
-      if (symbol.getKind() == symbolKind) {
-        return Optional.of(symbol);
+  public Optional<Entity> getEntityWithNameAndKind(String simpleName, Entity.Kind entityKind) {
+    for (Entity entity : entities.get(simpleName)) {
+      if (entity.getKind() == entityKind) {
+        return Optional.of(entity);
       }
     }
     // TODO: check imports.
     // TODO: check super class and interfaces
-    return parentIndex.getSymbolWithNameAndKind(simpleName, symbolKind);
+    return parentIndex.getEntityWithNameAndKind(simpleName, entityKind);
   }
 
   @Override
-  public Multimap<String, Symbol> getAllSymbols() {
-    ImmutableMultimap.Builder<String, Symbol> builder = new ImmutableMultimap.Builder<>();
-    builder.putAll(symbols).putAll(innerClasses.entrySet()).putAll(parentIndex.getAllSymbols());
+  public Multimap<String, Entity> getAllEntities() {
+    ImmutableMultimap.Builder<String, Entity> builder = new ImmutableMultimap.Builder<>();
+    builder.putAll(entities).putAll(innerClasses.entrySet()).putAll(parentIndex.getAllEntities());
     // TODO: check imports.
     // TODO: check super class and interfaces
     return builder.build();
   }
 
   @Override
-  public Multimap<String, Symbol> getMemberSymbols() {
-    ImmutableMultimap.Builder<String, Symbol> builder = new ImmutableMultimap.Builder<>();
-    return builder.putAll(symbols).putAll(innerClasses.entrySet()).build();
+  public Multimap<String, Entity> getMemberEntities() {
+    ImmutableMultimap.Builder<String, Entity> builder = new ImmutableMultimap.Builder<>();
+    return builder.putAll(entities).putAll(innerClasses.entrySet()).build();
   }
 
   @Override
-  public void addSymbol(Symbol symbol) {
-    if (symbol instanceof ClassSymbol) {
-      innerClasses.put(symbol.getSimpleName(), (ClassSymbol) symbol);
+  public void addEntity(Entity entity) {
+    if (entity instanceof ClassEntity) {
+      innerClasses.put(entity.getSimpleName(), (ClassEntity) entity);
     } else {
-      symbols.put(symbol.getSimpleName(), symbol);
+      entities.put(entity.getSimpleName(), entity);
     }
   }
 
@@ -108,17 +108,17 @@ public class ClassSymbol extends Symbol implements SymbolIndex {
   }
 
   @Override
-  public Optional<SymbolIndex> getParentIndex() {
+  public Optional<EntityIndex> getParentIndex() {
     return Optional.of(parentIndex);
   }
 
-  public Map<String, ClassSymbol> getInnerClasses() {
+  public Map<String, ClassEntity> getInnerClasses() {
     return ImmutableMap.copyOf(innerClasses);
   }
 
   @Override
   public String toString() {
-    return "ClassSymbol<"
+    return "ClassEntity<"
         + QualifiedNames.formatQualifiedName(getQualifiers(), getSimpleName())
         + ">";
   }
