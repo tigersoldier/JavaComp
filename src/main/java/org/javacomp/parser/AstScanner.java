@@ -9,7 +9,6 @@ import com.sun.source.tree.ArrayTypeTree;
 import com.sun.source.tree.BlockTree;
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.CompilationUnitTree;
-import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.IdentifierTree;
 import com.sun.source.tree.ImportTree;
 import com.sun.source.tree.MemberSelectTree;
@@ -29,11 +28,11 @@ import java.util.Deque;
 import java.util.List;
 import org.javacomp.model.BlockScope;
 import org.javacomp.model.ClassEntity;
-import org.javacomp.model.FileScope;
-import org.javacomp.model.MethodScope;
-import org.javacomp.model.MethodEntity;
 import org.javacomp.model.Entity;
 import org.javacomp.model.EntityScope;
+import org.javacomp.model.FileScope;
+import org.javacomp.model.MethodEntity;
+import org.javacomp.model.MethodScope;
 import org.javacomp.model.TypeReference;
 import org.javacomp.model.VariableEntity;
 import org.javacomp.model.util.NestedRangeMapBuilder;
@@ -195,7 +194,10 @@ public class AstScanner extends TreeScanner<Void, EntityScope> {
   @Override
   public Void visitVariable(VariableTree node, EntityScope currentScope) {
     VariableEntity variableEntity =
-        new VariableEntity(node.getName().toString(), this.currentQualifiers);
+        new VariableEntity(
+            node.getName().toString(),
+            this.currentQualifiers,
+            typeReferenceScanner.getTypeReference(node.getType()));
     currentScope.addEntity(variableEntity);
     // TODO: add entity to global scope if it's a non-private static entity.
     return null;

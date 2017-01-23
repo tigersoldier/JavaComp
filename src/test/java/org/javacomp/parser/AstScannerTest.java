@@ -15,11 +15,12 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.List;
-import org.javacomp.model.FileScope;
-import org.javacomp.model.MethodEntity;
 import org.javacomp.model.Entity;
 import org.javacomp.model.EntityScope;
+import org.javacomp.model.FileScope;
+import org.javacomp.model.MethodEntity;
 import org.javacomp.model.TypeReference;
+import org.javacomp.model.VariableEntity;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -255,6 +256,28 @@ public class AstScannerTest {
   public void testOnDemandClassImport() {
     assertThat(fileScope.getOnDemandClassImportQualifiers())
         .containsExactly(ImmutableList.of("foo", "bar"), ImmutableList.of("foo", "bar", "baz"));
+  }
+
+  @Test
+  public void typeOfClassField() {
+    VariableEntity intField =
+        (VariableEntity) lookupEntity(fileScope, "TestData.publicStaticIntField");
+    assertThat(intField.getType().getFullName()).containsExactly("int");
+  }
+
+  @Test
+  public void typeOfVariableInMethod() {
+    String varName = "fullyQualifiedVar";
+    EntityScope scopeEnclosingVar = getEntityScopeAfter(varName);
+    VariableEntity variable = (VariableEntity) lookupEntity(scopeEnclosingVar, varName);
+    assertThat(variable.getType().getFullName()).containsExactly("foo", "bar", "Baz").inOrder();
+  }
+
+  @Test
+  public void enumValueHasTypeOfTheEnumClass() {
+    VariableEntity enumValue =
+        (VariableEntity) lookupEntity(fileScope, "TestData.PublicInnerEnum.ENUM_VALUE1");
+    assertThat(enumValue.getType().getFullName()).containsExactly("PublicInnerEnum");
   }
 
   private EntityScope getEntityScopeAfter(String subString) {

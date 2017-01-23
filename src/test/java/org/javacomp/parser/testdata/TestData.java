@@ -18,6 +18,7 @@ public class TestData {
 
   public boolean publicIfBlockMethod() {
     Baz methodScopeVar;
+    foo.bar.Baz fullyQualifiedVar;
     if (a == 1) {
       int ifScopeVar;
       return true;
