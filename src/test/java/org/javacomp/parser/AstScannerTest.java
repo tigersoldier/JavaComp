@@ -64,32 +64,32 @@ public class AstScannerTest {
   }
 
   @Test
-  public void classIsScopeedInPackage() {
+  public void classIsDeclaredInPackage() {
     Entity classEntity = lookupEntity(fileScope, "TestData");
     assertThat(classEntity.getKind()).isEqualTo(Entity.Kind.CLASS);
   }
 
   @Test
-  public void classIsScopeedGlobally() {
+  public void classIsDeclaredGlobally() {
     List<Entity> classEntity = fileScope.getGlobalEntitiesWithName("TestData");
     assertThat(classEntity).hasSize(1);
     assertThat(classEntity.get(0).getKind()).isEqualTo(Entity.Kind.CLASS);
   }
 
   @Test
-  public void methodIsScopeedInClassScope() {
+  public void methodIsDeclaredInClassScope() {
     Entity methodEntity = lookupEntity(fileScope, "TestData.publicIfBlockMethod");
     assertThat(methodEntity.getKind()).isEqualTo(Entity.Kind.METHOD);
   }
 
   @Test
-  public void classStaticFieldIsScopeedInClassScope() {
+  public void classStaticFieldIsDeclaredInClassScope() {
     Entity variableEntity = lookupEntity(fileScope, "TestData.publicStaticIntField");
     assertThat(variableEntity.getKind()).isEqualTo(Entity.Kind.VARIABLE);
   }
 
   @Test
-  public void innerClassIsScopeedInClassScope() {
+  public void innerClassIsDeclaredInClassScope() {
     Entity classEntity = lookupEntity(fileScope, "TestData.PrivateStaticInnerClass");
     assertThat(classEntity.getKind()).isEqualTo(Entity.Kind.CLASS);
     Entity annotationEntity = lookupEntity(fileScope, "TestData.PublicInnerAnnotation");
@@ -101,7 +101,7 @@ public class AstScannerTest {
   }
 
   @Test
-  public void enumItemIsScopeedInEnumScope() {
+  public void enumItemIsDeclaredInEnumScope() {
     Entity variableEntity = lookupEntity(fileScope, "TestData.PublicInnerEnum.ENUM_VALUE1");
     assertThat(variableEntity.getKind()).isEqualTo(Entity.Kind.VARIABLE);
   }
