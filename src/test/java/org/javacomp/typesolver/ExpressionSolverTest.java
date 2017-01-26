@@ -25,35 +25,35 @@ public class ExpressionSolverTest {
 
   private GlobalScope globalScope;
   private ClassEntity topLevelClass;
-  private ClassEntity innerAEntity;
-  private ClassEntity innerBEntity;
-  private ClassEntity innerCEntity;
+  private ClassEntity innerAClass;
+  private ClassEntity innerBClass;
+  private ClassEntity innerCClass;
 
   @Before
   public void setUpTestScope() throws Exception {
     globalScope = TestUtil.parseFiles(TEST_DIR, TEST_FILE);
     topLevelClass = (ClassEntity) TestUtil.lookupEntity(TOP_LEVEL_CLASS_FULL_NAME, globalScope);
-    innerAEntity =
+    innerAClass =
         (ClassEntity) TestUtil.lookupEntity(TOP_LEVEL_CLASS_FULL_NAME + ".InnerA", globalScope);
-    innerBEntity =
+    innerBClass =
         (ClassEntity) TestUtil.lookupEntity(TOP_LEVEL_CLASS_FULL_NAME + ".InnerB", globalScope);
-    innerCEntity =
+    innerCClass =
         (ClassEntity) TestUtil.lookupEntity(TOP_LEVEL_CLASS_FULL_NAME + ".InnerC", globalScope);
   }
 
   @Test
   public void solveMemberSelection() {
-    assertThat(solveExpression("innerA", topLevelClass).getEntity()).isEqualTo(innerAEntity);
-    assertThat(solveExpression("innerA.innerB", topLevelClass).getEntity()).isEqualTo(innerBEntity);
+    assertThat(solveExpression("innerA", topLevelClass).getEntity()).isEqualTo(innerAClass);
+    assertThat(solveExpression("innerA.innerB", topLevelClass).getEntity()).isEqualTo(innerBClass);
     assertThat(solveExpression("innerA.innerB.innerC", topLevelClass).getEntity())
-        .isEqualTo(innerCEntity);
+        .isEqualTo(innerCClass);
   }
 
   @Test
   public void solvedInheritedField() {
-    assertThat(solveExpression("baseInnerB", innerAEntity).getEntity()).isEqualTo(innerBEntity);
+    assertThat(solveExpression("baseInnerB", innerAClass).getEntity()).isEqualTo(innerBClass);
     assertThat(solveExpression("innerA.baseInnerB", topLevelClass).getEntity())
-        .isEqualTo(innerBEntity);
+        .isEqualTo(innerBClass);
   }
 
   @Test
@@ -61,13 +61,31 @@ public class ExpressionSolverTest {
     assertThat(
             solveExpression("org.javacomp.typesolver.testdata.TestExpression.innerA", topLevelClass)
                 .getEntity())
-        .isEqualTo(innerAEntity);
+        .isEqualTo(innerAClass);
+  }
+
+  @Test
+  public void solveThis() {
+    assertThat(solveExpression("this", topLevelClass).getEntity()).isEqualTo(topLevelClass);
+    assertThat(solveExpression("this.innerA", topLevelClass).getEntity()).isEqualTo(innerAClass);
+  }
+
+  @Test
+  public void solveSuper() {
+    assertThat(solveExpression("super.innerA", innerAClass).getEntity()).isEqualTo(innerAClass);
+  }
+
+  @Test
+  public void solveThisOfSuperClass() {
+    assertThat(solveExpression("TestExpression.this", innerAClass).getEntity())
+        .isEqualTo(topLevelClass);
   }
 
   private SolvedType solveExpression(String expression, EntityScope baseScope) {
     ExpressionTree expressionTree = TestUtil.parseExpression(expression);
     Optional<SolvedType> solvedExpression =
         expressionSolver.solve(expressionTree, globalScope, baseScope);
+    System.out.println("Testing....");
     assertThat(solvedExpression).named(expression).isPresent();
     return solvedExpression.get();
   }

@@ -26,6 +26,9 @@ public class ExpressionSolver {
           .add(Entity.Kind.VARIABLE)
           .add(Entity.Kind.QUALIFIER)
           .build();
+  private static final String IDENT_THIS = "this";
+  private static final String IDENT_SUPER = "super";
+
   private final TypeSolver typeSolver;
 
   public ExpressionSolver(TypeSolver typeSolver) {
@@ -59,7 +62,10 @@ public class ExpressionSolver {
       }
       isMethodInvocation = savedIsMethodInvocation;
 
-      Entity expressionEntity = expressionType.getEntity();
+      String identifier = node.getIdentifier().toString();
+      if (IDENT_THIS.equals(identifier)) {
+        return expressionType;
+      }
 
       Entity memberEntity =
           typeSolver.findEntityMember(
@@ -73,6 +79,24 @@ public class ExpressionSolver {
 
     @Override
     public SolvedType visitIdentifier(IdentifierTree node, Void unused) {
+      String identifier = node.getName().toString();
+
+      if (IDENT_THIS.equals(identifier)) {
+        return solveEntityType(findEnclosingClass(baseScope));
+      }
+
+      if (IDENT_SUPER.equals(identifier)) {
+        ClassEntity enclosingClass = findEnclosingClass(baseScope);
+        if (enclosingClass != null && enclosingClass.getSuperClass().isPresent()) {
+          return typeSolver
+              .solve(
+                  enclosingClass.getSuperClass().get(),
+                  globalScope,
+                  enclosingClass.getParentScope().get())
+              .orNull();
+        }
+      }
+
       Entity entity =
           typeSolver.findEntityInScope(
               node.getName().toString(), globalScope, baseScope, getAllowedEntityKinds());
@@ -114,6 +138,16 @@ public class ExpressionSolver {
       }
       if (entity instanceof PackageEntity) {
         return SolvedType.builder().setEntity(entity).build();
+      }
+      return null;
+    }
+
+    @Nullable
+    private ClassEntity findEnclosingClass(EntityScope baseScope) {
+      for (; baseScope != null; baseScope = baseScope.getParentScope().orNull()) {
+        if (baseScope instanceof ClassEntity) {
+          return (ClassEntity) baseScope;
+        }
       }
       return null;
     }
