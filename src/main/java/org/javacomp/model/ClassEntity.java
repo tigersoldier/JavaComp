@@ -17,7 +17,7 @@ import org.javacomp.model.util.QualifiedNames;
 
 /** Represents a class, interface, enum, or annotation. */
 public class ClassEntity extends Entity implements EntityScope {
-  private static final Set<Entity.Kind> ALLOWED_KINDS =
+  public static final Set<Entity.Kind> ALLOWED_KINDS =
       EnumSet.of(
           Entity.Kind.CLASS, Entity.Kind.INTERFACE, Entity.Kind.ANNOTATION, Entity.Kind.ENUM);
 

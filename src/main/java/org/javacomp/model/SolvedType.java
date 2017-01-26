@@ -1,14 +1,21 @@
 package org.javacomp.model;
 
-/** The actual type solved for {@link TypeReference}. */
-public class SolvedType {
-  private final ClassEntity classEntity;
+import com.google.auto.value.AutoValue;
 
-  public SolvedType(ClassEntity classEntity) {
-    this.classEntity = classEntity;
+/** The actual type solved for {@link TypeReference}. */
+@AutoValue
+public abstract class SolvedType {
+
+  public abstract Entity getEntity();
+
+  public static Builder builder() {
+    return new AutoValue_SolvedType.Builder();
   }
 
-  public ClassEntity getClassEntity() {
-    return classEntity;
+  @AutoValue.Builder
+  public abstract static class Builder {
+    public abstract Builder setEntity(Entity entity);
+
+    public abstract SolvedType build();
   }
 }

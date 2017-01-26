@@ -1,5 +1,6 @@
 java_library(
     name = "tests",
+    testonly = 1,
     srcs = glob(["*.java"]),
     data = glob(["testdata/**"]),
     deps = [
@@ -10,12 +11,21 @@ java_library(
         "//external:truth",
         "//src/main/java/org/javacomp/model",
         "//src/main/java/org/javacomp/parser",
+        "//src/main/java/org/javacomp/testing",
         "//src/main/java/org/javacomp/typesolver",
     ],
 )
 
 java_test(
     name = "TypeSolverTest",
+    size = "small",
+    runtime_deps = [
+        ":tests",
+    ],
+)
+
+java_test(
+    name = "ExpressionSolverTest",
     size = "small",
     runtime_deps = [
         ":tests",
