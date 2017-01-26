@@ -32,9 +32,6 @@ public class TypeSolver {
     List<String> fullName = typeReference.getFullName();
     ClassEntity currentClass =
         (ClassEntity) findEntityInScope(fullName.get(0), globalScope, parentScope, CLASS_KINDS);
-    if (currentClass == null) {
-      return Optional.absent();
-    }
     // Find the rest of the name parts, if exist.
     for (int i = 1; currentClass != null && i < fullName.size(); i++) {
       String innerClassName = fullName.get(i);
@@ -132,7 +129,8 @@ public class TypeSolver {
             return foundEntity;
           }
         }
-        if (Objects.equals(name, classEntity.getSimpleName())) {
+        if (allowedKinds.contains(classEntity.getKind())
+            && Objects.equals(name, classEntity.getSimpleName())) {
           return classEntity;
         }
       } else if (currentScope.get() instanceof FileScope) {

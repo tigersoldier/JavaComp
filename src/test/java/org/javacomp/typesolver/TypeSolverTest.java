@@ -118,15 +118,23 @@ public class TypeSolverTest {
         .isSameAs(TestUtil.lookupEntity(OTHER_SHADOW_CLASS_FULL_NAME, globalScope));
   }
 
+  @Test
+  public void solveFullyQualifiedType() {
+    SolvedType fullyQualifiedBaseClass =
+        solveMethodReturnType(TEST_CLASS_FULL_NAME + ".getFullyQualifiedBaseClass");
+    assertThat(fullyQualifiedBaseClass.getEntity())
+        .isSameAs(TestUtil.lookupEntity(BASE_CLASS_FULL_NAME, globalScope));
+  }
+
   private SolvedType solveMethodReturnType(String qualifiedMethodName) {
     MethodEntity method = (MethodEntity) TestUtil.lookupEntity(qualifiedMethodName, globalScope);
-    assertThat(method).isNotNull();
+    assertThat(method).named(qualifiedMethodName).isNotNull();
     MethodEntity.Overload methodOverload = method.getOverloads().get(0);
     TypeReference methodReturnType = methodOverload.getReturnType();
     Optional<SolvedType> solvedType =
         typeSolver.solve(
             methodReturnType, globalScope, methodOverload.getMethodScope().getParentClass());
-    assertThat(solvedType).isPresent();
+    assertThat(solvedType).named(methodReturnType.toString()).isPresent();
     return solvedType.get();
   }
 }

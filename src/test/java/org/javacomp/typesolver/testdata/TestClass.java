@@ -17,5 +17,9 @@ public class TestClass extends BaseClass implements BaseInterface {
     return new Shadow();
   }
 
+  public org.javacomp.typesolver.testdata.other.BaseClass getFullyQualifiedBaseClass() {
+    return this;
+  }
+
   public class TestClassFactory extends BaseInnerClass implements BaseInterfaceFactory {}
 }
