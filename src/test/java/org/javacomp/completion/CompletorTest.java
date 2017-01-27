@@ -24,7 +24,7 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public class CompletorTest {
   private static final String TEST_DATA_DIR = "src/test/java/org/javacomp/completion/testdata/";
-  private static final String COMPLETION_POINT_MARK = "/**@complete*/";
+  private static final String COMPLETION_POINT_MARK = "/** @complete */";
 
   private List<CompletionCandidate> completeTestFile(String filename) throws Exception {
     Context javacContext = new Context();

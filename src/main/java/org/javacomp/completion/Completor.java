@@ -4,10 +4,10 @@ import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Multimap;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import java.util.List;
-import org.javacomp.model.FileScope;
-import org.javacomp.model.GlobalScope;
 import org.javacomp.model.Entity;
 import org.javacomp.model.EntityScope;
+import org.javacomp.model.FileScope;
+import org.javacomp.model.GlobalScope;
 
 /** Entry point of completion logic. */
 public class Completor {
@@ -29,7 +29,8 @@ public class Completor {
       String input) {
     EntityScope completionPointScope = inputFileScope.getEntityScopeAt(input.length() - 1);
     CompletionAction action = new CompletionAst().getCompletionAction(compilationUnit);
-    Multimap<String, Entity> entities = action.getVisibleEntities(globalScope, completionPointScope);
+    Multimap<String, Entity> entities =
+        action.getVisibleEntities(globalScope, completionPointScope);
     // TODO: filter and sort candidates by query.
     return FluentIterable.from(entities.entries())
         .transform(

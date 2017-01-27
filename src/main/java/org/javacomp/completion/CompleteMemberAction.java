@@ -2,9 +2,9 @@ package org.javacomp.completion;
 
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
-import org.javacomp.model.GlobalScope;
 import org.javacomp.model.Entity;
 import org.javacomp.model.EntityScope;
+import org.javacomp.model.GlobalScope;
 
 /** An action to get completion candidates for member selection. */
 class CompleteMemberAction implements CompletionAction {

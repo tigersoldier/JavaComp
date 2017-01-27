@@ -6,10 +6,10 @@ java_library(
     name = "completion",
     srcs = glob(["*.java"]),
     deps = [
-        "//external:javac",
         "//external:guava",
-        "//third_party:auto_value",
+        "//external:javac",
         "//src/main/java/org/javacomp/model",
         "//src/main/java/org/javacomp/parser",
+        "//third_party:auto_value",
     ],
 )

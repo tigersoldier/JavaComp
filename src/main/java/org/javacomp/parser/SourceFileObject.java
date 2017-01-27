@@ -14,5 +14,4 @@ public class SourceFileObject extends SimpleJavaFileObject {
   public CharSequence getCharContent(boolean ignoreEncodingErrors) {
     return "";
   }
-
 }
