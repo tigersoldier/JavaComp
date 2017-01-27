@@ -86,7 +86,6 @@ public class ExpressionSolverTest {
     ExpressionTree expressionTree = TestUtil.parseExpression(expression);
     Optional<SolvedType> solvedExpression =
         expressionSolver.solve(expressionTree, globalScope, baseScope);
-    System.out.println("Testing....");
     Truth8.assertThat(solvedExpression).named(expression).isPresent();
     return solvedExpression.get();
   }
