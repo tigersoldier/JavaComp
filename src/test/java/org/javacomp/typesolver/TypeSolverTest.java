@@ -3,7 +3,8 @@ package org.javacomp.typesolver;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.base.Joiner;
-import com.google.common.base.Optional;
+import com.google.common.truth.Truth8;
+import java.util.Optional;
 import org.javacomp.model.ClassEntity;
 import org.javacomp.model.GlobalScope;
 import org.javacomp.model.MethodEntity;
@@ -56,7 +57,7 @@ public class TypeSolverTest {
     TypeReference baseInterfaceReference = testClass.getInterfaces().get(0);
     Optional<SolvedType> solvedType =
         typeSolver.solve(baseInterfaceReference, globalScope, testClass);
-    assertThat(solvedType).isPresent();
+    Truth8.assertThat(solvedType).isPresent();
     assertThat(solvedType.get().getEntity())
         .isSameAs(TestUtil.lookupEntity(BASE_INTERFACE_FULL_NAME, globalScope));
   }
@@ -68,7 +69,7 @@ public class TypeSolverTest {
     TypeReference baseInterfaceReference = testClass.getInterfaces().get(0);
     Optional<SolvedType> solvedType =
         typeSolver.solve(baseInterfaceReference, globalScope, testClass);
-    assertThat(solvedType).isPresent();
+    Truth8.assertThat(solvedType).isPresent();
     assertThat(solvedType.get().getEntity())
         .isSameAs(TestUtil.lookupEntity(BASE_INTERFACE_FACTORY_FULL_NAME, globalScope));
   }
@@ -85,7 +86,7 @@ public class TypeSolverTest {
     ClassEntity testClass = (ClassEntity) TestUtil.lookupEntity(TEST_CLASS_FULL_NAME, globalScope);
     TypeReference baseClassReference = testClass.getSuperClass().get();
     Optional<SolvedType> solvedType = typeSolver.solve(baseClassReference, globalScope, testClass);
-    assertThat(solvedType).isPresent();
+    Truth8.assertThat(solvedType).isPresent();
     assertThat(solvedType.get().getEntity())
         .isSameAs(TestUtil.lookupEntity(BASE_CLASS_FULL_NAME, globalScope));
   }
@@ -97,7 +98,7 @@ public class TypeSolverTest {
     TypeReference baseInnerClassReference = testClass.getSuperClass().get();
     Optional<SolvedType> solvedType =
         typeSolver.solve(baseInnerClassReference, globalScope, testClass);
-    assertThat(solvedType).isPresent();
+    Truth8.assertThat(solvedType).isPresent();
     assertThat(solvedType.get().getEntity())
         .isSameAs(TestUtil.lookupEntity(BASE_INNER_CLASS_FULL_NAME, globalScope));
   }
@@ -134,7 +135,7 @@ public class TypeSolverTest {
     Optional<SolvedType> solvedType =
         typeSolver.solve(
             methodReturnType, globalScope, methodOverload.getMethodScope().getParentClass());
-    assertThat(solvedType).named(methodReturnType.toString()).isPresent();
+    Truth8.assertThat(solvedType).named(methodReturnType.toString()).isPresent();
     return solvedType.get();
   }
 }

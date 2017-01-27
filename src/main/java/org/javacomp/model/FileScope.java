@@ -1,6 +1,5 @@
 package org.javacomp.model;
 
-import com.google.common.base.Optional;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMultimap;
@@ -10,6 +9,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import javax.annotation.Nullable;
 
 /** Scope of entities in the scope of a Java source file. */
@@ -46,7 +46,7 @@ public class FileScope implements EntityScope {
         return Optional.of(entity);
       }
     }
-    return Optional.absent();
+    return Optional.empty();
   }
 
   @Override
@@ -60,7 +60,7 @@ public class FileScope implements EntityScope {
   }
 
   public Optional<List<String>> getImportedClass(String simpleName) {
-    return Optional.fromNullable(importedClasses.get(simpleName));
+    return Optional.ofNullable(importedClasses.get(simpleName));
   }
 
   public void addImportedClass(List<String> qualifiers) {
@@ -131,7 +131,7 @@ public class FileScope implements EntityScope {
 
   @Override
   public Optional<EntityScope> getParentScope() {
-    return Optional.absent();
+    return Optional.empty();
   }
 
   public String getFilename() {

@@ -9,8 +9,8 @@ java_library(
     deps = [
         "//external:guava",
         "//external:javac",
-        "//external:truth",
         "//src/main/java/org/javacomp/model",
         "//src/main/java/org/javacomp/parser",
+        "//third_party:truth",
     ],
 )

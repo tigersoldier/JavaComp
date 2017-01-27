@@ -1,6 +1,5 @@
 package org.javacomp.typesolver;
 
-import com.google.common.base.Optional;
 import com.google.common.collect.AbstractIterator;
 import com.google.common.collect.Iterables;
 import java.util.ArrayDeque;
@@ -10,6 +9,7 @@ import java.util.Deque;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import javax.annotation.Nullable;
 import org.javacomp.model.ClassEntity;
@@ -24,7 +24,7 @@ import org.javacomp.model.TypeReference;
 
 /** Logic for solving the type of a given entity. */
 public class TypeSolver {
-  private static final Optional<SolvedType> UNSOLVED = Optional.absent();
+  private static final Optional<SolvedType> UNSOLVED = Optional.empty();
   private static final Set<Entity.Kind> CLASS_KINDS = ClassEntity.ALLOWED_KINDS;
 
   public Optional<SolvedType> solve(
@@ -38,7 +38,7 @@ public class TypeSolver {
       currentClass =
           (ClassEntity) findClassMember(innerClassName, currentClass, globalScope, CLASS_KINDS);
       if (currentClass == null) {
-        return Optional.absent();
+        return Optional.empty();
       }
     }
     if (currentClass != null) {
@@ -52,7 +52,7 @@ public class TypeSolver {
     if (classInGlobalScope != null) {
       return Optional.of(SolvedType.builder().setEntity(classInGlobalScope).build());
     }
-    return Optional.absent();
+    return Optional.empty();
   }
 
   /**

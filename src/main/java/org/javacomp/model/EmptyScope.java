@@ -1,10 +1,10 @@
 package org.javacomp.model;
 
-import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
 import java.util.List;
+import java.util.Optional;
 
 /** An scope containing no entity. */
 public class EmptyScope implements EntityScope {
@@ -19,7 +19,7 @@ public class EmptyScope implements EntityScope {
 
   @Override
   public Optional<Entity> getEntityWithNameAndKind(String simpleName, Entity.Kind entityKind) {
-    return Optional.absent();
+    return Optional.empty();
   }
 
   @Override
@@ -39,6 +39,6 @@ public class EmptyScope implements EntityScope {
 
   @Override
   public Optional<EntityScope> getParentScope() {
-    return Optional.absent();
+    return Optional.empty();
   }
 }

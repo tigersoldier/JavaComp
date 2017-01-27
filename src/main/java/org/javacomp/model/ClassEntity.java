@@ -2,7 +2,6 @@ package org.javacomp.model;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import com.google.common.base.Optional;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -12,6 +11,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import org.javacomp.model.util.QualifiedNames;
 

@@ -1,6 +1,5 @@
 package org.javacomp.model;
 
-import com.google.common.base.Optional;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
@@ -10,6 +9,7 @@ import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * The scope of the whole project. Can reach all scoped entities (e.g. packages, classes) defined in
@@ -43,7 +43,7 @@ public class GlobalScope implements EntityScope {
         return Optional.of(entity);
       }
     }
-    return Optional.absent();
+    return Optional.empty();
   }
 
   @Override
@@ -84,7 +84,7 @@ public class GlobalScope implements EntityScope {
   }
 
   public Optional<FileScope> getFileScope(String filename) {
-    return Optional.fromNullable(fileScopeMap.get(filename));
+    return Optional.ofNullable(fileScopeMap.get(filename));
   }
 
   public PackageScope getRootPackage() {
@@ -132,6 +132,6 @@ public class GlobalScope implements EntityScope {
 
   @Override
   public Optional<EntityScope> getParentScope() {
-    return Optional.absent();
+    return Optional.empty();
   }
 }

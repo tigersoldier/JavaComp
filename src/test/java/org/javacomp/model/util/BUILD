@@ -5,8 +5,8 @@ java_library(
     deps = [
         "//external:guava",
         "//external:junit4",
-        "//external:truth",
         "//src/main/java/org/javacomp/model/util",
+        "//third_party:truth",
     ],
 )
 

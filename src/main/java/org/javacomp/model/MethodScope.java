@@ -1,11 +1,11 @@
 package org.javacomp.model;
 
-import com.google.common.base.Optional;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
 import java.util.List;
+import java.util.Optional;
 
 /** Scope of entities declared in a method. */
 public class MethodScope implements EntityScope {

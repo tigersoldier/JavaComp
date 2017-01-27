@@ -52,3 +52,11 @@ java_plugin(
         "@com_google_auto_value_auto_value//jar",
     ],
 )
+
+java_library(
+    name = "truth",
+    exports = [
+        "@com_google_truth_extensions_truth_java8_extension//jar",
+        "@com_google_truth_truth//jar",
+    ],
+)

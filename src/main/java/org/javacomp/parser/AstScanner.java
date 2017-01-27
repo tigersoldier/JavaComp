@@ -2,7 +2,6 @@ package org.javacomp.parser;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Range;
 import com.sun.source.tree.ArrayTypeTree;
@@ -26,6 +25,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
+import java.util.Optional;
 import org.javacomp.model.BlockScope;
 import org.javacomp.model.ClassEntity;
 import org.javacomp.model.Entity;
@@ -115,7 +115,7 @@ public class AstScanner extends TreeScanner<Void, EntityScope> {
         throw new IllegalArgumentException("Unknown entity kind for class: " + node.getKind());
     }
     ImmutableList.Builder<TypeReference> interfaceBuilder = new ImmutableList.Builder<>();
-    Optional<TypeReference> superClass = Optional.absent();
+    Optional<TypeReference> superClass = Optional.empty();
     if (node.getExtendsClause() != null) {
       superClass = Optional.of(typeReferenceScanner.getTypeReference(node.getExtendsClause()));
     }
@@ -156,7 +156,7 @@ public class AstScanner extends TreeScanner<Void, EntityScope> {
         (MethodEntity)
             currentScope
                 .getEntityWithNameAndKind(node.getName().toString(), Entity.Kind.METHOD)
-                .orNull();
+                .orElse(null);
     if (methodEntity == null) {
       methodEntity = new MethodEntity(node.getName().toString(), this.currentQualifiers);
     }

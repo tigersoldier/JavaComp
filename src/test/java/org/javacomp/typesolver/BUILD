@@ -8,11 +8,11 @@ java_library(
         "//external:javac",
         "//external:jsr305",
         "//external:junit4",
-        "//external:truth",
         "//src/main/java/org/javacomp/model",
         "//src/main/java/org/javacomp/parser",
         "//src/main/java/org/javacomp/testing",
         "//src/main/java/org/javacomp/typesolver",
+        "//third_party:truth",
     ],
 )
 

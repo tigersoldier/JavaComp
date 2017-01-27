@@ -43,15 +43,15 @@ maven_jar(
     sha1 = "2973d150c0dc1fefe998f834810d68f278ea58ec",
 )
 
-bind(
-    name = "truth",
-    actual = "@com_google_truth_truth//jar",
-)
-
 maven_jar(
     name = "com_google_truth_truth",
     artifact = "com.google.truth:truth:0.30",
     sha1 = "9d591b5a66eda81f0b88cf1c748ab8853d99b18b",
+)
+
+maven_jar(
+    name = "com_google_truth_extensions_truth_java8_extension",
+    artifact = "com.google.truth.extensions:truth-java8-extension:0.30",
 )
 
 maven_jar(

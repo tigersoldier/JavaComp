@@ -1,8 +1,8 @@
 package org.javacomp.model;
 
-import com.google.common.base.Optional;
 import com.google.common.collect.Multimap;
 import java.util.List;
+import java.util.Optional;
 
 public interface EntityScope {
   List<Entity> getEntitiesWithName(String simpleName);

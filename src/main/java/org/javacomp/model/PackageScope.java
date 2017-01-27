@@ -2,13 +2,13 @@ package org.javacomp.model;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
-import com.google.common.base.Optional;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 /** Scope of sub packages and files in a package. */
@@ -45,7 +45,7 @@ public class PackageScope implements EntityScope {
         return entity;
       }
     }
-    return Optional.absent();
+    return Optional.empty();
   }
 
   @Override
@@ -95,6 +95,6 @@ public class PackageScope implements EntityScope {
 
   @Override
   public Optional<EntityScope> getParentScope() {
-    return Optional.absent();
+    return Optional.empty();
   }
 }

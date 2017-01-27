@@ -1,6 +1,5 @@
 package org.javacomp.model;
 
-
 import java.util.List;
 
 /** Represents a package. */

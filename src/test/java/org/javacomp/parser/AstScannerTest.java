@@ -5,6 +5,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
+import com.google.common.truth.Truth8;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.parser.JavacParser;
 import com.sun.tools.javac.parser.ParserFactory;
@@ -157,7 +158,8 @@ public class AstScannerTest {
     EntityScope scopeAtEnd = getEntityScopeBefore("} else { // end of if");
     EntityScope scopeAtField = getEntityScopeAfter("ifScopeVar");
     for (EntityScope scope : ImmutableList.of(scopeAtStart, scopeAtEnd, scopeAtField)) {
-      assertThat(scope.getEntityWithNameAndKind("ifScopeVar", Entity.Kind.VARIABLE)).isPresent();
+      Truth8.assertThat(scope.getEntityWithNameAndKind("ifScopeVar", Entity.Kind.VARIABLE))
+          .isPresent();
       assertThat(scope.getEntitiesWithName("elseScopeVar")).isEmpty();
     }
   }
@@ -168,7 +170,8 @@ public class AstScannerTest {
     EntityScope scopeAtEnd = getEntityScopeBefore("} // else");
     EntityScope scopeAtField = getEntityScopeAfter("elseScopeVar");
     for (EntityScope scope : ImmutableList.of(scopeAtStart, scopeAtEnd, scopeAtField)) {
-      assertThat(scope.getEntityWithNameAndKind("elseScopeVar", Entity.Kind.VARIABLE)).isPresent();
+      Truth8.assertThat(scope.getEntityWithNameAndKind("elseScopeVar", Entity.Kind.VARIABLE))
+          .isPresent();
       assertThat(scope.getEntitiesWithName("ifScopeVar")).isEmpty();
     }
   }
@@ -179,7 +182,8 @@ public class AstScannerTest {
     EntityScope scopeAtEnd = getEntityScopeBefore("} // while loop");
     EntityScope scopeAtField = getEntityScopeAfter("whileScopeVar");
     for (EntityScope scope : ImmutableList.of(scopeAtStart, scopeAtEnd, scopeAtField)) {
-      assertThat(scope.getEntityWithNameAndKind("whileScopeVar", Entity.Kind.VARIABLE)).isPresent();
+      Truth8.assertThat(scope.getEntityWithNameAndKind("whileScopeVar", Entity.Kind.VARIABLE))
+          .isPresent();
     }
   }
 
@@ -189,7 +193,8 @@ public class AstScannerTest {
     EntityScope scopeAtEnd = getEntityScopeBefore("} // for loop");
     EntityScope scopeAtField = getEntityScopeAfter("forScopeVar");
     for (EntityScope scope : ImmutableList.of(scopeAtStart, scopeAtEnd, scopeAtField)) {
-      assertThat(scope.getEntityWithNameAndKind("forScopeVar", Entity.Kind.VARIABLE)).isPresent();
+      Truth8.assertThat(scope.getEntityWithNameAndKind("forScopeVar", Entity.Kind.VARIABLE))
+          .isPresent();
     }
   }
 
@@ -199,7 +204,7 @@ public class AstScannerTest {
     EntityScope scopeAtEnd = getEntityScopeBefore("} // switch");
     EntityScope scopeAtField = getEntityScopeAfter("switchScopeVar");
     for (EntityScope scope : ImmutableList.of(scopeAtStart, scopeAtEnd, scopeAtField)) {
-      assertThat(scope.getEntityWithNameAndKind("switchScopeVar", Entity.Kind.VARIABLE))
+      Truth8.assertThat(scope.getEntityWithNameAndKind("switchScopeVar", Entity.Kind.VARIABLE))
           .isPresent();
       assertThat(scope.getEntitiesWithName("caseScopeVar")).isEmpty();
     }
@@ -211,9 +216,10 @@ public class AstScannerTest {
     EntityScope scopeAtEnd = getEntityScopeBefore("} // end of case block");
     EntityScope scopeAtField = getEntityScopeAfter("caseScopeVar");
     for (EntityScope scope : ImmutableList.of(scopeAtStart, scopeAtEnd, scopeAtField)) {
-      assertThat(scope.getEntityWithNameAndKind("switchScopeVar", Entity.Kind.VARIABLE))
+      Truth8.assertThat(scope.getEntityWithNameAndKind("switchScopeVar", Entity.Kind.VARIABLE))
           .isPresent();
-      assertThat(scope.getEntityWithNameAndKind("caseScopeVar", Entity.Kind.VARIABLE)).isPresent();
+      Truth8.assertThat(scope.getEntityWithNameAndKind("caseScopeVar", Entity.Kind.VARIABLE))
+          .isPresent();
     }
   }
 
@@ -223,9 +229,11 @@ public class AstScannerTest {
     EntityScope scopeAtEnd = getEntityScopeBefore("} /* end of new PublicInnerInterface *");
     EntityScope scopeAtField = getEntityScopeAfter("privateAnnonymousClassMethod");
     for (EntityScope scope : ImmutableList.of(scopeAtStart, scopeAtEnd, scopeAtField)) {
-      assertThat(scope.getEntityWithNameAndKind("privateAnnonymousClassMethod", Entity.Kind.METHOD))
+      Truth8.assertThat(
+              scope.getEntityWithNameAndKind("privateAnnonymousClassMethod", Entity.Kind.METHOD))
           .isPresent();
-      assertThat(scope.getEntityWithNameAndKind("interfaceMethod", Entity.Kind.METHOD)).isPresent();
+      Truth8.assertThat(scope.getEntityWithNameAndKind("interfaceMethod", Entity.Kind.METHOD))
+          .isPresent();
     }
   }
 
@@ -249,7 +257,8 @@ public class AstScannerTest {
 
   @Test
   public void explicitClassImport() {
-    assertThat(fileScope.getImportedClass("Baz")).hasValue(ImmutableList.of("foo", "Bar", "Baz"));
+    Truth8.assertThat(fileScope.getImportedClass("Baz"))
+        .hasValue(ImmutableList.of("foo", "Bar", "Baz"));
   }
 
   @Test

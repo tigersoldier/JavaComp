@@ -1,11 +1,11 @@
 package org.javacomp.typesolver;
 
-import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableSet;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.IdentifierTree;
 import com.sun.source.tree.MemberSelectTree;
 import com.sun.source.util.TreeScanner;
+import java.util.Optional;
 import java.util.Set;
 import javax.annotation.Nullable;
 import org.javacomp.model.ClassEntity;
@@ -37,7 +37,7 @@ public class ExpressionSolver {
 
   public Optional<SolvedType> solve(
       ExpressionTree expression, GlobalScope globalScope, EntityScope baseScope) {
-    return Optional.fromNullable(
+    return Optional.ofNullable(
         new ExpressionTypeScanner(globalScope, baseScope).scan(expression, null /* unused */));
   }
 
@@ -93,7 +93,7 @@ public class ExpressionSolver {
                   enclosingClass.getSuperClass().get(),
                   globalScope,
                   enclosingClass.getParentScope().get())
-              .orNull();
+              .orElse(null);
         }
       }
 
@@ -122,7 +122,7 @@ public class ExpressionSolver {
       if (entity instanceof VariableEntity) {
         return typeSolver
             .solve(((VariableEntity) entity).getType(), globalScope, baseScope)
-            .orNull();
+            .orElse(null);
       }
       if (entity instanceof MethodEntity) {
         // TODO: support overloading resolution
@@ -131,7 +131,7 @@ public class ExpressionSolver {
                 ((MethodEntity) entity).getOverloads().get(0).getReturnType(),
                 globalScope,
                 baseScope)
-            .orNull();
+            .orElse(null);
       }
       if (entity instanceof ClassEntity) {
         return SolvedType.builder().setEntity(entity).build();
@@ -144,7 +144,7 @@ public class ExpressionSolver {
 
     @Nullable
     private ClassEntity findEnclosingClass(EntityScope baseScope) {
-      for (; baseScope != null; baseScope = baseScope.getParentScope().orNull()) {
+      for (; baseScope != null; baseScope = baseScope.getParentScope().orElse(null)) {
         if (baseScope instanceof ClassEntity) {
           return (ClassEntity) baseScope;
         }
