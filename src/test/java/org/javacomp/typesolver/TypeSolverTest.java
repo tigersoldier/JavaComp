@@ -130,11 +130,10 @@ public class TypeSolverTest {
   private SolvedType solveMethodReturnType(String qualifiedMethodName) {
     MethodEntity method = (MethodEntity) TestUtil.lookupEntity(qualifiedMethodName, globalScope);
     assertThat(method).named(qualifiedMethodName).isNotNull();
-    MethodEntity.Overload methodOverload = method.getOverloads().get(0);
-    TypeReference methodReturnType = methodOverload.getReturnType();
+    TypeReference methodReturnType = method.getReturnType();
     Optional<SolvedType> solvedType =
         typeSolver.solve(
-            methodReturnType, globalScope, methodOverload.getMethodScope().getParentClass());
+            methodReturnType, globalScope, method.getChildScope().getParentScope().get());
     Truth8.assertThat(solvedType).named(methodReturnType.toString()).isPresent();
     return solvedType.get();
   }

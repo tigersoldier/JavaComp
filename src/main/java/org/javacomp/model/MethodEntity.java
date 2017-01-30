@@ -2,45 +2,37 @@ package org.javacomp.model;
 
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
-import java.util.ArrayList;
 import java.util.List;
 
 /** Represents a method. */
 public class MethodEntity extends Entity {
-  private final List<Overload> overloads;
+  private final MethodScope methodScope;
+  private final TypeReference returnType;
+  private final List<Parameter> parameters;
 
-  public MethodEntity(String simpleName, List<String> qualifiers) {
+  public MethodEntity(
+      String simpleName,
+      List<String> qualifiers,
+      MethodScope methodScope,
+      TypeReference returnType,
+      List<Parameter> parameters) {
     super(simpleName, Entity.Kind.METHOD, qualifiers);
-    this.overloads = new ArrayList<>();
+    this.methodScope = methodScope;
+    this.returnType = returnType;
+    this.parameters = ImmutableList.copyOf(parameters);
   }
 
   @Override
   public EntityScope getChildScope() {
-    // Unknown scope until we know the overloading.
-    return EmptyScope.INSTANCE;
+    return methodScope;
   }
 
-  public ImmutableList<Overload> getOverloads() {
-    return ImmutableList.copyOf(overloads);
+  public List<Parameter> getParameters() {
+    return parameters;
   }
 
-  public void addOverload(Overload overload) {
-    this.overloads.add(overload);
-  }
-
-  @AutoValue
-  public abstract static class Overload {
-    public abstract MethodScope getMethodScope();
-
-    public abstract TypeReference getReturnType();
-
-    public abstract ImmutableList<Parameter> getParameters();
-
-    public static Overload create(
-        MethodScope methodScope, TypeReference returnType, List<Parameter> parameters) {
-      return new AutoValue_MethodEntity_Overload(
-          methodScope, returnType, ImmutableList.copyOf(parameters));
-    }
+  public TypeReference getReturnType() {
+    return returnType;
   }
 
   @AutoValue

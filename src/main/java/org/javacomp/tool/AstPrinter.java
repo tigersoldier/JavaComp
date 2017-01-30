@@ -7,6 +7,7 @@ import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.ErroneousTree;
 import com.sun.source.tree.IdentifierTree;
 import com.sun.source.tree.MemberSelectTree;
+import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.MethodTree;
 import com.sun.source.tree.ModifiersTree;
 import com.sun.source.tree.Tree;
@@ -166,6 +167,16 @@ public class AstPrinter extends TreeScanner<Void, Void> {
     scan(node.getNameExpression(), null);
     printWithIndent("[initializer]");
     scan(node.getInitializer(), null);
+    return null;
+  }
+
+  @Override
+  public Void visitMethodInvocation(MethodInvocationTree node, Void unused) {
+    scan(node.getMethodSelect(), null);
+    printWithIndent("[arguments]");
+    scan(node.getArguments(), null);
+    printWithIndent("[type arguments]");
+    scan(node.getTypeArguments(), null);
     return null;
   }
 

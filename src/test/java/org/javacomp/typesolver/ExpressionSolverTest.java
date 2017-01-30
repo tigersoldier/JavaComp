@@ -82,6 +82,22 @@ public class ExpressionSolverTest {
         .isEqualTo(topLevelClass);
   }
 
+  @Test
+  public void solveMethodInvocation() {
+    assertThat(solveExpression("baseMethod()", topLevelClass).getEntity()).isEqualTo(innerCClass);
+    assertThat(solveExpression("this.baseMethod()", topLevelClass).getEntity())
+        .isEqualTo(innerCClass);
+  }
+
+  @Test
+  public void solveSuperClassMethodInvocation() {
+    assertThat(solveExpression("innerA.baseMethod()", topLevelClass).getEntity())
+        .isEqualTo(innerCClass);
+    assertThat(solveExpression("baseMethod()", innerAClass).getEntity()).isEqualTo(innerCClass);
+    assertThat(solveExpression("super.baseMethod()", innerAClass).getEntity())
+        .isEqualTo(innerCClass);
+  }
+
   private SolvedType solveExpression(String expression, EntityScope baseScope) {
     ExpressionTree expressionTree = TestUtil.parseExpression(expression);
     Optional<SolvedType> solvedExpression =

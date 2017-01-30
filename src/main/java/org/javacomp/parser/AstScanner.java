@@ -152,16 +152,6 @@ public class AstScanner extends TreeScanner<Void, EntityScope> {
   public Void visitMethod(MethodTree node, EntityScope currentScope) {
     checkArgument(
         currentScope instanceof ClassEntity, "Method's parent scope must be a class entity");
-    MethodEntity methodEntity =
-        (MethodEntity)
-            currentScope
-                .getEntityWithNameAndKind(node.getName().toString(), Entity.Kind.METHOD)
-                .orElse(null);
-    if (methodEntity == null) {
-      methodEntity = new MethodEntity(node.getName().toString(), this.currentQualifiers);
-    }
-
-    MethodScope methodScope = new MethodScope((ClassEntity) currentScope);
     TypeReference returnType;
     if (node.getReturnType() == null) {
       // Constructor doesn't have return type.
@@ -175,8 +165,14 @@ public class AstScanner extends TreeScanner<Void, EntityScope> {
       parameterListBuilder.add(parameterScanner.getParameter(parameter));
     }
 
-    methodEntity.addOverload(
-        MethodEntity.Overload.create(methodScope, returnType, parameterListBuilder.build()));
+    MethodScope methodScope = new MethodScope((ClassEntity) currentScope);
+    MethodEntity methodEntity =
+        new MethodEntity(
+            node.getName().toString(),
+            this.currentQualifiers,
+            methodScope,
+            returnType,
+            parameterListBuilder.build());
     // TODO: distinguish between static and non-static methods.
     currentScope.addEntity(methodEntity);
     List<String> previousQualifiers = this.currentQualifiers;

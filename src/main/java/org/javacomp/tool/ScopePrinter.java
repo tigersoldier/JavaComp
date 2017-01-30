@@ -48,26 +48,22 @@ public class ScopePrinter {
       }
     } else if (entity instanceof MethodEntity) {
       MethodEntity methodEntity = (MethodEntity) entity;
-      for (MethodEntity.Overload overload : methodEntity.getOverloads()) {
-        sb.append('\n');
-        sb.append(generateIndent(indent + 4));
-        sb.append('(');
-        boolean firstParameter = true;
-        for (MethodEntity.Parameter parameter : overload.getParameters()) {
-          if (!firstParameter) {
-            sb.append(", ");
-          } else {
-            firstParameter = false;
-          }
-          TypeReference parameterType = parameter.getType();
-          sb.append(formatTypeReference(parameterType));
-          sb.append(' ');
-          sb.append(parameter.getName());
+      sb.append('(');
+      boolean firstParameter = true;
+      for (MethodEntity.Parameter parameter : methodEntity.getParameters()) {
+        if (!firstParameter) {
+          sb.append(", ");
+        } else {
+          firstParameter = false;
         }
-        sb.append(")->");
-        TypeReference returnType = overload.getReturnType();
-        sb.append(formatTypeReference(returnType));
+        TypeReference parameterType = parameter.getType();
+        sb.append(formatTypeReference(parameterType));
+        sb.append(' ');
+        sb.append(parameter.getName());
       }
+      sb.append(")->");
+      TypeReference returnType = methodEntity.getReturnType();
+      sb.append(formatTypeReference(returnType));
     }
     return sb.toString();
   }

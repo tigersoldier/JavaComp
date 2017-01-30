@@ -148,7 +148,7 @@ public class AstScannerTest {
     for (EntityScope scope : ImmutableList.of(scopeAtStart, scopeAtEnd, scopeAtField)) {
       MethodEntity methodEntity =
           (MethodEntity) lookupEntity(fileScope, "TestData.publicIfBlockMethod");
-      assertThat(scope).isEqualTo(methodEntity.getOverloads().get(0).getMethodScope());
+      assertThat(scope).isEqualTo(methodEntity.getChildScope());
     }
   }
 
@@ -241,8 +241,7 @@ public class AstScannerTest {
   public void primitiveTypeReference() {
     MethodEntity methodEntity =
         (MethodEntity) lookupEntity(fileScope, "TestData.protectedWhileBlockMethod");
-    TypeReference intReference =
-        methodEntity.getOverloads().get(0).getParameters().get(0).getType();
+    TypeReference intReference = methodEntity.getParameters().get(0).getType();
     assertThat(intReference.getFullName()).containsExactly("int").inOrder();
   }
 
@@ -250,8 +249,7 @@ public class AstScannerTest {
   public void nonPrimitiveTypeReference() {
     MethodEntity methodEntity =
         (MethodEntity) lookupEntity(fileScope, "TestData.privateForBlockMethod");
-    TypeReference intReference =
-        methodEntity.getOverloads().get(0).getParameters().get(0).getType();
+    TypeReference intReference = methodEntity.getParameters().get(0).getType();
     assertThat(intReference.getFullName()).containsExactly("java", "util", "List").inOrder();
   }
 

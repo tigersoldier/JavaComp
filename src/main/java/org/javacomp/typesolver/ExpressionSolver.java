@@ -4,7 +4,10 @@ import com.google.common.collect.ImmutableSet;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.IdentifierTree;
 import com.sun.source.tree.MemberSelectTree;
+import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.util.TreeScanner;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import javax.annotation.Nullable;
@@ -44,23 +47,34 @@ public class ExpressionSolver {
   private class ExpressionTypeScanner extends TreeScanner<SolvedType, Void> {
     private final EntityScope baseScope;
     private final GlobalScope globalScope;
-    private boolean isMethodInvocation;
+    private List<Optional<SolvedType>> methodArgs;
 
     private ExpressionTypeScanner(GlobalScope globalScope, EntityScope baseScope) {
       this.globalScope = globalScope;
       this.baseScope = baseScope;
-      this.isMethodInvocation = false;
+      this.methodArgs = null;
+    }
+
+    @Override
+    public SolvedType visitMethodInvocation(MethodInvocationTree node, Void unused) {
+      methodArgs = new ArrayList<>(node.getArguments().size());
+      for (ExpressionTree arg : node.getArguments()) {
+        methodArgs.add(solve(arg, globalScope, baseScope));
+      }
+      SolvedType solvedType = scan(node.getMethodSelect(), null);
+      methodArgs = null;
+      return solvedType;
     }
 
     @Override
     public SolvedType visitMemberSelect(MemberSelectTree node, Void unused) {
-      boolean savedIsMethodInvocation = isMethodInvocation;
-      isMethodInvocation = false;
+      List<Optional<SolvedType>> savedMethodArgs = methodArgs;
+      methodArgs = null;
       SolvedType expressionType = scan(node.getExpression(), null);
       if (expressionType == null) {
         return null;
       }
-      isMethodInvocation = savedIsMethodInvocation;
+      methodArgs = savedMethodArgs;
 
       String identifier = node.getIdentifier().toString();
       if (IDENT_THIS.equals(identifier)) {
@@ -111,7 +125,7 @@ public class ExpressionSolver {
     }
 
     private Set<Entity.Kind> getAllowedEntityKinds() {
-      return isMethodInvocation ? ALLOWED_KINDS_METHOD : ALLOWED_KINDS_NON_METHOD;
+      return methodArgs == null ? ALLOWED_KINDS_NON_METHOD : ALLOWED_KINDS_METHOD;
     }
 
     @Nullable
@@ -127,10 +141,7 @@ public class ExpressionSolver {
       if (entity instanceof MethodEntity) {
         // TODO: support overloading resolution
         return typeSolver
-            .solve(
-                ((MethodEntity) entity).getOverloads().get(0).getReturnType(),
-                globalScope,
-                baseScope)
+            .solve(((MethodEntity) entity).getReturnType(), globalScope, baseScope)
             .orElse(null);
       }
       if (entity instanceof ClassEntity) {
