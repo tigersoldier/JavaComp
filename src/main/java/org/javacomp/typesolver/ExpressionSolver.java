@@ -81,14 +81,26 @@ public class ExpressionSolver {
         return expressionType;
       }
 
-      Entity memberEntity =
-          typeSolver.findEntityMember(
-              node.getIdentifier().toString(),
-              expressionType.getEntity(),
-              globalScope,
-              getAllowedEntityKinds());
+      if (isMethodInvocation()) {
+        // Methods must be defined in classes.
+        if (expressionType.getEntity() instanceof ClassEntity) {
+          return solveMethodReturnType(
+              typeSolver.findClassMethods(
+                  node.getIdentifier().toString(),
+                  (ClassEntity) expressionType.getEntity(),
+                  globalScope));
+        }
+        return null;
+      } else {
+        Entity memberEntity =
+            typeSolver.findEntityMember(
+                node.getIdentifier().toString(),
+                expressionType.getEntity(),
+                globalScope,
+                ALLOWED_KINDS_NON_METHOD);
 
-      return solveEntityType(memberEntity);
+        return solveNonMethodEntityType(memberEntity);
+      }
     }
 
     @Override
@@ -96,7 +108,7 @@ public class ExpressionSolver {
       String identifier = node.getName().toString();
 
       if (IDENT_THIS.equals(identifier)) {
-        return solveEntityType(findEnclosingClass(baseScope));
+        return solveNonMethodEntityType(findEnclosingClass(baseScope));
       }
 
       if (IDENT_SUPER.equals(identifier)) {
@@ -111,17 +123,21 @@ public class ExpressionSolver {
         }
       }
 
-      Entity entity =
-          typeSolver.findEntityInScope(
+      List<Entity> entities =
+          typeSolver.findEntitiesInScope(
               node.getName().toString(), globalScope, baseScope, getAllowedEntityKinds());
 
-      if (entity != null) {
-        return solveEntityType(entity);
+      if (!entities.isEmpty()) {
+        return solveEntityType(entities);
       }
 
-      return solveEntityType(
+      if (isMethodInvocation()) {
+        // Method cannot be direct memeber of root package.
+        return null;
+      }
+      return solveNonMethodEntityType(
           typeSolver.findDirectMember(
-              node.getName().toString(), globalScope, getAllowedEntityKinds()));
+              node.getName().toString(), globalScope, ALLOWED_KINDS_NON_METHOD));
     }
 
     private Set<Entity.Kind> getAllowedEntityKinds() {
@@ -129,19 +145,35 @@ public class ExpressionSolver {
     }
 
     @Nullable
-    private SolvedType solveEntityType(@Nullable Entity entity) {
+    private SolvedType solveEntityType(List<Entity> foundEntities) {
+      if (isMethodInvocation()) {
+        return solveMethodReturnType(foundEntities);
+      } else {
+        // Non-method entities have no overload
+        return solveNonMethodEntityType(foundEntities.get(0));
+      }
+    }
+
+    @Nullable
+    private SolvedType solveMethodReturnType(List<Entity> methodOverloads) {
+      // TODO: properly support overloading resolution
+      for (Entity entity : methodOverloads) {
+        MethodEntity method = (MethodEntity) entity;
+        if (method.getParameters().size() == methodArgs.size()) {
+          return typeSolver.solve(method.getReturnType(), globalScope, baseScope).orElse(null);
+        }
+      }
+      return null;
+    }
+
+    @Nullable
+    private SolvedType solveNonMethodEntityType(@Nullable Entity entity) {
       if (entity == null) {
         return null;
       }
       if (entity instanceof VariableEntity) {
         return typeSolver
             .solve(((VariableEntity) entity).getType(), globalScope, baseScope)
-            .orElse(null);
-      }
-      if (entity instanceof MethodEntity) {
-        // TODO: support overloading resolution
-        return typeSolver
-            .solve(((MethodEntity) entity).getReturnType(), globalScope, baseScope)
             .orElse(null);
       }
       if (entity instanceof ClassEntity) {
@@ -161,6 +193,10 @@ public class ExpressionSolver {
         }
       }
       return null;
+    }
+
+    private boolean isMethodInvocation() {
+      return methodArgs != null;
     }
   }
 }

@@ -7,6 +7,8 @@ public class TestExpression {
 
   public InnerC baseMethod();
 
+  public InnerB baseMethod(int foo);
+
   public class InnerA extends TestExpression {
     public final InnerB innerB = new InnerB();
   }

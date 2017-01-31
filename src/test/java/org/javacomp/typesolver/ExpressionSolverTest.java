@@ -85,6 +85,7 @@ public class ExpressionSolverTest {
   @Test
   public void solveMethodInvocation() {
     assertThat(solveExpression("baseMethod()", topLevelClass).getEntity()).isEqualTo(innerCClass);
+    assertThat(solveExpression("baseMethod(42)", topLevelClass).getEntity()).isEqualTo(innerBClass);
     assertThat(solveExpression("this.baseMethod()", topLevelClass).getEntity())
         .isEqualTo(innerCClass);
   }

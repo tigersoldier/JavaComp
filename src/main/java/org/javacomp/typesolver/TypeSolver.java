@@ -1,7 +1,9 @@
 package org.javacomp.typesolver;
 
 import com.google.common.collect.AbstractIterator;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Sets;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -17,10 +19,12 @@ import org.javacomp.model.Entity;
 import org.javacomp.model.EntityScope;
 import org.javacomp.model.FileScope;
 import org.javacomp.model.GlobalScope;
+import org.javacomp.model.MethodEntity;
 import org.javacomp.model.PackageEntity;
 import org.javacomp.model.PackageScope;
 import org.javacomp.model.SolvedType;
 import org.javacomp.model.TypeReference;
+import org.javacomp.model.VariableEntity;
 
 /** Logic for solving the type of a given entity. */
 public class TypeSolver {
@@ -110,41 +114,48 @@ public class TypeSolver {
   @Nullable
   Entity findEntityInScope(
       String name, GlobalScope globalScope, EntityScope baseScope, Set<Entity.Kind> allowedKinds) {
+    return Iterables.getFirst(
+        findEntitiesInScope(name, globalScope, baseScope, allowedKinds), null);
+  }
+
+  List<Entity> findEntitiesInScope(
+      String name, GlobalScope globalScope, EntityScope baseScope, Set<Entity.Kind> allowedKinds) {
     // Search class from the narrowest scope to wider scope.
+    List<Entity> foundEntities = ImmutableList.of();
     FileScope fileScope = null;
-    Entity foundEntity = null;
     for (Optional<EntityScope> currentScope = Optional.of(baseScope);
         currentScope.isPresent();
         currentScope = currentScope.get().getParentScope()) {
       if (currentScope.get() instanceof ClassEntity) {
         ClassEntity classEntity = (ClassEntity) currentScope.get();
-        foundEntity = findClassMember(name, classEntity, globalScope, allowedKinds);
-        if (foundEntity != null) {
-          return foundEntity;
+        foundEntities = findClassMembers(name, classEntity, globalScope, allowedKinds);
+        if (!foundEntities.isEmpty()) {
+          return foundEntities;
         }
         ClassEntity classInGlobalScope = findClassInGlobalScope(globalScope, classEntity);
         if (classInGlobalScope != null && classInGlobalScope != classEntity) {
-          foundEntity = findClassMember(name, classInGlobalScope, globalScope, allowedKinds);
-          if (foundEntity != null) {
-            return foundEntity;
+          foundEntities = findClassMembers(name, classInGlobalScope, globalScope, allowedKinds);
+          if (!foundEntities.isEmpty()) {
+            return foundEntities;
           }
         }
         if (allowedKinds.contains(classEntity.getKind())
             && Objects.equals(name, classEntity.getSimpleName())) {
-          return classEntity;
+          return ImmutableList.of(classEntity);
         }
       } else if (currentScope.get() instanceof FileScope) {
         fileScope = (FileScope) currentScope.get();
-        foundEntity = findEntityInFile(name, fileScope, globalScope, allowedKinds);
-        if (foundEntity != null) {
-          return foundEntity;
+        foundEntities = findEntitiesInFile(name, fileScope, globalScope, allowedKinds);
+        if (!foundEntities.isEmpty()) {
+          return foundEntities;
         }
         Optional<FileScope> fileInGlobalScope = findFileInGlobalScope(globalScope, fileScope);
         if (fileInGlobalScope.isPresent() && fileInGlobalScope.get() != fileScope) {
-          foundEntity = findEntityInFile(name, fileInGlobalScope.get(), globalScope, allowedKinds);
-        }
-        if (foundEntity != null) {
-          return foundEntity;
+          foundEntities =
+              findEntitiesInFile(name, fileInGlobalScope.get(), globalScope, allowedKinds);
+          if (!foundEntities.isEmpty()) {
+            return foundEntities;
+          }
         }
       }
       // TODO: handle annonymous class
@@ -155,13 +166,13 @@ public class TypeSolver {
       List<String> packageQualifiers = fileScope.getPackageQualifiers();
       PackageScope packageScope = findPackage(globalScope, packageQualifiers);
       if (packageScope != null) {
-        foundEntity = findClassInPackage(name, packageScope);
+        Entity foundEntity = findClassInPackage(name, packageScope);
         if (foundEntity != null) {
-          return foundEntity;
+          return ImmutableList.of(foundEntity);
         }
       }
     }
-    return null;
+    return foundEntities;
   }
 
   @Nullable
@@ -189,6 +200,44 @@ public class TypeSolver {
     return null;
   }
 
+  List<Entity> findClassMembers(
+      String name,
+      ClassEntity classEntity,
+      GlobalScope globalScope,
+      Set<Entity.Kind> allowedKinds) {
+    // Non-method members can have only one entity.
+    if (!allowedKinds.contains(Entity.Kind.METHOD)) {
+      Entity classMember = findClassMember(name, classEntity, globalScope, allowedKinds);
+      if (classMember != null) {
+        return ImmutableList.of(classMember);
+      } else {
+        return ImmutableList.of();
+      }
+    }
+
+    ImmutableList.Builder<Entity> builder = new ImmutableList.Builder<>();
+    if (allowedKinds.size() > 1) {
+      // Contains non-method members, don't look for all of them, just get the applicable one.
+      Set<Entity.Kind> nonMethodKinds =
+          Sets.filter(allowedKinds, kind -> kind != Entity.Kind.METHOD);
+      Entity nonMemberEntity = findClassMember(name, classEntity, globalScope, nonMethodKinds);
+      if (nonMemberEntity != null) {
+        builder.add(nonMemberEntity);
+      }
+    }
+
+    for (ClassEntity classInHierarchy : classHierarchy(classEntity, globalScope)) {
+      builder.addAll(classInHierarchy.getMethodsWithName(name));
+    }
+
+    return builder.build();
+  }
+
+  List<Entity> findClassMethods(String name, ClassEntity classEntity, GlobalScope globalScope) {
+    return findClassMembers(
+        name, classEntity, globalScope, Sets.immutableEnumSet(Entity.Kind.METHOD));
+  }
+
   @Nullable
   Entity findDirectMember(String name, EntityScope entityScope, Set<Entity.Kind> allowedKinds) {
     for (Entity member : entityScope.getMemberEntities().get(name)) {
@@ -199,9 +248,31 @@ public class TypeSolver {
     return null;
   }
 
-  @Nullable
-  private ClassEntity findEntityInFile(
+  private List<Entity> findEntitiesInFile(
       String name, FileScope fileScope, GlobalScope globalScope, Set<Entity.Kind> allowedKinds) {
+    ImmutableList.Builder<Entity> builder = new ImmutableList.Builder<>();
+    if (!Sets.intersection(allowedKinds, ClassEntity.ALLOWED_KINDS).isEmpty()) {
+      Entity foundClass = findClassInFile(name, fileScope, globalScope);
+      if (foundClass != null) {
+        builder.add(foundClass);
+      }
+    }
+
+    if (allowedKinds.contains(Entity.Kind.METHOD)) {
+      builder.addAll(findImportedMethodsInFile(name, fileScope, globalScope));
+    }
+
+    if (allowedKinds.contains(Entity.Kind.VARIABLE)) {
+      Entity foundField = findImportedFieldInFile(name, fileScope, globalScope);
+      if (foundField != null) {
+        builder.add(foundField);
+      }
+    }
+    return builder.build();
+  }
+
+  @Nullable
+  private ClassEntity findClassInFile(String name, FileScope fileScope, GlobalScope globalScope) {
     Collection<Entity> entities = fileScope.getMemberEntities().get(name);
     for (Entity entity : entities) {
       if (entity instanceof ClassEntity) {
@@ -228,6 +299,18 @@ public class TypeSolver {
       }
     }
 
+    return null;
+  }
+
+  private List<MethodEntity> findImportedMethodsInFile(
+      String name, FileScope fileScope, GlobalScope globalScope) {
+    // TODO: handle static import.
+    return ImmutableList.of();
+  }
+
+  @Nullable
+  private VariableEntity findImportedFieldInFile(
+      String name, FileScope fileScope, GlobalScope globalScope) {
     // TODO: handle static import.
     return null;
   }
