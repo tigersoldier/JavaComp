@@ -48,4 +48,17 @@ public class PrimitiveEntity extends Entity {
   public String toString() {
     return "PrimitiveEntity: " + getSimpleName();
   }
+
+  @Override
+  public boolean equals(Object o) {
+    if (o == this) {
+      return true;
+    }
+    if (!(o instanceof PrimitiveEntity)) {
+      return false;
+    }
+
+    PrimitiveEntity other = (PrimitiveEntity) o;
+    return getSimpleName().equals(other.getSimpleName());
+  }
 }

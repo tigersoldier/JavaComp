@@ -23,7 +23,10 @@ public class ExpressionSolverTest {
   private static final String TOP_LEVEL_CLASS_FULL_NAME =
       "org.javacomp.typesolver.testdata.TestExpression";
 
-  private final ExpressionSolver expressionSolver = new ExpressionSolver(new TypeSolver());
+  private final TypeSolver typeSolver = new TypeSolver();
+  private final OverloadSolver overloadSolver = new OverloadSolver(typeSolver);
+  private final ExpressionSolver expressionSolver =
+      new ExpressionSolver(typeSolver, overloadSolver);
 
   private GlobalScope globalScope;
   private ClassEntity topLevelClass;

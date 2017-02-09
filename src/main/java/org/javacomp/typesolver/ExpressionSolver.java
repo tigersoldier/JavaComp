@@ -1,5 +1,7 @@
 package org.javacomp.typesolver;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import com.google.common.collect.ImmutableSet;
 import com.sun.source.tree.ArrayAccessTree;
 import com.sun.source.tree.ExpressionTree;
@@ -36,9 +38,11 @@ public class ExpressionSolver {
   private static final String IDENT_LENGTH = "length";
 
   private final TypeSolver typeSolver;
+  private final OverloadSolver overloadSolver;
 
-  public ExpressionSolver(TypeSolver typeSolver) {
+  public ExpressionSolver(TypeSolver typeSolver, OverloadSolver overloadSolver) {
     this.typeSolver = typeSolver;
+    this.overloadSolver = overloadSolver;
   }
 
   public Optional<SolvedType> solve(
@@ -185,15 +189,17 @@ public class ExpressionSolver {
     }
 
     @Nullable
-    private SolvedType solveMethodReturnType(List<Entity> methodOverloads) {
-      // TODO: properly support overloading resolution
-      for (Entity entity : methodOverloads) {
-        MethodEntity method = (MethodEntity) entity;
-        if (method.getParameters().size() == methodArgs.size()) {
-          return typeSolver.solve(method.getReturnType(), globalScope, baseScope).orElse(null);
-        }
+    private SolvedType solveMethodReturnType(List<Entity> methodEntities) {
+      if (methodEntities.isEmpty()) {
+        return null;
       }
-      return null;
+      for (Entity entity : methodEntities) {
+        checkArgument(entity instanceof MethodEntity, "Entity %s is not a method", entity);
+      }
+      @SuppressWarnings("unchecked")
+      List<MethodEntity> methods = (List<MethodEntity>) (List) methodEntities;
+      MethodEntity solvedMethod = overloadSolver.solve(methods, methodArgs, globalScope);
+      return typeSolver.solve(solvedMethod.getReturnType(), globalScope, baseScope).orElse(null);
     }
 
     @Nullable

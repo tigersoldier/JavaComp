@@ -1,6 +1,11 @@
 bind(
     name = "guava",
-    actual = "@com_google_guava_guava//jar",
+    actual = "@com_google_guava_guava21//jar",
+)
+
+maven_jar(
+    name = "com_google_guava_guava21",
+    artifact = "com.google.guava:guava:jar:21.0",
 )
 
 bind(

@@ -2,6 +2,7 @@ package org.javacomp.model;
 
 import com.google.common.collect.ImmutableList;
 import java.util.List;
+import org.javacomp.model.util.QualifiedNames;
 
 /**
  * A Java entity declared in the source code.
@@ -49,6 +50,11 @@ public abstract class Entity {
   /** Gets the qualifiers of the name of the entity. */
   public List<String> getQualifiers() {
     return qualifiers;
+  }
+
+  /** Gets the qualified name in the form of qualifier1.qualifier2.simpleName */
+  public String getQualifiedName() {
+    return QualifiedNames.formatQualifiedName(qualifiers, simpleName);
   }
 
   public Kind getKind() {

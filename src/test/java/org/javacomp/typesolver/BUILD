@@ -31,3 +31,11 @@ java_test(
         ":tests",
     ],
 )
+
+java_test(
+    name = "OverloadSolverTest",
+    size = "small",
+    runtime_deps = [
+        ":tests",
+    ],
+)
