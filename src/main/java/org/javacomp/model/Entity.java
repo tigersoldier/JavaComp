@@ -23,6 +23,8 @@ public abstract class Entity {
     QUALIFIER,
     // A psuedo entity kind. Represents the a reference to a entity by name. May be resolved to its referencing entity.
     REFERENCE,
+    // A premitive type.
+    PRIMITIVE,
     ;
   }
 

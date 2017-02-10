@@ -155,7 +155,7 @@ public class AstScanner extends TreeScanner<Void, EntityScope> {
     TypeReference returnType;
     if (node.getReturnType() == null) {
       // Constructor doesn't have return type.
-      returnType = TypeReference.VOID_TYPE;
+      returnType = TypeReference.EMPTY_TYPE;
     } else {
       returnType = typeReferenceScanner.getTypeReference(node.getReturnType());
     }
@@ -227,15 +227,23 @@ public class AstScanner extends TreeScanner<Void, EntityScope> {
 
   private static class TypeReferenceScanner extends TreeScanner<Void, Void> {
     private final Deque<String> names = new ArrayDeque<>();
+    private boolean isPrimitive = false;
+    private boolean isArray = false;
 
     public TypeReference getTypeReference(Tree node) {
       names.clear();
+      isPrimitive = false;
+      isArray = false;
       scan(node, null);
       if (names.isEmpty()) {
         // Malformed input, no type can be referenced
-        return TypeReference.VOID_TYPE;
+        return TypeReference.EMPTY_TYPE;
       }
-      return new TypeReference(ImmutableList.copyOf(names));
+      return TypeReference.builder()
+          .setFullName(names)
+          .setPrimitive(isPrimitive)
+          .setArray(isArray)
+          .build();
     }
 
     @Override
@@ -247,7 +255,7 @@ public class AstScanner extends TreeScanner<Void, EntityScope> {
 
     @Override
     public Void visitArrayType(ArrayTypeTree node, Void unused) {
-      // TODO: handle array types.
+      isArray = true;
       scan(node.getType(), unused);
       return null;
     }
@@ -267,6 +275,7 @@ public class AstScanner extends TreeScanner<Void, EntityScope> {
 
     @Override
     public Void visitPrimitiveType(PrimitiveTypeTree node, Void unused) {
+      isPrimitive = true;
       names.addFirst(node.getPrimitiveTypeKind().name().toLowerCase());
       return null;
     }
@@ -275,7 +284,7 @@ public class AstScanner extends TreeScanner<Void, EntityScope> {
   private static class ParameterScanner extends TreeScanner<Void, Void> {
     private final TypeReferenceScanner typeReferenceScanner;
     private String name = "";
-    private TypeReference type = TypeReference.VOID_TYPE;
+    private TypeReference type = TypeReference.EMPTY_TYPE;
 
     private ParameterScanner(TypeReferenceScanner typeReferenceScanner) {
       this.typeReferenceScanner = typeReferenceScanner;
@@ -283,7 +292,7 @@ public class AstScanner extends TreeScanner<Void, EntityScope> {
 
     private MethodEntity.Parameter getParameter(Tree node) {
       name = "";
-      type = TypeReference.VOID_TYPE;
+      type = TypeReference.EMPTY_TYPE;
       scan(node, null);
       return MethodEntity.Parameter.create(type, name);
     }

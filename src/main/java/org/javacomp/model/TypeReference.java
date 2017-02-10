@@ -1,41 +1,54 @@
 package org.javacomp.model;
 
+import com.google.auto.value.AutoValue;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
-import java.util.List;
+import java.util.Collection;
 
 /** A reference to a type for lazy resolution. */
-public class TypeReference {
-  public static final TypeReference VOID_TYPE = new TypeReference();
+@AutoValue
+public abstract class TypeReference {
+  public static final TypeReference EMPTY_TYPE =
+      TypeReference.builder().setFullName().setPrimitive(false).setArray(false).build();
 
   private static final Joiner JOINER = Joiner.on(".");
 
-  private final ImmutableList<String> fullName;
+  public abstract ImmutableList<String> getFullName();
 
-  private Entity resolvedEntity = null;
+  public abstract boolean isPrimitive();
 
-  public TypeReference(String... fullName) {
-    this(ImmutableList.copyOf(fullName));
-  }
+  public abstract boolean isArray();
 
-  public TypeReference(List<String> fullName) {
-    this.fullName = ImmutableList.copyOf(fullName);
-  }
-
-  public void setResolvedEntity(Entity resolvedEntity) {
-    this.resolvedEntity = resolvedEntity;
+  public static Builder builder() {
+    return new AutoValue_TypeReference.Builder();
   }
 
   public String getSimpleName() {
+    ImmutableList<String> fullName = getFullName();
     return fullName.get(fullName.size() - 1);
-  }
-
-  public List<String> getFullName() {
-    return fullName;
   }
 
   @Override
   public String toString() {
-    return "TypeReference<" + JOINER.join(fullName) + ">";
+    return "TypeReference<" + JOINER.join(getFullName()) + (isArray() ? "[]>" : ">");
+  }
+
+  @AutoValue.Builder
+  public abstract static class Builder {
+    public abstract Builder setFullName(ImmutableList<String> fullName);
+
+    public abstract Builder setPrimitive(boolean isPrimitive);
+
+    public abstract Builder setArray(boolean isArray);
+
+    public abstract TypeReference build();
+
+    public Builder setFullName(String... fullName) {
+      return setFullName(ImmutableList.copyOf(fullName));
+    }
+
+    public Builder setFullName(Collection<String> fullName) {
+      return setFullName(ImmutableList.copyOf(fullName));
+    }
   }
 }

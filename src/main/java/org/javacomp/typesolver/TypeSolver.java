@@ -22,6 +22,7 @@ import org.javacomp.model.GlobalScope;
 import org.javacomp.model.MethodEntity;
 import org.javacomp.model.PackageEntity;
 import org.javacomp.model.PackageScope;
+import org.javacomp.model.PrimitiveEntity;
 import org.javacomp.model.SolvedType;
 import org.javacomp.model.TypeReference;
 import org.javacomp.model.VariableEntity;
@@ -33,6 +34,11 @@ public class TypeSolver {
 
   public Optional<SolvedType> solve(
       TypeReference typeReference, GlobalScope globalScope, EntityScope parentScope) {
+    if (typeReference.isPrimitive()) {
+      return Optional.of(
+          createSolvedType(PrimitiveEntity.get(typeReference.getSimpleName()), typeReference));
+    }
+
     List<String> fullName = typeReference.getFullName();
     ClassEntity currentClass =
         (ClassEntity) findEntityInScope(fullName.get(0), globalScope, parentScope, CLASS_KINDS);
@@ -46,7 +52,7 @@ public class TypeSolver {
       }
     }
     if (currentClass != null) {
-      return Optional.of(SolvedType.builder().setEntity(currentClass).build());
+      return Optional.of(createSolvedType(currentClass, typeReference));
     }
 
     // The first part of the type full name is not known class inside the package. Try to find in
@@ -54,7 +60,7 @@ public class TypeSolver {
     ClassEntity classInGlobalScope =
         findClassInGlobalScope(globalScope, typeReference.getFullName());
     if (classInGlobalScope != null) {
-      return Optional.of(SolvedType.builder().setEntity(classInGlobalScope).build());
+      return Optional.of(createSolvedType(classInGlobalScope, typeReference));
     }
     return Optional.empty();
   }
@@ -360,6 +366,14 @@ public class TypeSolver {
     return currentScope;
   }
 
+  private SolvedType createSolvedType(Entity solvedEntity, TypeReference typeReference) {
+    return SolvedType.builder()
+        .setEntity(solvedEntity)
+        .setPrimitive(typeReference.isPrimitive())
+        .setArray(typeReference.isArray())
+        .build();
+  }
+
   /** Returns an iterable over a class and all its ancestor classes and interfaces. */
   public Iterable<ClassEntity> classHierarchy(ClassEntity classEntity, GlobalScope globalScope) {
     return new Iterable<ClassEntity>() {
@@ -407,6 +421,9 @@ public class TypeSolver {
         Optional<SolvedType> solvedType =
             solve(classReference.classType, globalScope, classReference.baseScope);
         if (solvedType.isPresent()) {
+          if (solvedType.get().isPrimitive()) {
+            throw new RuntimeException(classReference.classType + " " + solvedType);
+          }
           enqueueSuperClassAndInterfaces((ClassEntity) solvedType.get().getEntity());
           return (ClassEntity) solvedType.get().getEntity();
         }

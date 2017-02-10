@@ -177,10 +177,10 @@ public class ExpressionSolver {
             .orElse(null);
       }
       if (entity instanceof ClassEntity) {
-        return SolvedType.builder().setEntity(entity).build();
+        return SolvedType.builder().setEntity(entity).setPrimitive(false).setArray(false).build();
       }
       if (entity instanceof PackageEntity) {
-        return SolvedType.builder().setEntity(entity).build();
+        return SolvedType.builder().setEntity(entity).setPrimitive(false).setArray(false).build();
       }
       return null;
     }
