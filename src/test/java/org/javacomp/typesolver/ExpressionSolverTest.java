@@ -8,6 +8,7 @@ import java.util.Optional;
 import org.javacomp.model.ClassEntity;
 import org.javacomp.model.EntityScope;
 import org.javacomp.model.GlobalScope;
+import org.javacomp.model.PrimitiveEntity;
 import org.javacomp.model.SolvedType;
 import org.javacomp.testing.TestUtil;
 import org.junit.Before;
@@ -97,6 +98,26 @@ public class ExpressionSolverTest {
     assertThat(solveExpression("baseMethod()", innerAClass).getEntity()).isEqualTo(innerCClass);
     assertThat(solveExpression("super.baseMethod()", innerAClass).getEntity())
         .isEqualTo(innerCClass);
+  }
+
+  @Test
+  public void solveArray() {
+    SolvedType innerBArray = solveExpression("innerA.innerBArray", topLevelClass);
+    assertThat(innerBArray.getEntity()).isSameAs(innerBClass);
+    assertThat(innerBArray.isArray()).named("innerBArray.isArray()").isTrue();
+  }
+
+  @Test
+  public void solveArrayAccess() {
+    SolvedType innerBArrayAccess = solveExpression("innerA.innerBArray[0]", topLevelClass);
+    assertThat(innerBArrayAccess.getEntity()).isSameAs(innerBClass);
+    assertThat(innerBArrayAccess.isArray()).named("innerBArray.isArray()").isFalse();
+  }
+
+  @Test
+  public void solveArrayLength() {
+    assertThat(solveExpression("innerA.innerBArray.length", topLevelClass).getEntity())
+        .isSameAs(PrimitiveEntity.INT);
   }
 
   private SolvedType solveExpression(String expression, EntityScope baseScope) {

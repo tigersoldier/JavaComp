@@ -12,6 +12,8 @@ public abstract class SolvedType {
 
   public abstract boolean isArray();
 
+  public abstract Builder toBuilder();
+
   public static Builder builder() {
     return new AutoValue_SolvedType.Builder();
   }

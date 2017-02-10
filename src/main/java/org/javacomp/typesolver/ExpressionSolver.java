@@ -1,6 +1,7 @@
 package org.javacomp.typesolver;
 
 import com.google.common.collect.ImmutableSet;
+import com.sun.source.tree.ArrayAccessTree;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.IdentifierTree;
 import com.sun.source.tree.MemberSelectTree;
@@ -17,6 +18,7 @@ import org.javacomp.model.EntityScope;
 import org.javacomp.model.GlobalScope;
 import org.javacomp.model.MethodEntity;
 import org.javacomp.model.PackageEntity;
+import org.javacomp.model.PrimitiveEntity;
 import org.javacomp.model.SolvedType;
 import org.javacomp.model.VariableEntity;
 
@@ -31,6 +33,7 @@ public class ExpressionSolver {
           .build();
   private static final String IDENT_THIS = "this";
   private static final String IDENT_SUPER = "super";
+  private static final String IDENT_LENGTH = "length";
 
   private final TypeSolver typeSolver;
 
@@ -77,10 +80,25 @@ public class ExpressionSolver {
       methodArgs = savedMethodArgs;
 
       String identifier = node.getIdentifier().toString();
+
+      ///////
+      // OuterClass.this
       if (IDENT_THIS.equals(identifier)) {
         return expressionType;
       }
 
+      ////////
+      //  someArray.length
+      if (expressionType.isArray() && IDENT_LENGTH.equals(identifier)) {
+        return SolvedType.builder()
+            .setEntity(PrimitiveEntity.INT)
+            .setPrimitive(true)
+            .setArray(false)
+            .build();
+      }
+
+      ///////
+      //  foo.bar(baz)
       if (isMethodInvocation()) {
         // Methods must be defined in classes.
         if (expressionType.getEntity() instanceof ClassEntity) {
@@ -91,16 +109,28 @@ public class ExpressionSolver {
                   globalScope));
         }
         return null;
-      } else {
-        Entity memberEntity =
-            typeSolver.findEntityMember(
-                node.getIdentifier().toString(),
-                expressionType.getEntity(),
-                globalScope,
-                ALLOWED_KINDS_NON_METHOD);
-
-        return solveNonMethodEntityType(memberEntity);
       }
+
+      ////////
+      //  foo.bar
+      Entity memberEntity =
+          typeSolver.findEntityMember(
+              node.getIdentifier().toString(),
+              expressionType.getEntity(),
+              globalScope,
+              ALLOWED_KINDS_NON_METHOD);
+
+      return solveNonMethodEntityType(memberEntity);
+    }
+
+    @Override
+    public SolvedType visitArrayAccess(ArrayAccessTree node, Void unused) {
+      SolvedType expType = scan(node.getExpression(), null);
+      if (expType == null || !expType.isArray()) {
+        return null;
+      }
+
+      return expType.toBuilder().setArray(false).build();
     }
 
     @Override

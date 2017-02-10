@@ -11,6 +11,7 @@ public class TestExpression {
 
   public class InnerA extends TestExpression {
     public final InnerB innerB = new InnerB();
+    public final InnerB[] innerBArray;
   }
 
   public class InnerB {
