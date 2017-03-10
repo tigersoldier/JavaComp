@@ -5,7 +5,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Deque;
 import java.util.Iterator;
@@ -105,19 +104,6 @@ public class TypeSolver {
   }
 
   @Nullable
-  private ClassEntity findClassInGlobalScope(GlobalScope globalScope, ClassEntity classEntity) {
-    List<String> fullName = new ArrayList<>();
-    fullName.addAll(classEntity.getQualifiers());
-    fullName.add(classEntity.getSimpleName());
-    return findClassInGlobalScope(globalScope, fullName);
-  }
-
-  @Nullable
-  private Optional<FileScope> findFileInGlobalScope(GlobalScope globalScope, FileScope fileScope) {
-    return globalScope.getFileScope(fileScope.getFilename());
-  }
-
-  @Nullable
   Entity findEntityInScope(
       String name, GlobalScope globalScope, EntityScope baseScope, Set<Entity.Kind> allowedKinds) {
     return Iterables.getFirst(
@@ -138,13 +124,6 @@ public class TypeSolver {
         if (!foundEntities.isEmpty()) {
           return foundEntities;
         }
-        ClassEntity classInGlobalScope = findClassInGlobalScope(globalScope, classEntity);
-        if (classInGlobalScope != null && classInGlobalScope != classEntity) {
-          foundEntities = findClassMembers(name, classInGlobalScope, globalScope, allowedKinds);
-          if (!foundEntities.isEmpty()) {
-            return foundEntities;
-          }
-        }
         if (allowedKinds.contains(classEntity.getKind())
             && Objects.equals(name, classEntity.getSimpleName())) {
           return ImmutableList.of(classEntity);
@@ -154,14 +133,6 @@ public class TypeSolver {
         foundEntities = findEntitiesInFile(name, fileScope, globalScope, allowedKinds);
         if (!foundEntities.isEmpty()) {
           return foundEntities;
-        }
-        Optional<FileScope> fileInGlobalScope = findFileInGlobalScope(globalScope, fileScope);
-        if (fileInGlobalScope.isPresent() && fileInGlobalScope.get() != fileScope) {
-          foundEntities =
-              findEntitiesInFile(name, fileInGlobalScope.get(), globalScope, allowedKinds);
-          if (!foundEntities.isEmpty()) {
-            return foundEntities;
-          }
         }
       }
       // TODO: handle annonymous class
