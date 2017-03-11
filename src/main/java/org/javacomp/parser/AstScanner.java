@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 import java.util.Optional;
+import org.javacomp.logging.JLogger;
 import org.javacomp.model.BlockScope;
 import org.javacomp.model.ClassEntity;
 import org.javacomp.model.Entity;
@@ -40,6 +41,8 @@ import org.javacomp.model.util.NestedRangeMapBuilder;
 public class AstScanner extends TreeScanner<Void, EntityScope> {
   private static final List<String> UNAVAILABLE_QUALIFIERS = ImmutableList.of();
   private static final String ON_DEMAND_IMPORT_WILDCARD = "*";
+
+  private static final JLogger logger = JLogger.createForEnclosingClass();
 
   private final TypeReferenceScanner typeReferenceScanner = new TypeReferenceScanner();
   private final ParameterScanner parameterScanner = new ParameterScanner(typeReferenceScanner);
@@ -112,7 +115,8 @@ public class AstScanner extends TreeScanner<Void, EntityScope> {
         entityKind = Entity.Kind.ANNOTATION;
         break;
       default:
-        throw new IllegalArgumentException("Unknown entity kind for class: " + node.getKind());
+        logger.severe("Unknown entity kind for class: %s", node.getKind());
+        return null;
     }
     ImmutableList.Builder<TypeReference> interfaceBuilder = new ImmutableList.Builder<>();
     Optional<TypeReference> superClass = Optional.empty();

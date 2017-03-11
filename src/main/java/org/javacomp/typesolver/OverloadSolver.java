@@ -15,6 +15,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
+import org.javacomp.logging.JLogger;
 import org.javacomp.model.ClassEntity;
 import org.javacomp.model.GlobalScope;
 import org.javacomp.model.MethodEntity;
@@ -30,6 +31,8 @@ import org.javacomp.model.TypeReference;
  */
 public class OverloadSolver {
   private static final String OBJECT_FULL_NAME = "java.lang.Object";
+
+  private static final JLogger logger = JLogger.createForEnclosingClass();
 
   // The type specified by the key can be converted to the types specified by the values without
   // losing information about the overall magnitude.
@@ -421,7 +424,8 @@ public class OverloadSolver {
     }
 
     // Shouldn't reach here.
-    throw new IllegalStateException("No most specific method picked.");
+    logger.warning("No most specific method picked.");
+    return null;
   }
 
   /**

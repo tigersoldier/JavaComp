@@ -6,6 +6,7 @@ java_library(
         "//external:guava",
         "//external:javac",
         "//external:jsr305",
+        "//src/main/java/org/javacomp/logging",
         "//src/main/java/org/javacomp/model",
     ],
 )
