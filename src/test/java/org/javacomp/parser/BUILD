@@ -6,9 +6,9 @@ java_library(
         "//external:guava",
         "//external:javac",
         "//external:jsr305",
-        "//external:junit4",
         "//src/main/java/org/javacomp/model",
         "//src/main/java/org/javacomp/parser",
+        "//third_party:junit4",
         "//third_party:truth",
     ],
 )

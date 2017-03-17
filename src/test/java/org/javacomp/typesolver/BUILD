@@ -7,11 +7,11 @@ java_library(
         "//external:guava",
         "//external:javac",
         "//external:jsr305",
-        "//external:junit4",
         "//src/main/java/org/javacomp/model",
         "//src/main/java/org/javacomp/parser",
         "//src/main/java/org/javacomp/testing",
         "//src/main/java/org/javacomp/typesolver",
+        "//third_party:junit4",
         "//third_party:truth",
     ],
 )

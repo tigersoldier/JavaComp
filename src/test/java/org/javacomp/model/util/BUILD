@@ -4,8 +4,8 @@ java_library(
     data = glob(["testdata/*"]),
     deps = [
         "//external:guava",
-        "//external:junit4",
         "//src/main/java/org/javacomp/model/util",
+        "//third_party:junit4",
         "//third_party:truth",
     ],
 )

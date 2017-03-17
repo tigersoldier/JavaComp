@@ -60,3 +60,11 @@ java_library(
         "@com_google_truth_truth//jar",
     ],
 )
+
+java_library(
+    name = "junit4",
+    exports = [
+        "@junit_junit//jar",
+        "@org_hamcrest_hamcrest_core_1_3//jar",
+    ],
+)

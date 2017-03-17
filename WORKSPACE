@@ -37,11 +37,6 @@ java_proto_repositories()
 ####################
 # For tests
 
-bind(
-    name = "junit4",
-    actual = "@junit_junit//jar",
-)
-
 maven_jar(
     name = "junit_junit",
     artifact = "junit:junit:4.12",
@@ -78,4 +73,9 @@ maven_jar(
 maven_jar(
     name = "com_google_auto_value_auto_value",
     artifact = "com.google.auto.value:auto-value:1.3",
+)
+
+maven_jar(
+    name = "org_hamcrest_hamcrest_core_1_3",
+    artifact = "org.hamcrest:hamcrest-core:1.3",
 )
