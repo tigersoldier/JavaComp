@@ -67,4 +67,19 @@ public class JLogger {
   public void info(String msgfmt, Object... args) {
     javaLogger.info(String.format(msgfmt, args));
   }
+
+  /** Logs a message at fine level. */
+  public void fine(String msg) {
+    javaLogger.info(msg);
+  }
+
+  /**
+   * Logs a message at fine level with formatting parameters.
+   *
+   * @param msgfmt the message format string that can be accepted by {@link String#format}
+   * @param args arguments to be filled into {@code msgfmt}
+   */
+  public void fine(String msgfmt, Object... args) {
+    javaLogger.fine(String.format(msgfmt, args));
+  }
 }
