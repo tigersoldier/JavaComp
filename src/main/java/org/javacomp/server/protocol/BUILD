@@ -3,10 +3,6 @@ package(
 )
 
 java_library(
-    name = "io",
+    name = "protocol",
     srcs = glob(["*.java"]),
-    deps = [
-        "//external:guava",
-        "//src/main/java/org/javacomp/logging",
-    ],
 )

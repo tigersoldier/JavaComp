@@ -54,6 +54,13 @@ java_plugin(
 )
 
 java_library(
+    name = "gson",
+    exports = [
+        "@com_google_code_gson_gson//jar",
+    ],
+)
+
+java_library(
     name = "truth",
     exports = [
         "@com_google_truth_extensions_truth_java8_extension//jar",

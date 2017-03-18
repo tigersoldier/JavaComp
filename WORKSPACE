@@ -19,6 +19,11 @@ maven_jar(
     sha1 = "b23b2b0e3f79e3f737496a9eca5bab65cdca791d",
 )
 
+# maven_jar(
+#     name = "com_google_code_gson_gson",
+#     artifact = "com.google.code.gson:gson:2.8.0",
+# )
+
 bind(
     name = "jsr305",
     actual = "@com_google_code_findbugs_jsr305//jar",
