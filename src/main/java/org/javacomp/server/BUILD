@@ -15,6 +15,7 @@ java_library(
     srcs = glob(["*.java"]),
     deps = [
         "//external:guava",
+        "//external:jsr305",
         "//src/main/java/org/javacomp/server/io",
         "//src/main/java/org/javacomp/server/protocol",
         "//third_party:auto_value",

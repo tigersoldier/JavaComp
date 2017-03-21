@@ -3,9 +3,11 @@ java_library(
     srcs = glob(["*.java"]),
     data = glob(["testdata/*"]),
     deps = [
+        "//external:guava",
         "//external:jsr305",
         "//src/main/java/org/javacomp/server",
         "//src/main/java/org/javacomp/server/io",
+        "//src/main/java/org/javacomp/server/protocol",
         "//third_party:gson",
         "//third_party:junit4",
         "//third_party:truth",
@@ -14,6 +16,14 @@ java_library(
 
 java_test(
     name = "RequestParserTest",
+    size = "small",
+    runtime_deps = [
+        ":tests",
+    ],
+)
+
+java_test(
+    name = "RequestDispatcherTest",
     size = "small",
     runtime_deps = [
         ":tests",

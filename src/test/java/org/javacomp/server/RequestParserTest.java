@@ -41,35 +41,6 @@ public class RequestParserTest {
     assertThat(parser.parse(reader).getContent()).isEqualTo(content2);
   }
 
-  @Test
-  public void testParseRequests_missingMethod_throwsInvalidRequestError() throws Exception {
-    RequestReader reader =
-        createReader("{\"jsonrpc\": \"2.0\", \"id\": 1, \"params\": {\"foo\": 1}}");
-
-    thrown.expect(errorCodeIs(ErrorCode.INVALID_REQUEST));
-    thrown.expectMessage("method");
-    parser.parse(reader);
-  }
-
-  @Test
-  public void testParseRequests_missingId_throwsInvalidRequestError() throws Exception {
-    RequestReader reader =
-        createReader("{\"jsonrpc\": \"2.0\", \"method\": \"cmd1\", \"params\": {\"foo\": 1}}");
-
-    thrown.expect(errorCodeIs(ErrorCode.INVALID_REQUEST));
-    thrown.expectMessage("ID");
-    parser.parse(reader);
-  }
-
-  @Test
-  public void testParseRequests_missingParams_throwsInvalidRequestError() throws Exception {
-    RequestReader reader = createReader("{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"cmd1\"}");
-
-    thrown.expect(errorCodeIs(ErrorCode.INVALID_REQUEST));
-    thrown.expectMessage("params");
-    parser.parse(reader);
-  }
-
   private RequestReader createReader(String... contents) {
     StringBuilder sb = new StringBuilder();
     for (String content : contents) {
@@ -85,12 +56,12 @@ public class RequestParserTest {
     return new RequestReader(in, 1024 /* capacity */);
   }
 
-  private Matcher<ParseException> errorCodeIs(ErrorCode errorCode) {
-    return new CustomMatcher<ParseException>("ParseException with error code " + errorCode) {
+  private Matcher<RequestException> errorCodeIs(ErrorCode errorCode) {
+    return new CustomMatcher<RequestException>("ParseException with error code " + errorCode) {
       @Override
       public boolean matches(Object object) {
-        return (object instanceof ParseException)
-            && ((ParseException) object).getErrorCode() == errorCode;
+        return (object instanceof RequestException)
+            && ((RequestException) object).getErrorCode() == errorCode;
       }
     };
   }
