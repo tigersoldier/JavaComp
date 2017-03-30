@@ -8,5 +8,7 @@ java_library(
     deps = [
         "//external:guava",
         "//src/main/java/org/javacomp/logging",
+        "//src/main/java/org/javacomp/server:response",
+        "//third_party:gson",
     ],
 )

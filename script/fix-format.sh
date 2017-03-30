@@ -82,12 +82,14 @@ run_google_java_format() {
   else
     local _ret=0
     for file in $@; do
-      google-java-format $file | cmp -s $file -
-      if [[ $? -ne 0 ]]; then
-        if [[ $verbose = true ]];then
-          echo $file
-        fi
-        local _ret=1
+      if [[ -f $file ]]; then
+          google-java-format $file | cmp -s $file -
+          if [[ $? -ne 0 ]]; then
+              if [[ $verbose = true ]];then
+                  echo $file
+              fi
+              local _ret=1
+          fi
       fi
     done
   fi

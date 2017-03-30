@@ -4,8 +4,8 @@ import com.google.common.collect.ImmutableMap;
 import com.google.gson.Gson;
 import java.io.IOException;
 import java.util.Map;
-import org.javacomp.server.io.NotEnoughDataException;
 import org.javacomp.server.io.RequestReader;
+import org.javacomp.server.io.StreamClosedException;
 
 /**
  * A parser for Request that follows the base protocol of Microsoft Language Server Protocol.
@@ -26,33 +26,27 @@ public class RequestParser {
 
   private final Gson gson;
 
-  public RequestParser() {
-    this.gson = new Gson();
+  public RequestParser(Gson gson) {
+    this.gson = gson;
   }
 
   /** Parse a request from input stream. */
-  public RawRequest parse(RequestReader reader) throws RequestException {
+  public RawRequest parse(RequestReader reader) throws RequestException, StreamClosedException {
     Map<String, String> header = parseHeader(reader);
     int contentLength = getContentLength(header);
     RawRequest.Content content = parseContent(reader, contentLength);
     return RawRequest.create(header, content);
   }
 
-  private Map<String, String> parseHeader(RequestReader reader) throws RequestException {
+  private Map<String, String> parseHeader(RequestReader reader)
+      throws RequestException, StreamClosedException {
     ImmutableMap.Builder<String, String> headerBuilder = new ImmutableMap.Builder<>();
     while (true) {
       String headerLine;
       try {
         headerLine = reader.readLine();
-      } catch (NotEnoughDataException e) {
-        throw new RequestException(ErrorCode.INVALID_REQUEST, e, "No header found.");
       } catch (IOException e) {
         throw new RequestException(ErrorCode.INVALID_REQUEST, e, "Failed to read request.");
-      }
-
-      if (headerLine == null) {
-        throw new RequestException(
-            ErrorCode.PARSE_ERROR, "Failed to read header. Incomplete request");
       }
 
       if (headerLine.length() == 0) {
@@ -94,7 +88,7 @@ public class RequestParser {
   }
 
   private RawRequest.Content parseContent(RequestReader reader, int contentLength)
-      throws RequestException {
+      throws RequestException, StreamClosedException {
     if (contentLength > MAX_CONTENT_LENGTH) {
       throw new RequestException(
           ErrorCode.INVALID_REQUEST,
@@ -106,9 +100,6 @@ public class RequestParser {
     String content;
     try {
       content = reader.readString(contentLength);
-    } catch (NotEnoughDataException e) {
-      throw new RequestException(
-          ErrorCode.PARSE_ERROR, e, "Request ended without enough content data.");
     } catch (IOException e) {
       throw new RequestException(ErrorCode.PARSE_ERROR, e, "Failed to read request.");
     }

@@ -46,9 +46,9 @@ public class RequestReaderTest {
   }
 
   @Test
-  public void testReadLine_noCrLf_throwsNotEnoughDataException() throws Exception {
+  public void testReadLine_noCrLf_throwsStreamClosedException() throws Exception {
     RequestReader reader = createReader("12345", 50);
-    thrown.expect(NotEnoughDataException.class);
+    thrown.expect(StreamClosedException.class);
     reader.readLine();
   }
 
@@ -93,7 +93,7 @@ public class RequestReaderTest {
   public void testReadString_notEnoughData_throwsException() throws Exception {
     RequestReader reader = createReader("0123456789", 20 /* capacity */);
 
-    thrown.expect(NotEnoughDataException.class);
+    thrown.expect(StreamClosedException.class);
     reader.readString(11);
   }
 

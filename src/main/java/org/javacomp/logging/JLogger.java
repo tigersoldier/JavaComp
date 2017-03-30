@@ -1,5 +1,6 @@
 package org.javacomp.logging;
 
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -38,6 +39,17 @@ public class JLogger {
     javaLogger.severe(String.format(msgfmt, args));
   }
 
+  /**
+   * Logs a message at severe level with formatting parameters and associated Throwable information.
+   *
+   * @param thrown Throwable associated with the log message
+   * @param msgfmt the message format string that can be accepted by {@link String#format}
+   * @param args arguments to be filled into {@code msgfmt}
+   */
+  public void severe(Throwable thrown, String msgfmt, Object... args) {
+    javaLogger.log(Level.SEVERE, String.format(msgfmt, args), thrown);
+  }
+
   /** Logs a message at warning level. */
   public void warning(String msg) {
     javaLogger.warning(msg);
@@ -51,6 +63,18 @@ public class JLogger {
    */
   public void warning(String msgfmt, Object... args) {
     javaLogger.warning(String.format(msgfmt, args));
+  }
+
+  /**
+   * Logs a message at warning level with formatting parameters and associated Throwable
+   * information.
+   *
+   * @param thrown Throwable associated with the log message
+   * @param msgfmt the message format string that can be accepted by {@link String#format}
+   * @param args arguments to be filled into {@code msgfmt}
+   */
+  public void warning(Throwable thrown, String msgfmt, Object... args) {
+    javaLogger.log(Level.WARNING, String.format(msgfmt, args), thrown);
   }
 
   /** Logs a message at info level. */

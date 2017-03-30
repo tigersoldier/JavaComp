@@ -49,10 +49,10 @@ public class RequestReader implements Closeable {
    *     Note that even if there is data left in the buffer, as long as no line terminator is found
    *     and the stream is closed, the return value is {@code null}, not the rest of the content.
    *     Empty lines are returned as empty strings, not {@code null}.
-   * @throw NotEnoughDataException thrown if the input stream ends without a full line
+   * @throw StreamClosedException thrown if the input stream ends without a full line
    * @throw IOException thrown if any other I/O errors occur
    */
-  public String readLine() throws NotEnoughDataException, IOException {
+  public String readLine() throws StreamClosedException, IOException {
     int peekOffset = readOffset;
     int lineLen = 0;
     int terminatorLen = 0;
@@ -64,7 +64,7 @@ public class RequestReader implements Closeable {
           lineLen = 0;
         }
         if (!fillBuffer()) {
-          throw new NotEnoughDataException("Input stream ends without line terminator.");
+          throw new StreamClosedException("Input stream ends without line terminator.");
         }
       }
       if (buffer[peekOffset] == '\n' || buffer[peekOffset] == '\r') {
@@ -101,11 +101,11 @@ public class RequestReader implements Closeable {
    *
    * <p>This method will block until numBytes bytes are read, or the input stream has ended.
    *
-   * @throw NotEnoughDataException thrown if the input stream ends and the number of available bytes
+   * @throw StreamClosedException thrown if the input stream ends and the number of available bytes
    *     is less than numBytes
    * @throw IOException thrown if any other I/O errors occur
    */
-  public String readString(int numBytes) throws NotEnoughDataException, IOException {
+  public String readString(int numBytes) throws StreamClosedException, IOException {
     if (numBytes == 0) {
       return "";
     }
@@ -122,7 +122,7 @@ public class RequestReader implements Closeable {
         sb.append(s);
       } else {
         if (!fillBuffer()) {
-          throw new NotEnoughDataException("Input stream ended without enough data.");
+          throw new StreamClosedException("Input stream ended without enough data.");
         }
       }
     }

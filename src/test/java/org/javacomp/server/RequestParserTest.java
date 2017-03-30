@@ -3,6 +3,7 @@ package org.javacomp.server;
 import static com.google.common.truth.Truth.assertThat;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import java.io.StringBufferInputStream;
 import org.hamcrest.CustomMatcher;
@@ -18,7 +19,7 @@ import org.junit.runners.JUnit4;
 public class RequestParserTest {
   @Rule public ExpectedException thrown = ExpectedException.none();
 
-  private final RequestParser parser = new RequestParser();
+  private final RequestParser parser = new RequestParser(new Gson());
 
   @Test
   public void testParseRequests() throws Exception {
