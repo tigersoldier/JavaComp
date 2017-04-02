@@ -12,16 +12,29 @@ package_group(
 
 java_library(
     name = "server",
+    srcs = ["Server.java"],
+)
+
+java_library(
+    name = "serverimpl",
     srcs = glob(
         ["*.java"],
         exclude = [
             "ErrorCode.java",
+            "GsonUtils.java",
+            "Request.java",
+            "RequestException.java",
             "Response.java",
+            "Server.java",
         ],
     ),
     deps = [
         ":errorcode",
+        ":gsonutils",
+        ":request",
+        ":requestexception",
         ":response",
+        ":server",
         "//external:guava",
         "//external:jsr305",
         "//src/main/java/org/javacomp/logging",
@@ -38,6 +51,34 @@ java_library(
 )
 
 java_library(
+    name = "gsonutils",
+    srcs = ["GsonUtils.java"],
+    deps = [
+        "//third_party:gson",
+    ],
+)
+
+java_library(
+    name = "request",
+    srcs = ["Request.java"],
+    deps = [
+        "//external:guava",
+        "//external:jsr305",
+        "//src/main/java/org/javacomp/server/protocol:nullparams",
+        "//src/main/java/org/javacomp/server/protocol:requestparams",
+        "//third_party:auto_value",
+    ],
+)
+
+java_library(
+    name = "requestexception",
+    srcs = ["RequestException.java"],
+    deps = [
+        ":errorcode",
+    ],
+)
+
+java_library(
     name = "response",
     srcs = ["Response.java"],
     deps = [
@@ -49,6 +90,6 @@ java_library(
 
 java_binary(
     name = "JavaComp",
-    main_class = "org.javacomp.server.Server",
-    runtime_deps = [":server"],
+    main_class = "org.javacomp.server.JavaComp",
+    runtime_deps = [":serverimpl"],
 )

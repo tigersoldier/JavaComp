@@ -4,5 +4,27 @@ package(
 
 java_library(
     name = "protocol",
-    srcs = glob(["*.java"]),
+    srcs = glob(
+        ["*.java"],
+        exclude = ["ReuestParams.java"],
+    ),
+    deps = [
+        ":requestparams",
+        "//external:jsr305",
+        "//src/main/java/org/javacomp/server",
+        "//src/main/java/org/javacomp/server:request",
+        "//src/main/java/org/javacomp/server:requestexception",
+        "//third_party:gson",
+    ],
+)
+
+java_library(
+    name = "requestparams",
+    srcs = ["RequestParams.java"],
+)
+
+java_library(
+    name = "nullparams",
+    srcs = ["NullParams.java"],
+    deps = [":requestparams"],
 )

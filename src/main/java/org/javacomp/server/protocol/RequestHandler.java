@@ -1,7 +1,7 @@
-package org.javacomp.server;
+package org.javacomp.server.protocol;
 
-import org.javacomp.server.protocol.NullParams;
-import org.javacomp.server.protocol.RequestParams;
+import org.javacomp.server.Request;
+import org.javacomp.server.RequestException;
 
 /**
  * Logic for handling incoming request for a particular request method.
@@ -41,6 +41,11 @@ public abstract class RequestHandler<PARAM extends RequestParams> {
    * @throws Exceptoin if any error happens without a specific ErrorCode
    */
   public abstract Object handleRequest(Request<PARAM> request) throws RequestException, Exception;
+
+  /** Whether the handled method is a notification. A notification doesn't have any response. */
+  public boolean isNotification() {
+    return false;
+  }
 
   @Override
   public String toString() {

@@ -2,6 +2,7 @@ package org.javacomp.server;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.gson.Gson;
+import java.io.Closeable;
 import java.io.IOException;
 import java.util.Map;
 import org.javacomp.server.io.RequestReader;
@@ -15,7 +16,7 @@ import org.javacomp.server.io.StreamClosedException;
  * <p>See
  * https://github.com/Microsoft/language-server-protocol/blob/master/protocol.md#base-protocol
  */
-public class RequestParser {
+public class RequestParser implements Closeable {
   /** Normalized Content-Length header name in the request header. */
   public static final String HEADER_CONTENT_LENGTH = "content-length";
   /** Normalized Content-Type header name in the request header. */
@@ -25,13 +26,15 @@ public class RequestParser {
   private static final String HEADER_KEY_VALUE_SEPARATOR = ": ";
 
   private final Gson gson;
+  private final RequestReader reader;
 
-  public RequestParser(Gson gson) {
+  public RequestParser(Gson gson, RequestReader reader) {
     this.gson = gson;
+    this.reader = reader;
   }
 
   /** Parse a request from input stream. */
-  public RawRequest parse(RequestReader reader) throws RequestException, StreamClosedException {
+  public RawRequest parse() throws RequestException, StreamClosedException {
     Map<String, String> header = parseHeader(reader);
     int contentLength = getContentLength(header);
     RawRequest.Content content = parseContent(reader, contentLength);
@@ -106,5 +109,10 @@ public class RequestParser {
 
     RawRequest.Content requestContent = gson.fromJson(content, RawRequest.Content.class);
     return requestContent;
+  }
+
+  @Override
+  public void close() throws IOException {
+    reader.close();
   }
 }

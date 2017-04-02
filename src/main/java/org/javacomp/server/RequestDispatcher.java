@@ -1,10 +1,15 @@
 package org.javacomp.server;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.gson.Gson;
-import javax.annotation.Nullable;
+import org.javacomp.logging.JLogger;
+import org.javacomp.server.io.ResponseWriter;
+import org.javacomp.server.io.StreamClosedException;
 import org.javacomp.server.protocol.NullParams;
+import org.javacomp.server.protocol.RequestHandler;
 import org.javacomp.server.protocol.RequestParams;
 
 /**
@@ -12,60 +17,96 @@ import org.javacomp.server.protocol.RequestParams;
  * name.
  */
 public class RequestDispatcher {
+  private static final JLogger logger = JLogger.createForEnclosingClass();
+
   private final Gson gson;
   private final ImmutableMap<String, RequestHandler> handlerRegistry;
+  private final RequestParser requestParser;
+  private final ResponseWriter responseWriter;
 
-  private RequestDispatcher(Gson gson, ImmutableMap<String, RequestHandler> handlerRegistry) {
-    this.gson = gson;
-    this.handlerRegistry = handlerRegistry;
+  private RequestDispatcher(Builder builder, ImmutableMap<String, RequestHandler> handlerRegistry) {
+    this.gson = checkNotNull(builder.gson, "gson");
+    this.requestParser = checkNotNull(builder.requestParser, "requestParser");
+    this.responseWriter = checkNotNull(builder.responseWriter, "responseWriter");
+    this.handlerRegistry = checkNotNull(handlerRegistry, "handlerRegistry");
+  }
+
+  /**
+   * Reads a requset, dispatches it to the registered handler and writes response to client.
+   *
+   * @return whether the dispatcher can dispatch more requests. If it's false, the server should be
+   *     shutdown and exit
+   */
+  public boolean dispatchRequest() {
+    RawRequest rawRequest;
+    try {
+      rawRequest = requestParser.parse();
+    } catch (RequestException e) {
+      logger.severe(e, "Malformed request received and unable to recover. Shutting down.");
+      return false;
+    } catch (StreamClosedException e) {
+      logger.severe(e, "Input stream closed, shutting down server.");
+      return false;
+    }
+
+    Object result = null;
+    Response.ResponseError error = null;
+    try {
+      result = dispatchRequestInternal(rawRequest);
+    } catch (RequestException e) {
+      logger.severe(e, "Failed to process request.");
+      error = new Response.ResponseError(e.getErrorCode(), e.getMessage());
+    } catch (Throwable e) {
+      logger.severe(e, "Failed to process request.");
+      error = new Response.ResponseError(ErrorCode.INTERNAL_ERROR, e.getMessage());
+    }
+
+    String requestId = rawRequest.getContent().getId();
+    if (Strings.isNullOrEmpty(requestId)) {
+      // No ID provided. The request is a notification and the client doesn't expect any response.
+      return true;
+    }
+
+    Response response;
+    if (error != null) {
+      response = Response.createError(requestId, error);
+    } else {
+      response = Response.createResponse(requestId, result);
+    }
+    try {
+      responseWriter.writeResponse(response);
+    } catch (Throwable e) {
+      logger.severe(e, "Failed to write response, shutting down server.");
+      return false;
+    }
+
+    return true;
   }
 
   /**
    * Dispatches a {@link RawRequest} to the {@link RequestHandler} registered for the method of the
    * request.
+   *
+   * @return the result of processing the request
    */
-  public Response dispatchRequest(RawRequest rawRequest) {
+  private Object dispatchRequestInternal(RawRequest rawRequest) throws RequestException, Exception {
     RawRequest.Content requestContent = rawRequest.getContent();
-    String requestId = requestContent.getId();
-    Response.ResponseError responseError = responseIfContentIsInvalid(rawRequest.getContent());
-    if (responseError != null) {
-      return Response.createError(requestId, responseError);
+
+    if (Strings.isNullOrEmpty(requestContent.getMethod())) {
+      throw new RequestException(ErrorCode.INVALID_REQUEST, "Missing request method.");
     }
 
     if (!handlerRegistry.containsKey(requestContent.getMethod())) {
-      return Response.createError(
-          requestId,
-          ErrorCode.METHOD_NOT_FOUND,
-          "Cannot find method %s",
-          requestContent.getMethod());
+      throw new RequestException(
+          ErrorCode.METHOD_NOT_FOUND, "Cannot find method %s", requestContent.getMethod());
     }
 
     RequestHandler handler = handlerRegistry.get(requestContent.getMethod());
-    try {
-      Request typedRequest = convertRawToRequest(rawRequest, handler);
-      @SuppressWarnings("unchecked")
-      Object result = handler.handleRequest(typedRequest);
-      return Response.createResponse(requestId, result);
-    } catch (RequestException e) {
-      return Response.createError(requestId, e.getErrorCode(), e.getMessage());
-    } catch (Exception e) {
-      return Response.createError(requestId, ErrorCode.INTERNAL_ERROR, e.getMessage());
-    }
-  }
 
-  /** Returns an error response if the required fields are missing in the request content. */
-  @Nullable
-  private Response.ResponseError responseIfContentIsInvalid(RawRequest.Content content) {
-    if (Strings.isNullOrEmpty(content.getId())) {
-      return new Response.ResponseError(ErrorCode.INVALID_REQUEST, "Missing request ID.");
-    }
-
-    if (Strings.isNullOrEmpty(content.getMethod())) {
-      return new Response.ResponseError(ErrorCode.INVALID_REQUEST, "Missing request method.");
-    }
-
-    // We don't check the jsonrpc field because it's useless.
-    return null;
+    Request typedRequest = convertRawToRequest(rawRequest, handler);
+    @SuppressWarnings("unchecked")
+    Object result = handler.handleRequest(typedRequest);
+    return result;
   }
 
   @SuppressWarnings("unchecked")
@@ -90,12 +131,28 @@ public class RequestDispatcher {
 
   /** Builder for {@link RequestDispatcher}. */
   public static class Builder {
-    private final Gson gson;
-    private final ImmutableMap.Builder<String, RequestHandler> registryBuilder;
+    private Gson gson;
+    private ImmutableMap.Builder<String, RequestHandler> registryBuilder;
+    private RequestParser requestParser;
+    private ResponseWriter responseWriter;
 
-    public Builder(Gson gson) {
-      this.gson = gson;
+    public Builder() {
       this.registryBuilder = new ImmutableMap.Builder<>();
+    }
+
+    public Builder setGson(Gson gson) {
+      this.gson = gson;
+      return this;
+    }
+
+    public Builder setRequestParser(RequestParser requestParser) {
+      this.requestParser = requestParser;
+      return this;
+    }
+
+    public Builder setResponseWriter(ResponseWriter responseWriter) {
+      this.responseWriter = responseWriter;
+      return this;
     }
 
     /** Registers a {@link RequestHandler} to the {@link RequestDispatcher} to be built. */
@@ -105,7 +162,7 @@ public class RequestDispatcher {
     }
 
     public RequestDispatcher build() {
-      return new RequestDispatcher(gson, registryBuilder.build());
+      return new RequestDispatcher(this, registryBuilder.build());
     }
   }
 }

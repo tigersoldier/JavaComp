@@ -19,12 +19,12 @@ import org.junit.runners.JUnit4;
 public class RequestParserTest {
   @Rule public ExpectedException thrown = ExpectedException.none();
 
-  private final RequestParser parser = new RequestParser(new Gson());
+  private final Gson gson = GsonUtils.getGson();
 
   @Test
   public void testParseRequests() throws Exception {
-    RequestReader reader =
-        createReader(
+    RequestParser parser =
+        createParser(
             "{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"cmd1\", \"params\": {\"foo\": 1}}",
             "{\"jsonrpc\": \"2.0\", \"id\": 2, \"method\": \"cmd2\", "
                 + "\"params\": {\"bar\": \"baz\"}}");
@@ -33,16 +33,16 @@ public class RequestParserTest {
     params1.addProperty("foo", 1);
     RawRequest.Content content1 =
         new RawRequest.Content("cmd1", "1" /* id */, "2.0" /* jsonrpc */, params1);
-    assertThat(parser.parse(reader).getContent()).isEqualTo(content1);
+    assertThat(parser.parse().getContent()).isEqualTo(content1);
 
     JsonObject params2 = new JsonObject();
     params2.addProperty("bar", "baz");
     RawRequest.Content content2 =
         new RawRequest.Content("cmd2", "2" /* id */, "2.0" /* jsonrpc */, params2);
-    assertThat(parser.parse(reader).getContent()).isEqualTo(content2);
+    assertThat(parser.parse().getContent()).isEqualTo(content2);
   }
 
-  private RequestReader createReader(String... contents) {
+  private RequestParser createParser(String... contents) {
     StringBuilder sb = new StringBuilder();
     for (String content : contents) {
       int length = content.getBytes(UTF_8).length;
@@ -54,7 +54,7 @@ public class RequestParserTest {
       sb.append(content);
     }
     StringBufferInputStream in = new StringBufferInputStream(sb.toString());
-    return new RequestReader(in, 1024 /* capacity */);
+    return new RequestParser(gson, new RequestReader(in, 1024 /* capacity */));
   }
 
   private Matcher<RequestException> errorCodeIs(ErrorCode errorCode) {
