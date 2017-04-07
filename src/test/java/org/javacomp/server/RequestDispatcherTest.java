@@ -13,6 +13,7 @@ import com.google.gson.JsonPrimitive;
 import java.util.Map;
 import javax.annotation.Nullable;
 import org.javacomp.server.io.ResponseWriter;
+import org.javacomp.server.protocol.NotificationHandler;
 import org.javacomp.server.protocol.NullParams;
 import org.javacomp.server.protocol.RequestHandler;
 import org.javacomp.server.protocol.RequestParams;
@@ -39,6 +40,7 @@ public class RequestDispatcherTest {
   private final Handler1 handler1 = new Handler1();
   private final Handler2 handler2 = new Handler2();
   private final NullParamsHandler nullParamsHandler = new NullParamsHandler();
+  private final CountingNotificationHandler notificationHandler = new CountingNotificationHandler();
 
   @Mock private RequestParser requestParser;
   @Mock private ResponseWriter responseWriter;
@@ -48,7 +50,7 @@ public class RequestDispatcherTest {
 
   @Before
   public void setUpDefaultDispatcher() {
-    dispatcher = createDispatcher(handler1, handler2, nullParamsHandler);
+    dispatcher = createDispatcher(handler1, handler2, nullParamsHandler, notificationHandler);
   }
 
   @Test
@@ -72,10 +74,8 @@ public class RequestDispatcherTest {
 
   @Test
   public void testDispatchNotification_doesNotWriteResponse() {
-    JsonObject rawParams1 = new JsonObject();
-    String params1Value = "foo";
-    rawParams1.add("strvalue", new JsonPrimitive(params1Value));
-    dispatchRequest(handler1.getMethod(), null /* id */, rawParams1);
+    dispatchRequest(notificationHandler.getMethod(), null /* id */, null);
+    assertThat(notificationHandler.numReceived).isEqualTo(1);
     verifyZeroInteractions(responseWriter);
   }
 
@@ -138,7 +138,7 @@ public class RequestDispatcherTest {
     return builder.build();
   }
 
-  private boolean dispatchRequest(String method, String id, @Nullable JsonObject params) {
+  private boolean dispatchRequest(String method, @Nullable String id, @Nullable JsonObject params) {
     RawRequest rawRequest =
         RawRequest.create(HEADER, new RawRequest.Content(method, id, JSON_RPC, params));
     try {
@@ -248,6 +248,19 @@ public class RequestDispatcherTest {
     @Override
     public Void handleRequest(Request<NullParams> request) throws Exception {
       throw toThrow;
+    }
+  }
+
+  private static class CountingNotificationHandler extends NotificationHandler<NullParams> {
+    private int numReceived = 0;
+
+    private CountingNotificationHandler() {
+      super("notifications", NullParams.class);
+    }
+
+    @Override
+    protected void handleNotification(Request<NullParams> request) throws Exception {
+      numReceived++;
     }
   }
 }

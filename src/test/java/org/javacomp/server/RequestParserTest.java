@@ -4,6 +4,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import java.io.StringBufferInputStream;
 import org.hamcrest.CustomMatcher;
@@ -25,9 +26,10 @@ public class RequestParserTest {
   public void testParseRequests() throws Exception {
     RequestParser parser =
         createParser(
-            "{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"cmd1\", \"params\": {\"foo\": 1}}",
-            "{\"jsonrpc\": \"2.0\", \"id\": 2, \"method\": \"cmd2\", "
-                + "\"params\": {\"bar\": \"baz\"}}");
+            createMessages(
+                "{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"cmd1\", \"params\": {\"foo\": 1}}",
+                "{\"jsonrpc\": \"2.0\", \"id\": 2, \"method\": \"cmd2\", "
+                    + "\"params\": {\"bar\": \"baz\"}}"));
 
     JsonObject params1 = new JsonObject();
     params1.addProperty("foo", 1);
@@ -42,7 +44,65 @@ public class RequestParserTest {
     assertThat(parser.parse().getContent()).isEqualTo(content2);
   }
 
-  private RequestParser createParser(String... contents) {
+  @Test
+  public void testParseNullParams() throws Exception {
+    RequestParser parser =
+        createParser(
+            createMessages(
+                "{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"cmd1\", \"params\": null}"));
+    RawRequest.Content content =
+        new RawRequest.Content(
+            "cmd1", "1" /* id */, "2.0" /* jsonrpc */, new JsonNull() /* params */);
+    assertThat(parser.parse().getContent()).isEqualTo(content);
+  }
+
+  @Test
+  public void testParseNoContentLength_ignoreUntilNextHeader() throws Exception {
+    RequestParser parser =
+        createParser(
+            "Some-Header: foo\r\n\r\n{to be ignored}\n"
+                + createMessages(
+                    "{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"cmd1\", \"params\": null}"));
+    RawRequest.Content content =
+        new RawRequest.Content(
+            "cmd1", "1" /* id */, "2.0" /* jsonrpc */, new JsonNull() /* params */);
+    assertThat(parser.parse().getContent()).isEqualTo(content);
+  }
+
+  @Test
+  public void testParseExtraNewLine_ignore() throws Exception {
+    String msg1 =
+        createMessages("{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"cmd1\", \"params\": null}");
+    String msg2 =
+        createMessages("{\"jsonrpc\": \"2.0\", \"id\": 2, \"method\": \"cmd2\", \"params\": null}");
+
+    RequestParser parser = createParser(msg1 + "\n" + msg2);
+    RawRequest.Content content1 =
+        new RawRequest.Content("cmd1", "1" /* id */, "2.0" /* jsonrpc */, new JsonNull());
+    assertThat(parser.parse().getContent()).isEqualTo(content1);
+
+    RawRequest.Content content2 =
+        new RawRequest.Content("cmd2", "2" /* id */, "2.0" /* jsonrpc */, new JsonNull());
+    assertThat(parser.parse().getContent()).isEqualTo(content2);
+  }
+
+  @Test
+  public void testParseNegativeContentLength_ignore() throws Exception {
+    String msg =
+        createMessages("{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"cmd1\", \"params\": null}");
+
+    RequestParser parser = createParser("Content-Length: -1\r\n\r\n" + msg);
+    RawRequest.Content content =
+        new RawRequest.Content("cmd1", "1" /* id */, "2.0" /* jsonrpc */, new JsonNull());
+    assertThat(parser.parse().getContent()).isEqualTo(content);
+  }
+
+  private RequestParser createParser(String messages) {
+    StringBufferInputStream in = new StringBufferInputStream(messages);
+    return new RequestParser(gson, new RequestReader(in, 1024 /* capacity */));
+  }
+
+  private String createMessages(String... contents) {
     StringBuilder sb = new StringBuilder();
     for (String content : contents) {
       int length = content.getBytes(UTF_8).length;
@@ -53,8 +113,7 @@ public class RequestParserTest {
       sb.append("\r\n");
       sb.append(content);
     }
-    StringBufferInputStream in = new StringBufferInputStream(sb.toString());
-    return new RequestParser(gson, new RequestReader(in, 1024 /* capacity */));
+    return sb.toString();
   }
 
   private Matcher<RequestException> errorCodeIs(ErrorCode errorCode) {

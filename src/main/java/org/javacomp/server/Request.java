@@ -25,7 +25,8 @@ public abstract class Request<T extends RequestParams> {
   /** The name of the request method. */
   public abstract String getMethod();
 
-  /** The request ID. */
+  /** The request ID. If the ID is null, it's a notification. */
+  @Nullable
   public abstract String getId();
 
   /** The parameters specific to the requdst method. */

@@ -2,7 +2,7 @@ package org.javacomp.server;
 
 import com.google.auto.value.AutoValue;
 import com.google.common.base.MoreObjects;
-import com.google.gson.JsonObject;
+import com.google.gson.JsonElement;
 import java.util.Map;
 import java.util.Objects;
 
@@ -37,11 +37,11 @@ public abstract class RawRequest {
     private String method;
     private String id;
     private String jsonrpc;
-    private JsonObject params;
+    private JsonElement params;
 
     public Content() {}
 
-    public Content(String method, String id, String jsonrpc, JsonObject params) {
+    public Content(String method, String id, String jsonrpc, JsonElement params) {
       this.method = method;
       this.id = id;
       this.jsonrpc = jsonrpc;
@@ -60,7 +60,7 @@ public abstract class RawRequest {
       return jsonrpc;
     }
 
-    public JsonObject getParams() {
+    public JsonElement getParams() {
       return params;
     }
 
