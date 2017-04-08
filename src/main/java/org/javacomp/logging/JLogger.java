@@ -1,7 +1,9 @@
 package org.javacomp.logging;
 
+import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 
 /**
  * Wrapper around Java logger.
@@ -10,7 +12,25 @@ import java.util.logging.Logger;
  * strings.
  */
 public class JLogger {
+  private static volatile boolean hasFileHandler = false;
   private final Logger javaLogger;
+
+  public static synchronized void setLogFile(String filePath) {
+    Logger rootLogger = Logger.getLogger("");
+
+    if (hasFileHandler) {
+      rootLogger.warning("Log file has already been set.");
+      return;
+    }
+    hasFileHandler = true;
+
+    try {
+      FileHandler fileHandler = new FileHandler(filePath);
+      fileHandler.setFormatter(new SimpleFormatter());
+      rootLogger.addHandler(fileHandler);
+    } catch (Exception e) {
+    }
+  }
 
   private JLogger(String enclosingClassName) {
     javaLogger = Logger.getLogger(enclosingClassName);
