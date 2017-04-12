@@ -13,6 +13,9 @@ package_group(
 java_library(
     name = "server",
     srcs = ["Server.java"],
+    deps = [
+        "//src/main/java/org/javacomp/file",
+    ],
 )
 
 java_library(
@@ -37,6 +40,8 @@ java_library(
         ":server",
         "//external:guava",
         "//external:jsr305",
+        "//src/main/java/org/javacomp/file",
+        "//src/main/java/org/javacomp/file:impl",
         "//src/main/java/org/javacomp/logging",
         "//src/main/java/org/javacomp/server/io",
         "//src/main/java/org/javacomp/server/protocol",

@@ -1,12 +1,20 @@
 package org.javacomp.server;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
+
 import com.google.gson.Gson;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.URI;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.javacomp.file.FileManager;
+import org.javacomp.file.FileManagerImpl;
 import org.javacomp.logging.JLogger;
 import org.javacomp.server.io.RequestReader;
 import org.javacomp.server.io.ResponseWriter;
+import org.javacomp.server.protocol.DidChangeTextDocumentHandler;
+import org.javacomp.server.protocol.DidOpenTextDocumentHandler;
 import org.javacomp.server.protocol.ExitHandler;
 import org.javacomp.server.protocol.InitializeHandler;
 import org.javacomp.server.protocol.ShutdownHandler;
@@ -25,6 +33,8 @@ public class JavaComp implements Server {
   private volatile boolean initialized;
   private volatile int exitCode = 0;
 
+  private FileManager fileManager;
+
   public JavaComp(InputStream inputStream, OutputStream outputStream) {
     this.gson = GsonUtils.getGson();
     this.isRunning = new AtomicBoolean(true);
@@ -36,9 +46,13 @@ public class JavaComp implements Server {
             .setGson(gson)
             .setRequestParser(requestParser)
             .setResponseWriter(responseWriter)
+            // Server manipulation
             .registerHandler(new InitializeHandler(this))
             .registerHandler(new ShutdownHandler(this))
             .registerHandler(new ExitHandler(this))
+            // Text document manipulation
+            .registerHandler(new DidOpenTextDocumentHandler(this))
+            .registerHandler(new DidChangeTextDocumentHandler(this))
             .build();
   }
 
@@ -55,14 +69,19 @@ public class JavaComp implements Server {
   }
 
   @Override
-  public synchronized void initialize(int clientProcessId) {
+  public synchronized void initialize(int clientProcessId, URI projectRootUri) {
+    checkState(!initialized, "Cannot initialize the server twice in a row.");
     initialized = true;
+    fileManager = new FileManagerImpl(projectRootUri);
     //TODO: Someday we should implement monitoring client process for all major platforms.
   }
 
   @Override
   public synchronized void shutdown() {
+    checkState(initialized, "Shutting down the server without initializing it.");
     initialized = false;
+    fileManager.shutdown();
+    fileManager = null;
   }
 
   @Override
@@ -83,6 +102,12 @@ public class JavaComp implements Server {
     } catch (Exception e) {
       logger.warning(e, "Failed to close input stream on exit.");
     }
+  }
+
+  @Override
+  public synchronized FileManager getFileManager() {
+    checkState(initialized, "Server not initialized.");
+    return checkNotNull(fileManager);
   }
 
   public static final void main(String[] args) {

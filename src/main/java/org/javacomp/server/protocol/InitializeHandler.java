@@ -19,7 +19,7 @@ public class InitializeHandler extends RequestHandler<InitializeParams> {
 
   @Override
   public InitializeResult handleRequest(Request<InitializeParams> request) {
-    server.initialize(request.getParams().processId);
+    server.initialize(request.getParams().processId, request.getParams().rootUri);
     InitializeResult result = new InitializeResult();
     result.capabilities = new InitializeResult.ServerCapabilities();
     result.capabilities.completionProvider = new InitializeResult.CompletionOptions();
