@@ -2,6 +2,7 @@ package org.javacomp.file;
 
 import java.io.IOException;
 import java.net.URI;
+import java.nio.file.Path;
 import java.util.Optional;
 
 /** Manages all files for the same project. */
@@ -42,6 +43,12 @@ public interface FileManager {
    * <p>The truth of the file becomes the content in the filesystem.
    */
   void closeFileForSnapshot(URI fileUri);
+
+  /** Watches file changes under {@code rootDirectory} and all its subdirectories. */
+  void watchSubDirectories(Path rootDirectory);
+
+  /** Sets listener for file changes under watched directories and snapshots. */
+  void setFileChangeListener(FileChangeListener listener);
 
   /**
    * Shuts down the file manager.

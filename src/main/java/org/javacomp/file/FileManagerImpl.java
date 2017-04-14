@@ -2,14 +2,23 @@ package org.javacomp.file;
 
 import java.io.IOException;
 import java.net.URI;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardWatchEventKinds;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Queue;
+import java.util.concurrent.ExecutorService;
+import org.javacomp.logging.JLogger;
 
 /** Manages all files for the same project. */
 public class FileManagerImpl implements FileManager {
+  private static final JLogger logger = JLogger.createForEnclosingClass();
+
   /**
    * A map from normalized file name to snapshotted files.
    *
@@ -19,10 +28,13 @@ public class FileManagerImpl implements FileManager {
   private final Map<Path, FileSnapshot> fileSnapshots;
 
   private final Path projectRoot;
+  private final FileWatcher fileWatcher;
 
-  public FileManagerImpl(URI projectRootUri) {
+  public FileManagerImpl(URI projectRootUri, ExecutorService executor) {
     projectRoot = Paths.get(projectRootUri);
     fileSnapshots = new HashMap<>();
+    fileWatcher = new FileWatcher(executor);
+    watchSubDirectories(uriToNormalizedPath(projectRootUri));
   }
 
   @Override
@@ -31,7 +43,14 @@ public class FileManagerImpl implements FileManager {
     if (fileSnapshots.containsKey(filePath)) {
       throw new IllegalStateException(String.format("File %s has already been opened.", fileUri));
     }
-    fileSnapshots.put(filePath, FileSnapshot.create(filePath.toUri(), content));
+    FileSnapshot fileSnapshot = FileSnapshot.create(filePath.toUri(), content);
+    fileSnapshots.put(filePath, fileSnapshot);
+    fileWatcher.watchFileSnapshotPath(filePath);
+    if (Files.exists(filePath)) {
+      fileWatcher.notifyFileChange(filePath, StandardWatchEventKinds.ENTRY_MODIFY);
+    } else {
+      fileWatcher.notifyFileChange(filePath, StandardWatchEventKinds.ENTRY_CREATE);
+    }
   }
 
   @Override
@@ -44,6 +63,7 @@ public class FileManagerImpl implements FileManager {
     }
 
     fileSnapshots.get(filePath).applyEdit(editRange, rangeLength, newText);
+    fileWatcher.notifyFileChange(filePath, StandardWatchEventKinds.ENTRY_MODIFY);
   }
 
   @Override
@@ -55,6 +75,7 @@ public class FileManagerImpl implements FileManager {
     }
 
     fileSnapshots.get(filePath).setContent(newText);
+    fileWatcher.notifyFileChange(filePath, StandardWatchEventKinds.ENTRY_MODIFY);
   }
 
   @Override
@@ -66,6 +87,41 @@ public class FileManagerImpl implements FileManager {
     }
 
     fileSnapshots.remove(filePath);
+    if (Files.exists(filePath)) {
+      fileWatcher.notifyFileChange(filePath, StandardWatchEventKinds.ENTRY_MODIFY);
+    } else {
+      fileWatcher.notifyFileChange(filePath, StandardWatchEventKinds.ENTRY_DELETE);
+    }
+  }
+
+  @Override
+  public void watchSubDirectories(Path rootDirectory) {
+    if (!Files.isDirectory(rootDirectory)) {
+      return;
+    }
+    Queue<Path> directories = new LinkedList<>();
+    directories.add(rootDirectory);
+
+    while (!directories.isEmpty()) {
+      Path directory = directories.remove();
+      if (!fileWatcher.watchDirectory(directory)) {
+        continue;
+      }
+
+      try (DirectoryStream<Path> directoryStream =
+          Files.newDirectoryStream(directory, file -> Files.isDirectory(file))) {
+        for (Path subDir : directoryStream) {
+          directories.add(subDir);
+        }
+      } catch (Throwable e) {
+        logger.warning(e, "Cannot list files in directory %s", directory);
+      }
+    }
+  }
+
+  @Override
+  public void setFileChangeListener(FileChangeListener listener) {
+    fileWatcher.setListener(listener);
   }
 
   @Override

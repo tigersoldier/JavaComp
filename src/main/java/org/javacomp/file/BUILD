@@ -3,6 +3,7 @@ package(
 )
 
 PUBLIC_INTERFACES = [
+    "FileChangeListener.java",
     "FileManager.java",
     "TextPosition.java",
     "TextRange.java",
@@ -25,5 +26,6 @@ java_library(
     deps = [
         ":file",
         "//external:guava",
+        "//src/main/java/org/javacomp/logging",
     ],
 )

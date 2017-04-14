@@ -7,6 +7,8 @@ import com.google.gson.Gson;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.javacomp.file.FileManager;
 import org.javacomp.file.FileManagerImpl;
@@ -21,8 +23,10 @@ import org.javacomp.server.protocol.ShutdownHandler;
 
 /** Entry point of the JavaComp server. */
 public class JavaComp implements Server {
-  private static final int REQUEST_BUFFER_SIZE = 4096;
   private static final JLogger logger = JLogger.createForEnclosingClass();
+
+  private static final int REQUEST_BUFFER_SIZE = 4096;
+  private static final int NUM_THREADS = 10;
 
   private final AtomicBoolean isRunning;
   private final RequestParser requestParser;
@@ -30,9 +34,9 @@ public class JavaComp implements Server {
   private final RequestDispatcher requestDispatcher;
   private final Gson gson;
 
-  private volatile boolean initialized;
-  private volatile int exitCode = 0;
-
+  private boolean initialized;
+  private int exitCode = 0;
+  private ExecutorService executor;
   private FileManager fileManager;
 
   public JavaComp(InputStream inputStream, OutputStream outputStream) {
@@ -72,7 +76,8 @@ public class JavaComp implements Server {
   public synchronized void initialize(int clientProcessId, URI projectRootUri) {
     checkState(!initialized, "Cannot initialize the server twice in a row.");
     initialized = true;
-    fileManager = new FileManagerImpl(projectRootUri);
+    executor = Executors.newFixedThreadPool(NUM_THREADS);
+    fileManager = new FileManagerImpl(projectRootUri, executor);
     //TODO: Someday we should implement monitoring client process for all major platforms.
   }
 
