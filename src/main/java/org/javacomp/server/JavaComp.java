@@ -13,6 +13,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.javacomp.file.FileManager;
 import org.javacomp.file.FileManagerImpl;
 import org.javacomp.logging.JLogger;
+import org.javacomp.project.Project;
 import org.javacomp.server.io.RequestReader;
 import org.javacomp.server.io.ResponseWriter;
 import org.javacomp.server.protocol.DidChangeTextDocumentHandler;
@@ -38,6 +39,7 @@ public class JavaComp implements Server {
   private int exitCode = 0;
   private ExecutorService executor;
   private FileManager fileManager;
+  private Project project;
 
   public JavaComp(InputStream inputStream, OutputStream outputStream) {
     this.gson = GsonUtils.getGson();
@@ -78,6 +80,8 @@ public class JavaComp implements Server {
     initialized = true;
     executor = Executors.newFixedThreadPool(NUM_THREADS);
     fileManager = new FileManagerImpl(projectRootUri, executor);
+    project = new Project(fileManager, projectRootUri);
+    project.initialize();
     //TODO: Someday we should implement monitoring client process for all major platforms.
   }
 

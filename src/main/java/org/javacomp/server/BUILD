@@ -43,6 +43,7 @@ java_library(
         "//src/main/java/org/javacomp/file",
         "//src/main/java/org/javacomp/file:impl",
         "//src/main/java/org/javacomp/logging",
+        "//src/main/java/org/javacomp/project",
         "//src/main/java/org/javacomp/server/io",
         "//src/main/java/org/javacomp/server/protocol",
         "//third_party:auto_value",

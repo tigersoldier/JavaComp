@@ -8,6 +8,7 @@ java_library(
     deps = [
         "//external:guava",
         "//external:jsr305",
+        "//src/main/java/org/javacomp/logging",
         "//src/main/java/org/javacomp/model/util",
         "//third_party:auto_value",
     ],

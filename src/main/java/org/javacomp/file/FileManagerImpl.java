@@ -1,5 +1,7 @@
 package org.javacomp.file;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.DirectoryStream;
@@ -122,6 +124,22 @@ public class FileManagerImpl implements FileManager {
   @Override
   public void setFileChangeListener(FileChangeListener listener) {
     fileWatcher.setListener(listener);
+  }
+
+  @Override
+  public Optional<CharSequence> getFileContent(Path filePath) {
+    Path normalizedPath = filePath.normalize();
+    if (fileSnapshots.containsKey(normalizedPath)) {
+      return Optional.of(
+          fileSnapshots.get(normalizedPath).getCharContent(true /* ignoreEncodingErrors */));
+    }
+
+    try {
+      return Optional.of(new String(Files.readAllBytes(normalizedPath), UTF_8));
+    } catch (Exception e) {
+      logger.severe(e, "Failed to read content from file %s", normalizedPath);
+    }
+    return Optional.empty();
   }
 
   @Override

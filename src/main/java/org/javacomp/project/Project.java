@@ -10,12 +10,20 @@ import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Log;
 import java.io.IOException;
+import java.net.URI;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardWatchEventKinds;
+import java.nio.file.WatchEvent;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import org.javacomp.completion.CompletionCandidate;
 import org.javacomp.completion.Completor;
+import org.javacomp.file.FileChangeListener;
+import org.javacomp.file.FileManager;
+import org.javacomp.logging.JLogger;
 import org.javacomp.model.FileScope;
 import org.javacomp.model.GlobalScope;
 import org.javacomp.parser.AstScanner;
@@ -23,31 +31,62 @@ import org.javacomp.parser.SourceFileObject;
 
 /** Handles all files in a project. */
 public class Project {
+  private static final JLogger logger = JLogger.createForEnclosingClass();
+
+  private static final String JAVA_EXTENSION = ".java";
+
   private final GlobalScope globalScope;
   private final Context javacContext;
-  private final JavacFileManager fileManager;
+  private final JavacFileManager javacFileManager;
   private final AstScanner astScanner;
   private final Completor completor;
+  private final FileManager fileManager;
+  private final URI rootUri;
 
-  public Project() {
+  private boolean initialized;
+
+  public Project(FileManager fileManager, URI rootUri) {
     globalScope = new GlobalScope();
     javacContext = new Context();
-    fileManager = new JavacFileManager(javacContext, true /* register */, UTF_8);
+    javacFileManager = new JavacFileManager(javacContext, true /* register */, UTF_8);
     astScanner = new AstScanner();
     completor = new Completor();
+    this.fileManager = fileManager;
+    this.rootUri = rootUri;
   }
 
-  public void addFile(String filename) {
-    try {
-      String input = new String(Files.readAllBytes(Paths.get(filename)), UTF_8);
-
-      // Set source file of the log before parsing. If not set, IllegalArgumentException will be
-      // thrown if the parser enconters errors.
-      FileScope fileScope = astScanner.startScan(parseFile(filename, input), filename);
-      globalScope.addOrReplaceFileScope(fileScope);
-    } catch (IOException e) {
-      System.exit(1);
+  public synchronized void initialize() {
+    if (initialized) {
+      logger.warning("Project has already been initalized.");
+      return;
     }
+    initialized = true;
+
+    fileManager.setFileChangeListener(new ProjectFileChangeListener());
+    try {
+      Files.walk(Paths.get(rootUri))
+          .forEach(
+              filePath -> {
+                if (isJavaFile(filePath)) {
+                  addOrUpdateFile(filePath);
+                }
+              });
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private void addOrUpdateFile(Path filePath) {
+    Optional<CharSequence> content = fileManager.getFileContent(filePath);
+    if (content.isPresent()) {
+      FileScope fileScope =
+          astScanner.startScan(parseFile(filePath.toString(), content.get()), filePath.toString());
+      globalScope.addOrReplaceFileScope(fileScope);
+    }
+  }
+
+  private void removeFile(Path filePath) {
+    globalScope.removeFile(filePath);
   }
 
   /**
@@ -84,7 +123,7 @@ public class Project {
         globalScope, inputFileScope, completionUnit, filename, inputBuilder.toString());
   }
 
-  private JCCompilationUnit parseFile(String filename, String content) {
+  private JCCompilationUnit parseFile(String filename, CharSequence content) {
     SourceFileObject sourceFileObject = new SourceFileObject(filename);
     Log javacLog = Log.instance(javacContext);
     javacLog.useSource(sourceFileObject);
@@ -99,5 +138,26 @@ public class Project {
 
   public GlobalScope getGlobalScope() {
     return globalScope;
+  }
+
+  private static boolean isJavaFile(Path filePath) {
+    return filePath.toString().endsWith(JAVA_EXTENSION) && Files.isRegularFile(filePath);
+  }
+
+  private class ProjectFileChangeListener implements FileChangeListener {
+    @Override
+    public void onFileChange(Path filePath, WatchEvent.Kind<?> changeKind) {
+      logger.fine("onFileChange(%s): %s", changeKind, filePath);
+      if (changeKind == StandardWatchEventKinds.ENTRY_CREATE
+          || changeKind == StandardWatchEventKinds.ENTRY_MODIFY) {
+        if (isJavaFile(filePath)) {
+          addOrUpdateFile(filePath);
+        }
+      } else if (changeKind == StandardWatchEventKinds.ENTRY_DELETE) {
+        // Do not check if the file is a java source file here. Deleted file is not a regular file.
+        // The global scope handles nonexistence file correctly.
+        removeFile(filePath);
+      }
+    }
   }
 }

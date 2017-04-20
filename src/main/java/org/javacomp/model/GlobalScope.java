@@ -3,6 +3,7 @@ package org.javacomp.model;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
+import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
@@ -10,12 +11,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.javacomp.logging.JLogger;
 
 /**
  * The scope of the whole project. Can reach all scoped entities (e.g. packages, classes) defined in
  * the project.
  */
 public class GlobalScope implements EntityScope {
+  private static final JLogger logger = JLogger.createForEnclosingClass();
+
   // Map of simple names -> FileScope that defines the name.
   private final Multimap<String, FileScope> nameToFileMap;
   // Map of filename -> FileScope.
@@ -29,7 +33,7 @@ public class GlobalScope implements EntityScope {
   }
 
   @Override
-  public List<Entity> getEntitiesWithName(final String simpleName) {
+  public synchronized List<Entity> getEntitiesWithName(final String simpleName) {
     return FluentIterable.from(nameToFileMap.get(simpleName))
         .transformAndConcat(fileScope -> fileScope.getGlobalEntitiesWithName(simpleName))
         .append(rootPackage.getEntitiesWithName(simpleName))
@@ -37,7 +41,8 @@ public class GlobalScope implements EntityScope {
   }
 
   @Override
-  public Optional<Entity> getEntityWithNameAndKind(String simpleName, Entity.Kind entityKind) {
+  public synchronized Optional<Entity> getEntityWithNameAndKind(
+      String simpleName, Entity.Kind entityKind) {
     for (Entity entity : getEntitiesWithName(simpleName)) {
       if (entity.getKind() == entityKind) {
         return Optional.of(entity);
@@ -47,7 +52,7 @@ public class GlobalScope implements EntityScope {
   }
 
   @Override
-  public Multimap<String, Entity> getAllEntities() {
+  public synchronized Multimap<String, Entity> getAllEntities() {
     return FluentIterable.from(fileScopeMap.values())
         .transformAndConcat(fileScope -> fileScope.getGlobalEntities().values())
         .append(rootPackage.getAllEntities().values())
@@ -55,7 +60,7 @@ public class GlobalScope implements EntityScope {
   }
 
   @Override
-  public Multimap<String, Entity> getMemberEntities() {
+  public synchronized Multimap<String, Entity> getMemberEntities() {
     return rootPackage.getMemberEntities();
   }
 
@@ -64,7 +69,8 @@ public class GlobalScope implements EntityScope {
     throw new UnsupportedOperationException();
   }
 
-  public void addOrReplaceFileScope(FileScope fileScope) {
+  public synchronized void addOrReplaceFileScope(FileScope fileScope) {
+    logger.fine("Adding file: %s: %s", fileScope.getFilename(), fileScope.getAllEntities());
     FileScope existingFileScope = fileScopeMap.get(fileScope.getFilename());
     // Add the new file scope to the package first, so that we don't GC the pacakge if
     // the new file and old file are in the same pacakge and is the only file in the package.
@@ -83,11 +89,18 @@ public class GlobalScope implements EntityScope {
     }
   }
 
-  public Optional<FileScope> getFileScope(String filename) {
+  public synchronized void removeFile(Path filePath) {
+    FileScope existingFileScope = fileScopeMap.get(filePath.toString());
+    if (existingFileScope != null) {
+      removeFileFromPacakge(existingFileScope);
+    }
+  }
+
+  public synchronized Optional<FileScope> getFileScope(String filename) {
     return Optional.ofNullable(fileScopeMap.get(filename));
   }
 
-  public PackageScope getRootPackage() {
+  public synchronized PackageScope getRootPackage() {
     return rootPackage;
   }
 

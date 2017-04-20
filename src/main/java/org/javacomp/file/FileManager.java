@@ -51,6 +51,14 @@ public interface FileManager {
   void setFileChangeListener(FileChangeListener listener);
 
   /**
+   * Gets the content of a file.
+   *
+   * <p>If the file is opened for snapshotting by {@link #openFileForSnapshot}, return the content
+   * of the snapshot. Otherwise return the content of the file in filesystem.
+   */
+  Optional<CharSequence> getFileContent(Path filePath);
+
+  /**
    * Shuts down the file manager.
    *
    * <p>All snapshotted files opened by {@link #openForSnapshot} will be closed.
