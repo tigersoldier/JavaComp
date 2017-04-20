@@ -114,7 +114,7 @@ public class JLogger {
 
   /** Logs a message at fine level. */
   public void fine(String msg) {
-    javaLogger.info(msg);
+    javaLogger.fine(msg);
   }
 
   /**
