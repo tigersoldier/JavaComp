@@ -18,6 +18,6 @@ java_binary(
         "//external:javac",
         "//src/main/java/org/javacomp/model",
         "//src/main/java/org/javacomp/model/util",
-        "//src/main/java/org/javacomp/project",
+        "//src/main/java/org/javacomp/parser",
     ],
 )

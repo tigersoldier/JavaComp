@@ -11,7 +11,9 @@ java_library(
     deps = [
         ":requestparams",
         "//external:jsr305",
+        "//src/main/java/org/javacomp/completion",
         "//src/main/java/org/javacomp/file",
+        "//src/main/java/org/javacomp/project",
         "//src/main/java/org/javacomp/server",
         "//src/main/java/org/javacomp/server:request",
         "//src/main/java/org/javacomp/server:requestexception",

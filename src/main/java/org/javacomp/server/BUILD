@@ -15,6 +15,7 @@ java_library(
     srcs = ["Server.java"],
     deps = [
         "//src/main/java/org/javacomp/file",
+        "//src/main/java/org/javacomp/project",
     ],
 )
 

@@ -68,9 +68,10 @@ public class AstScanner extends TreeScanner<Void, EntityScope> {
       this.currentQualifiers.addAll(qualifiers);
     }
 
-    this.fileScope = new FileScope(filename, this.currentQualifiers);
+    JCCompilationUnit compilationUnit = (JCCompilationUnit) node;
+    this.fileScope = new FileScope(filename, this.currentQualifiers, compilationUnit);
     this.scopeRangeBuilder = new NestedRangeMapBuilder<>();
-    this.endPosTable = ((JCCompilationUnit) node).endPositions;
+    this.endPosTable = compilationUnit.endPositions;
 
     // Handle imports
     for (ImportTree importTree : node.getImports()) {

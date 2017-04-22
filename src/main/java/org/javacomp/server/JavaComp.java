@@ -123,6 +123,12 @@ public class JavaComp implements Server {
     return checkNotNull(fileManager);
   }
 
+  @Override
+  public synchronized Project getProject() {
+    checkState(initialized, "Server not initialized.");
+    return checkNotNull(project);
+  }
+
   public static final void main(String[] args) {
     int exitCode = new JavaComp(System.in, System.out).run();
     System.exit(exitCode);

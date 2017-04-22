@@ -1,6 +1,10 @@
 package org.javacomp.server.protocol;
 
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.List;
+import org.javacomp.completion.CompletionCandidate;
+import org.javacomp.project.Project;
 import org.javacomp.server.Request;
 import org.javacomp.server.Server;
 import org.javacomp.server.protocol.CompletionList.CompletionItem;
@@ -24,22 +28,25 @@ public class CompletionTextDocumentHandler extends RequestHandler<TextDocumentPo
   @Override
   public CompletionList handleRequest(Request<TextDocumentPositionParams> request)
       throws Exception {
+    TextDocumentPositionParams params = request.getParams();
+    Project project = server.getProject();
+    List<CompletionCandidate> candidates =
+        project.getCompletionCandidates(
+            Paths.get(params.textDocument.uri),
+            params.position.getLine(),
+            params.position.getCharacter());
+
     CompletionList completionList = new CompletionList();
     completionList.isIncomplete = false;
     completionList.items = new ArrayList<>();
 
-    CompletionItem item1 = new CompletionItem();
-    item1.label = "method item";
-    item1.insertTextFormat = InsertTextFormat.PLAINTEXT;
-    item1.kind = CompletionItemKind.METHOD;
-    completionList.items.add(item1);
-
-    CompletionItem item2 = new CompletionItem();
-    item1.label = "class item";
-    item1.insertTextFormat = InsertTextFormat.PLAINTEXT;
-    item1.kind = CompletionItemKind.CLASS;
-    completionList.items.add(item2);
-
+    for (CompletionCandidate candidate : candidates) {
+      CompletionItem item = new CompletionItem();
+      item.label = candidate.getName();
+      item.insertTextFormat = InsertTextFormat.PLAINTEXT;
+      item.kind = CompletionItemKind.METHOD;
+      completionList.items.add(item);
+    }
     return completionList;
   }
 }

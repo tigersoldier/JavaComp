@@ -1,27 +1,41 @@
 package org.javacomp.tool;
 
 import com.google.common.base.Joiner;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Optional;
 import org.javacomp.model.ClassEntity;
 import org.javacomp.model.Entity;
 import org.javacomp.model.EntityScope;
+import org.javacomp.model.FileScope;
 import org.javacomp.model.MethodEntity;
 import org.javacomp.model.TypeReference;
-import org.javacomp.project.Project;
+import org.javacomp.parser.AstScanner;
+import org.javacomp.parser.ParserContext;
 
 public class ScopePrinter {
   private static final Joiner QUALIFIER_JOINER = Joiner.on(".");
+  private static final Joiner LINE_JOINER = Joiner.on("\n");
   private final String filename;
-  private final Project project;
+  private final ParserContext parserContext;
+  private final AstScanner astScanner;
 
   public ScopePrinter(String filename) {
     this.filename = filename;
-    this.project = new Project();
+    this.parserContext = new ParserContext();
+    this.astScanner = new AstScanner();
   }
 
   public void parse() {
-    project.addFile(filename);
-    printScope(project.getGlobalScope(), 0 /* scope */);
+    String content;
+    try {
+      content = LINE_JOINER.join(Files.readAllLines(Paths.get(filename)));
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+    FileScope fileScope = astScanner.startScan(parserContext.parse(filename, content), filename);
+    printScope(fileScope, 0 /* scope */);
   }
 
   private static String formatEntity(Entity entity, int indent) {

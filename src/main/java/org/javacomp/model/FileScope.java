@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.RangeMap;
+import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -23,15 +24,18 @@ public class FileScope implements EntityScope {
   private final ImmutableList<String> packageQualifiers;
   private final Map<String, List<String>> importedClasses;
   private final List<List<String>> onDemandClassImportQualifiers;
+  private final JCCompilationUnit compilationUnit;
   private RangeMap<Integer, EntityScope> scopeRangeMap = null;
 
-  public FileScope(String filename, List<String> packageQualifiers) {
+  public FileScope(
+      String filename, List<String> packageQualifiers, JCCompilationUnit compilationUnit) {
     this.filename = filename;
     this.entities = HashMultimap.create();
     this.packageQualifiers = ImmutableList.copyOf(packageQualifiers);
     this.globalEntities = HashMultimap.create();
     this.importedClasses = new HashMap<>();
     this.onDemandClassImportQualifiers = new ArrayList<>();
+    this.compilationUnit = compilationUnit;
   }
 
   @Override
@@ -136,5 +140,9 @@ public class FileScope implements EntityScope {
 
   public String getFilename() {
     return filename;
+  }
+
+  public JCCompilationUnit getCompilationUnit() {
+    return compilationUnit;
   }
 }

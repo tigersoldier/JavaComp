@@ -4,6 +4,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableList;
+import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Rule;
@@ -22,6 +23,7 @@ public class GlobalScopeTest {
   @Mock private Entity entity2;
   @Mock private Entity entity3;
   @Mock private Entity entity4;
+  @Mock private JCCompilationUnit compilationUnit;
 
   @Before
   public void setUpMocks() {
@@ -35,10 +37,13 @@ public class GlobalScopeTest {
 
   @Test
   public void addFilesShouldCreatePackages() {
-    FileScope fileScope1 = new FileScope("filename1", ImmutableList.of("foo", "bar"));
-    FileScope fileScope2 = new FileScope("filename2", ImmutableList.of("foo", "bar", "baz"));
-    FileScope fileScope3 = new FileScope("filename3", ImmutableList.of("foo", "baz"));
-    FileScope fileScope4 = new FileScope("filename4", ImmutableList.of("fxx"));
+    FileScope fileScope1 =
+        new FileScope("filename1", ImmutableList.of("foo", "bar"), compilationUnit);
+    FileScope fileScope2 =
+        new FileScope("filename2", ImmutableList.of("foo", "bar", "baz"), compilationUnit);
+    FileScope fileScope3 =
+        new FileScope("filename3", ImmutableList.of("foo", "baz"), compilationUnit);
+    FileScope fileScope4 = new FileScope("filename4", ImmutableList.of("fxx"), compilationUnit);
     fileScope1.addEntity(entity1);
     fileScope2.addEntity(entity2);
     fileScope3.addEntity(entity3);
@@ -66,8 +71,8 @@ public class GlobalScopeTest {
 
   @Test
   public void replaceFileWithSamePackageShouldNotRemovePackage() {
-    FileScope fileScope1 = new FileScope("foobar", ImmutableList.of("foo", "bar"));
-    FileScope fileScope2 = new FileScope("foobar", ImmutableList.of("foo", "bar"));
+    FileScope fileScope1 = new FileScope("foobar", ImmutableList.of("foo", "bar"), compilationUnit);
+    FileScope fileScope2 = new FileScope("foobar", ImmutableList.of("foo", "bar"), compilationUnit);
 
     fileScope1.addEntity(entity1);
     fileScope2.addEntity(entity2);
@@ -82,9 +87,10 @@ public class GlobalScopeTest {
 
   @Test
   public void replaceFileWithDifferentPackageShouldNotRemovePackage() {
-    FileScope fileScope1 = new FileScope("foobar", ImmutableList.of("foo", "bar", "baz"));
-    FileScope fileScope2 = new FileScope("foobar", ImmutableList.of("foo", "bar"));
-    FileScope fileScope3 = new FileScope("foobar", ImmutableList.of("fxx"));
+    FileScope fileScope1 =
+        new FileScope("foobar", ImmutableList.of("foo", "bar", "baz"), compilationUnit);
+    FileScope fileScope2 = new FileScope("foobar", ImmutableList.of("foo", "bar"), compilationUnit);
+    FileScope fileScope3 = new FileScope("foobar", ImmutableList.of("fxx"), compilationUnit);
 
     fileScope1.addEntity(entity1);
     fileScope2.addEntity(entity2);

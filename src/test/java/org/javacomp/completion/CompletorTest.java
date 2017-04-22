@@ -4,6 +4,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.FluentIterable;
+import com.sun.source.tree.LineMap;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.parser.JavacParser;
 import com.sun.tools.javac.parser.ParserFactory;
@@ -31,9 +32,8 @@ public class CompletorTest {
     String inputFilePath = TEST_DATA_DIR + filename;
     JavacFileManager fileManager = new JavacFileManager(javacContext, true /* register */, UTF_8);
     String testDataContent = new String(Files.readAllBytes(Paths.get(inputFilePath)), UTF_8);
-    int completion_point = testDataContent.indexOf(COMPLETION_POINT_MARK);
-    assertThat(completion_point).isGreaterThan(-1);
-    String input = testDataContent.substring(0, completion_point);
+    int completionPoint = testDataContent.indexOf(COMPLETION_POINT_MARK);
+    assertThat(completionPoint).isGreaterThan(-1);
 
     // If source file not set, parser will throw IllegalArgumentException when errors occur.
     SourceFileObject sourceFileObject = new SourceFileObject("/" + inputFilePath);
@@ -43,16 +43,20 @@ public class CompletorTest {
     JavacParser parser =
         ParserFactory.instance(javacContext)
             .newParser(
-                input, true /* keepDocComments */, true /* keepEndPos */, true /* keepLineMap */);
+                testDataContent,
+                true /* keepDocComments */,
+                true /* keepEndPos */,
+                true /* keepLineMap */);
     JCCompilationUnit compilationUnit = parser.parseCompilationUnit();
+    LineMap lineMap = compilationUnit.getLineMap();
+    int line = (int) lineMap.getLineNumber(completionPoint);
+    int column = (int) lineMap.getColumnNumber(completionPoint);
     FileScope inputFileScope = new AstScanner().startScan(compilationUnit, inputFilePath);
     GlobalScope globalScope = new GlobalScope();
-
-    // throw new RuntimeException(String.format("input length: %s, ranges: %s", input.length(), inputFileScope.getScopeRangeMap()));
+    globalScope.addOrReplaceFileScope(inputFileScope);
 
     return new Completor()
-        .getCompletionCandidates(
-            globalScope, inputFileScope, compilationUnit, inputFilePath, input);
+        .getCompletionCandidates(globalScope, Paths.get(inputFilePath), line, column);
   }
 
   private static List<String> getCandidateNames(List<CompletionCandidate> candidates) {
@@ -63,6 +67,12 @@ public class CompletorTest {
   public void completeNewStatement() throws Exception {
     assertThat(getCandidateNames(completeTestFile("CompleteNewStatement.java")))
         .containsExactly(
-            "CompleteNewStatement", "CONSTANT", "memberField", "memberMethod", "staticMethod");
+            "CompleteNewStatement",
+            "CompleteNewStatement",
+            "CONSTANT",
+            "memberField",
+            "memberMethod",
+            "staticMethod",
+            "org");
   }
 }

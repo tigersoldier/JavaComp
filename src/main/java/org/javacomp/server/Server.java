@@ -2,6 +2,7 @@ package org.javacomp.server;
 
 import java.net.URI;
 import org.javacomp.file.FileManager;
+import org.javacomp.project.Project;
 
 /** Interface for server functionalities to be accessed by components. */
 public interface Server {
@@ -24,4 +25,6 @@ public interface Server {
    * @throws IllegalStateException if the server is not initialized or shutdown
    */
   FileManager getFileManager();
+
+  Project getProject();
 }
