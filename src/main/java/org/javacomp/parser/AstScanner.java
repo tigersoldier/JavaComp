@@ -34,7 +34,6 @@ import org.javacomp.model.Entity;
 import org.javacomp.model.EntityScope;
 import org.javacomp.model.FileScope;
 import org.javacomp.model.MethodEntity;
-import org.javacomp.model.MethodScope;
 import org.javacomp.model.TypeReference;
 import org.javacomp.model.VariableEntity;
 import org.javacomp.model.util.NestedRangeMapBuilder;
@@ -171,22 +170,21 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
       parameterListBuilder.add(parameterScanner.getParameter(parameter));
     }
 
-    MethodScope methodScope = new MethodScope((ClassEntity) currentScope);
     MethodEntity methodEntity =
         new MethodEntity(
             node.getName().toString(),
             this.currentQualifiers,
-            methodScope,
             returnType,
-            parameterListBuilder.build());
+            parameterListBuilder.build(),
+            (ClassEntity) currentScope);
     // TODO: distinguish between static and non-static methods.
     currentScope.addEntity(methodEntity);
     List<String> previousQualifiers = this.currentQualifiers;
     // No entity defined inside method scope is qualified.
     this.currentQualifiers = UNAVAILABLE_QUALIFIERS;
     if (node.getBody() != null) {
-      scan(node.getBody(), methodScope);
-      addScopeRange((JCTree) node, methodScope);
+      scan(node.getBody(), methodEntity);
+      addScopeRange((JCTree) node, methodEntity);
     }
     this.currentQualifiers = previousQualifiers;
     return null;
@@ -208,7 +206,7 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
   @Override
   public Void visitBlock(BlockTree node, EntityScope currentScope) {
     boolean isMethodBlock =
-        (currentScope instanceof MethodScope)
+        (currentScope instanceof MethodEntity)
             && (getCurrentPath().getParentPath().getLeaf() instanceof MethodTree);
     if (!isMethodBlock) {
       currentScope = new BlockScope(currentScope);
