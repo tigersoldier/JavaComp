@@ -12,11 +12,24 @@ import org.javacomp.model.Entity;
 import org.javacomp.model.EntityScope;
 import org.javacomp.model.FileScope;
 import org.javacomp.model.GlobalScope;
+import org.javacomp.typesolver.ExpressionSolver;
+import org.javacomp.typesolver.OverloadSolver;
+import org.javacomp.typesolver.TypeSolver;
 
 /** Entry point of completion logic. */
 public class Completor {
 
   private static final String CONSTRUCTOR_NAME = "<init>";
+
+  private final TypeSolver typeSolver;
+  private final ExpressionSolver expressionSolver;
+  private final CompletionAst completionAst;
+
+  public Completor() {
+    this.typeSolver = new TypeSolver();
+    this.expressionSolver = new ExpressionSolver(typeSolver, new OverloadSolver(typeSolver));
+    this.completionAst = new CompletionAst(expressionSolver);
+  }
 
   /**
    * @param globalScope the global scope of the project
@@ -35,7 +48,7 @@ public class Completor {
     LineMap lineMap = compilationUnit.getLineMap();
     int position = (int) lineMap.getPosition(line, column);
     EntityScope completionPointScope = inputFileScope.get().getEntityScopeAt(position - 1);
-    CompletionAction action = new CompletionAst().getCompletionAction(compilationUnit);
+    CompletionAction action = completionAst.getCompletionAction(compilationUnit, position);
     Multimap<String, Entity> entities =
         action.getVisibleEntities(globalScope, completionPointScope);
     // TODO: filter and sort candidates by query.
