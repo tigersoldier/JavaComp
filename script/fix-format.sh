@@ -106,10 +106,10 @@ run_formatters() {
   fi
   if [[ $changed_only = true ]]; then
     local bazel_files=$(git diff --name-only HEAD | grep -E '(\bBUILD$|\bWORKSPACE$)')
-    local java_files=$(git diff --name-only HEAD | grep -E '\.java$')
+    local java_files=$(git diff --name-only HEAD | grep -E '\.java$' | grep -v "testdata")
   else
     local bazel_files=$(find . | grep -E '(\bBUILD$|\bWORKSPACE$)')
-    local java_files=$(find . -name "*.java")
+    local java_files=$(find . -name "*.java" | grep -v "testdata")
   fi
 
   run_buildifier $bazel_files

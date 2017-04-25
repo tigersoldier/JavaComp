@@ -33,6 +33,7 @@ public class ExpressionSolverTest {
   private ClassEntity innerAClass;
   private ClassEntity innerBClass;
   private ClassEntity innerCClass;
+  private EntityScope methodScope;
 
   @Before
   public void setUpTestScope() throws Exception {
@@ -44,6 +45,8 @@ public class ExpressionSolverTest {
         (ClassEntity) TestUtil.lookupEntity(TOP_LEVEL_CLASS_FULL_NAME + ".InnerB", globalScope);
     innerCClass =
         (ClassEntity) TestUtil.lookupEntity(TOP_LEVEL_CLASS_FULL_NAME + ".InnerC", globalScope);
+    methodScope =
+        TestUtil.lookupEntity(TOP_LEVEL_CLASS_FULL_NAME + ".method", globalScope).getChildScope();
   }
 
   @Test
@@ -121,6 +124,17 @@ public class ExpressionSolverTest {
   public void solveArrayLength() {
     assertThat(solveExpression("innerA.innerBArray.length", topLevelClass).getEntity())
         .isSameAs(PrimitiveEntity.INT);
+  }
+
+  @Test
+  public void solveLocalVariable() {
+    assertThat(solveExpression("varA", methodScope).getEntity()).isSameAs(innerAClass);
+  }
+
+  @Test
+  public void solveClassMemberInMethod() {
+    assertThat(solveExpression("innerA", methodScope).getEntity()).isSameAs(innerAClass);
+    assertThat(solveExpression("this.innerA", methodScope).getEntity()).isSameAs(innerAClass);
   }
 
   private SolvedType solveExpression(String expression, EntityScope baseScope) {

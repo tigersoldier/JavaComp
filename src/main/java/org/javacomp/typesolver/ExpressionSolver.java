@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import javax.annotation.Nullable;
+import org.javacomp.logging.JLogger;
 import org.javacomp.model.ClassEntity;
 import org.javacomp.model.Entity;
 import org.javacomp.model.EntityScope;
@@ -26,6 +27,8 @@ import org.javacomp.model.VariableEntity;
 
 /** Logic for solving the result type of an expression. */
 public class ExpressionSolver {
+  private static final JLogger logger = JLogger.createForEnclosingClass();
+
   private static final Set<Entity.Kind> ALLOWED_KINDS_METHOD = ImmutableSet.of(Entity.Kind.METHOD);
   private static final Set<Entity.Kind> ALLOWED_KINDS_NON_METHOD =
       new ImmutableSet.Builder<Entity.Kind>()

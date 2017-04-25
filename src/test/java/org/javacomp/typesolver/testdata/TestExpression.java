@@ -9,6 +9,11 @@ public class TestExpression {
 
   public InnerB baseMethod(int foo);
 
+  public void method() {
+    InnerA varA = new InnerA();
+    InnerB varB = new InnerB();
+  }
+
   public class InnerA extends TestExpression {
     public final InnerB innerB = new InnerB();
     public final InnerB[] innerBArray;

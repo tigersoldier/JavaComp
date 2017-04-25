@@ -28,7 +28,7 @@ public class Completor {
   public Completor() {
     this.typeSolver = new TypeSolver();
     this.expressionSolver = new ExpressionSolver(typeSolver, new OverloadSolver(typeSolver));
-    this.completionAst = new CompletionAst(expressionSolver);
+    this.completionAst = new CompletionAst(typeSolver, expressionSolver);
   }
 
   /**

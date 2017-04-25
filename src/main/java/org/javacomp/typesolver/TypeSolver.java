@@ -7,6 +7,7 @@ import com.google.common.collect.Sets;
 import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Deque;
+import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
@@ -134,6 +135,12 @@ public class TypeSolver {
         if (!foundEntities.isEmpty()) {
           return foundEntities;
         }
+      } else {
+        // Block-like scopes (method, if, for, etc...)
+        foundEntities = findEntitiesInBlock(name, currentScope.get(), globalScope, allowedKinds);
+        if (!foundEntities.isEmpty()) {
+          return foundEntities;
+        }
       }
       // TODO: handle annonymous class
     }
@@ -245,6 +252,24 @@ public class TypeSolver {
         builder.add(foundField);
       }
     }
+    return builder.build();
+  }
+
+  private List<Entity> findEntitiesInBlock(
+      String name, EntityScope baseScope, GlobalScope globalScope, Set<Entity.Kind> allowedKinds) {
+    ImmutableList.Builder<Entity> builder = new ImmutableList.Builder<>();
+    if (allowedKinds.contains(Entity.Kind.VARIABLE)) {
+      allowedKinds = Sets.difference(allowedKinds, EnumSet.of(Entity.Kind.VARIABLE));
+      while (baseScope != null && !(baseScope instanceof ClassEntity)) {
+        builder.addAll(baseScope.getMemberEntities().get(name));
+        baseScope = baseScope.getParentScope().orElse(null);
+      }
+    }
+
+    if (baseScope instanceof ClassEntity && !allowedKinds.isEmpty()) {
+      builder.addAll(findClassMembers(name, (ClassEntity) baseScope, globalScope, allowedKinds));
+    }
+
     return builder.build();
   }
 

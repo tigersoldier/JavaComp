@@ -32,6 +32,11 @@ public class JLogger {
     }
   }
 
+  public static synchronized void setLogLevel(Level level) {
+    Logger rootLogger = Logger.getLogger("");
+    rootLogger.setLevel(level);
+  }
+
   private JLogger(String enclosingClassName) {
     javaLogger = Logger.getLogger(enclosingClassName);
   }

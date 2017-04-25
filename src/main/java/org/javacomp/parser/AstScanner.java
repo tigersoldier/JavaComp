@@ -17,6 +17,7 @@ import com.sun.source.tree.PrimitiveTypeTree;
 import com.sun.source.tree.StatementTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.tree.VariableTree;
+import com.sun.source.util.TreePathScanner;
 import com.sun.source.util.TreeScanner;
 import com.sun.tools.javac.tree.EndPosTable;
 import com.sun.tools.javac.tree.JCTree;
@@ -38,7 +39,7 @@ import org.javacomp.model.TypeReference;
 import org.javacomp.model.VariableEntity;
 import org.javacomp.model.util.NestedRangeMapBuilder;
 
-public class AstScanner extends TreeScanner<Void, EntityScope> {
+public class AstScanner extends TreePathScanner<Void, EntityScope> {
   private static final List<String> UNAVAILABLE_QUALIFIERS = ImmutableList.of();
   private static final String ON_DEMAND_IMPORT_WILDCARD = "*";
 
@@ -184,8 +185,7 @@ public class AstScanner extends TreeScanner<Void, EntityScope> {
     // No entity defined inside method scope is qualified.
     this.currentQualifiers = UNAVAILABLE_QUALIFIERS;
     if (node.getBody() != null) {
-      // Use user.visitBlock because it doesn't create extra BlockScope.
-      super.visitBlock(node.getBody(), methodScope);
+      scan(node.getBody(), methodScope);
       addScopeRange((JCTree) node, methodScope);
     }
     this.currentQualifiers = previousQualifiers;
@@ -199,6 +199,7 @@ public class AstScanner extends TreeScanner<Void, EntityScope> {
             node.getName().toString(),
             this.currentQualifiers,
             typeReferenceScanner.getTypeReference(node.getType()));
+    logger.fine("adding variable %s to scope %s", variableEntity, currentScope);
     currentScope.addEntity(variableEntity);
     // TODO: add entity to global scope if it's a non-private static entity.
     return null;
@@ -206,11 +207,16 @@ public class AstScanner extends TreeScanner<Void, EntityScope> {
 
   @Override
   public Void visitBlock(BlockTree node, EntityScope currentScope) {
-    BlockScope blockScope = new BlockScope(currentScope);
-    for (StatementTree statement : node.getStatements()) {
-      this.scan(statement, blockScope);
+    boolean isMethodBlock =
+        (currentScope instanceof MethodScope)
+            && (getCurrentPath().getParentPath().getLeaf() instanceof MethodTree);
+    if (!isMethodBlock) {
+      currentScope = new BlockScope(currentScope);
     }
-    addScopeRange((JCTree) node, blockScope);
+    for (StatementTree statement : node.getStatements()) {
+      this.scan(statement, currentScope);
+    }
+    addScopeRange((JCTree) node, currentScope);
     return null;
   }
 

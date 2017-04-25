@@ -75,4 +75,10 @@ public class CompletorTest {
             "staticMethod",
             "org");
   }
+
+  @Test
+  public void completeMemberSelection() throws Exception {
+    assertThat(getCandidateNames(completeTestFile("CompleteMember.java")))
+        .containsExactly("field", "method");
+  }
 }

@@ -9,14 +9,17 @@ import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import org.javacomp.logging.JLogger;
 import org.javacomp.typesolver.ExpressionSolver;
+import org.javacomp.typesolver.TypeSolver;
 
 /** Retrieve completion information from the AST. */
 class CompletionAst {
   private static final JLogger logger = JLogger.createForEnclosingClass();
 
+  private final TypeSolver typeSolver;
   private final ExpressionSolver expressionSolver;
 
-  CompletionAst(ExpressionSolver expressionSolver) {
+  CompletionAst(TypeSolver typeSolver, ExpressionSolver expressionSolver) {
+    this.typeSolver = typeSolver;
     this.expressionSolver = expressionSolver;
   }
 
@@ -27,7 +30,7 @@ class CompletionAst {
     TreePath treePath = completionAstScanner.scan(compilationUnit, null);
     logger.fine("TreePath for completion: %s", TreePathFormatter.formatTreePath(treePath));
     if (treePath.getLeaf() instanceof MemberSelectTree) {
-      return new CompleteMemberAction(treePath, expressionSolver);
+      return new CompleteMemberAction(treePath, typeSolver, expressionSolver);
     }
     return new CompleteEntityAction();
   }
