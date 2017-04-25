@@ -11,6 +11,7 @@ import org.javacomp.model.EntityScope;
 import org.javacomp.model.FileScope;
 import org.javacomp.model.MethodEntity;
 import org.javacomp.model.TypeReference;
+import org.javacomp.model.VariableEntity;
 import org.javacomp.parser.AstScanner;
 import org.javacomp.parser.ParserContext;
 
@@ -64,7 +65,7 @@ public class ScopePrinter {
       MethodEntity methodEntity = (MethodEntity) entity;
       sb.append('(');
       boolean firstParameter = true;
-      for (MethodEntity.Parameter parameter : methodEntity.getParameters()) {
+      for (VariableEntity parameter : methodEntity.getParameters()) {
         if (!firstParameter) {
           sb.append(", ");
         } else {
@@ -73,7 +74,7 @@ public class ScopePrinter {
         TypeReference parameterType = parameter.getType();
         sb.append(formatTypeReference(parameterType));
         sb.append(' ');
-        sb.append(parameter.getName());
+        sb.append(parameter.getSimpleName());
       }
       sb.append(")->");
       TypeReference returnType = methodEntity.getReturnType();

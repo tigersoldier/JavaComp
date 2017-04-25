@@ -69,6 +69,8 @@ public class CompletorTest {
         .containsExactly(
             "CompleteNewStatement",
             "CompleteNewStatement",
+            "param1",
+            "stringParam",
             "CONSTANT",
             "memberField",
             "memberMethod",

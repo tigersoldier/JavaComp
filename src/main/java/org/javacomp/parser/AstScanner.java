@@ -164,8 +164,7 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
     } else {
       returnType = typeReferenceScanner.getTypeReference(node.getReturnType());
     }
-    ImmutableList.Builder<MethodEntity.Parameter> parameterListBuilder =
-        new ImmutableList.Builder<>();
+    ImmutableList.Builder<VariableEntity> parameterListBuilder = new ImmutableList.Builder<>();
     for (Tree parameter : node.getParameters()) {
       parameterListBuilder.add(parameterScanner.getParameter(parameter));
     }
@@ -299,11 +298,11 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
       this.typeReferenceScanner = typeReferenceScanner;
     }
 
-    private MethodEntity.Parameter getParameter(Tree node) {
+    private VariableEntity getParameter(Tree node) {
       name = "";
       type = TypeReference.EMPTY_TYPE;
       scan(node, null);
-      return MethodEntity.Parameter.create(type, name);
+      return new VariableEntity(name, ImmutableList.of() /* qualifiers */, type);
     }
 
     @Override
