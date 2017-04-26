@@ -25,3 +25,11 @@ java_test(
         ":tests",
     ],
 )
+
+java_test(
+    name = "PathUtilsTest",
+    size = "small",
+    runtime_deps = [
+        ":tests",
+    ],
+)

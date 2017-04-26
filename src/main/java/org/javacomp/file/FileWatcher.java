@@ -118,6 +118,10 @@ class FileWatcher {
   }
 
   synchronized void notifyFileChange(Path path, WatchEvent.Kind<?> eventKind) {
+    if (PathUtils.shouldIgnoreFile(path)) {
+      return;
+    }
+
     if (listener == null) {
       return;
     }
@@ -160,6 +164,10 @@ class FileWatcher {
       }
 
       Path fullPath = dir.resolve(event.context());
+
+      if (PathUtils.shouldIgnoreFile(fullPath)) {
+        return;
+      }
 
       if (fileSnapshotPaths.contains(fullPath)) {
         // The file is managed by file snapshots. Ignore file system events.

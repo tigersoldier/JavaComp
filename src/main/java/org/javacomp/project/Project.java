@@ -13,6 +13,7 @@ import org.javacomp.completion.CompletionCandidate;
 import org.javacomp.completion.Completor;
 import org.javacomp.file.FileChangeListener;
 import org.javacomp.file.FileManager;
+import org.javacomp.file.PathUtils;
 import org.javacomp.logging.JLogger;
 import org.javacomp.model.FileScope;
 import org.javacomp.model.GlobalScope;
@@ -55,7 +56,7 @@ public class Project {
       Files.walk(Paths.get(rootUri))
           .forEach(
               filePath -> {
-                if (isJavaFile(filePath)) {
+                if (isJavaFile(filePath) && !PathUtils.shouldIgnoreFile(filePath)) {
                   addOrUpdateFile(filePath);
                 }
               });

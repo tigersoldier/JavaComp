@@ -5,6 +5,7 @@ package(
 PUBLIC_INTERFACES = [
     "FileChangeListener.java",
     "FileManager.java",
+    "PathUtils.java",
     "TextPosition.java",
     "TextRange.java",
 ]
