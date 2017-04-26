@@ -34,6 +34,7 @@ public class ExpressionSolver {
       new ImmutableSet.Builder<Entity.Kind>()
           .addAll(ClassEntity.ALLOWED_KINDS)
           .add(Entity.Kind.VARIABLE)
+          .add(Entity.Kind.FIELD)
           .add(Entity.Kind.QUALIFIER)
           .build();
   private static final String IDENT_THIS = "this";

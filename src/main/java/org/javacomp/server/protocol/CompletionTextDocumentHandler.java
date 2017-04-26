@@ -44,9 +44,30 @@ public class CompletionTextDocumentHandler extends RequestHandler<TextDocumentPo
       CompletionItem item = new CompletionItem();
       item.label = candidate.getName();
       item.insertTextFormat = InsertTextFormat.PLAINTEXT;
-      item.kind = CompletionItemKind.METHOD;
+      item.kind = getCompletionItemKind(candidate.getKind());
       completionList.items.add(item);
     }
     return completionList;
+  }
+
+  private static CompletionItemKind getCompletionItemKind(CompletionCandidate.Kind candidateKind) {
+    switch (candidateKind) {
+      case CLASS:
+        return CompletionItemKind.CLASS;
+      case INTERFACE:
+        return CompletionItemKind.INTERFACE;
+      case ENUM:
+        return CompletionItemKind.ENUM;
+      case METHOD:
+        return CompletionItemKind.METHOD;
+      case VARIABLE:
+        return CompletionItemKind.VARIABLE;
+      case FIELD:
+        return CompletionItemKind.FIELD;
+      case PACKAGE:
+        return CompletionItemKind.MODULE;
+      default:
+        return CompletionItemKind.UNKNOWN;
+    }
   }
 }

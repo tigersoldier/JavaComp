@@ -19,6 +19,7 @@ public abstract class Entity {
     ENUM,
     METHOD,
     VARIABLE,
+    FIELD,
     // Each part of a pacakage qualifier
     // e.g org.javacomp has 2 qualifiers: org and javacomp
     QUALIFIER,

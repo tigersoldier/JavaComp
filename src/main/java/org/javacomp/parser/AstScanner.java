@@ -191,9 +191,12 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
 
   @Override
   public Void visitVariable(VariableTree node, EntityScope currentScope) {
+    Entity.Kind variableKind =
+        (currentScope instanceof ClassEntity) ? Entity.Kind.FIELD : Entity.Kind.VARIABLE;
     VariableEntity variableEntity =
         new VariableEntity(
             node.getName().toString(),
+            variableKind,
             this.currentQualifiers,
             typeReferenceScanner.getTypeReference(node.getType()));
     logger.fine("adding variable %s to scope %s", variableEntity, currentScope);
@@ -302,7 +305,8 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
       name = "";
       type = TypeReference.EMPTY_TYPE;
       scan(node, null);
-      return new VariableEntity(name, ImmutableList.of() /* qualifiers */, type);
+      return new VariableEntity(
+          name, Entity.Kind.VARIABLE, ImmutableList.of() /* qualifiers */, type);
     }
 
     @Override

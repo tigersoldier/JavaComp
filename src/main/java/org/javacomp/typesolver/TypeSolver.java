@@ -246,7 +246,7 @@ public class TypeSolver {
       builder.addAll(findImportedMethodsInFile(name, fileScope, globalScope));
     }
 
-    if (allowedKinds.contains(Entity.Kind.VARIABLE)) {
+    if (allowedKinds.contains(Entity.Kind.FIELD)) {
       Entity foundField = findImportedFieldInFile(name, fileScope, globalScope);
       if (foundField != null) {
         builder.add(foundField);

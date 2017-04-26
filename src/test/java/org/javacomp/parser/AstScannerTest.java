@@ -87,7 +87,7 @@ public class AstScannerTest {
   @Test
   public void classStaticFieldIsDeclaredInClassScope() {
     Entity variableEntity = lookupEntity(fileScope, "TestData.publicStaticIntField");
-    assertThat(variableEntity.getKind()).isEqualTo(Entity.Kind.VARIABLE);
+    assertThat(variableEntity.getKind()).isEqualTo(Entity.Kind.FIELD);
   }
 
   @Test
@@ -105,7 +105,7 @@ public class AstScannerTest {
   @Test
   public void enumItemIsDeclaredInEnumScope() {
     Entity variableEntity = lookupEntity(fileScope, "TestData.PublicInnerEnum.ENUM_VALUE1");
-    assertThat(variableEntity.getKind()).isEqualTo(Entity.Kind.VARIABLE);
+    assertThat(variableEntity.getKind()).isEqualTo(Entity.Kind.FIELD);
   }
 
   @Test

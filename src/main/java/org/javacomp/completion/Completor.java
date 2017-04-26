@@ -55,9 +55,36 @@ public class Completor {
     return FluentIterable.from(entities.entries())
         .transform(
             entry -> {
-              return CompletionCandidate.builder().setName(entry.getKey()).build();
+              return CompletionCandidate.builder()
+                  .setName(entry.getKey())
+                  .setKind(entityToKind(entry.getValue()))
+                  .build();
             })
         .filter(candidate -> !CONSTRUCTOR_NAME.equals(candidate.getName()))
         .toList();
+  }
+
+  private static CompletionCandidate.Kind entityToKind(Entity entity) {
+    switch (entity.getKind()) {
+      case CLASS:
+        return CompletionCandidate.Kind.CLASS;
+      case ANNOTATION:
+      case INTERFACE:
+        return CompletionCandidate.Kind.INTERFACE;
+      case ENUM:
+        return CompletionCandidate.Kind.ENUM;
+      case METHOD:
+        return CompletionCandidate.Kind.METHOD;
+      case VARIABLE:
+      case PRIMITIVE:
+        return CompletionCandidate.Kind.VARIABLE;
+      case FIELD:
+        return CompletionCandidate.Kind.FIELD;
+      case QUALIFIER:
+        return CompletionCandidate.Kind.PACKAGE;
+      case REFERENCE:
+      default:
+        return CompletionCandidate.Kind.UNKNOWN;
+    }
   }
 }
