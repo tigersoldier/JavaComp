@@ -15,6 +15,9 @@ public class TreePathFormatter {
   private TreePathFormatter() {}
 
   public static String formatTreePath(TreePath treePath) {
+    if (treePath == null) {
+      return "<empty>";
+    }
     StringBuilder sb = new StringBuilder();
     formatTreePath(treePath, sb);
     sb.append("<end>");
