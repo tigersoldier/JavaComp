@@ -1,7 +1,9 @@
 package org.javacomp.completion;
 
 import com.google.common.collect.HashMultimap;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multimap;
+import java.util.List;
 import java.util.Map;
 import org.javacomp.model.ClassEntity;
 import org.javacomp.model.Entity;
@@ -21,24 +23,26 @@ class CompleteEntityAction implements CompletionAction {
   }
 
   @Override
-  public Multimap<String, Entity> getVisibleEntities(
+  public List<CompletionCandidate> getCompletionCandidates(
       GlobalScope globalScope, EntityScope baseScope) {
-    Multimap<String, Entity> entityMap = HashMultimap.create();
+    Multimap<String, CompletionCandidate> candidateMap = HashMultimap.create();
     for (EntityScope currentScope = baseScope;
         currentScope != null;
         currentScope = currentScope.getParentScope().orElse(null)) {
       if (currentScope instanceof ClassEntity) {
         addEntries(
-            entityMap,
+            candidateMap,
             classMemberCompletor.getClassMembers((ClassEntity) currentScope, globalScope));
       } else if (currentScope instanceof FileScope) {
-        addEntries(entityMap, getPackageMembers((FileScope) currentScope, globalScope));
+        FileScope fileScope = (FileScope) currentScope;
+        addEntries(candidateMap, getPackageMembers(fileScope, globalScope));
+        addImportedEntities(candidateMap, fileScope);
       } else {
-        addEntries(entityMap, currentScope.getMemberEntities());
+        addEntries(candidateMap, currentScope.getMemberEntities());
       }
     }
-    entityMap.putAll(globalScope.getAllEntities());
-    return entityMap;
+    addEntries(candidateMap, globalScope.getAllEntities());
+    return ImmutableList.copyOf(candidateMap.values());
   }
 
   private Multimap<String, Entity> getPackageMembers(FileScope fileScope, GlobalScope globalScope) {
@@ -46,17 +50,35 @@ class CompleteEntityAction implements CompletionAction {
     return packageScope.getMemberEntities();
   }
 
-  private void addEntries(Multimap<String, Entity> target, Multimap<String, Entity> source) {
+  private void addImportedEntities(
+      Multimap<String, CompletionCandidate> candidateMap, FileScope fileScope) {
+    for (List<String> fullClassName : fileScope.getAllImportedClasses()) {
+      String simpleName = fullClassName.get(fullClassName.size() - 1);
+      if (!candidateMap.containsKey(simpleName)) {
+        candidateMap.put(
+            simpleName,
+            CompletionCandidate.builder()
+                .setName(simpleName)
+                .setKind(CompletionCandidate.Kind.CLASS)
+                .build());
+      }
+    }
+    // TODO: support on-demand imports and static imports.
+  }
+
+  private void addEntries(
+      Multimap<String, CompletionCandidate> target, Multimap<String, Entity> source) {
     for (Map.Entry<String, Entity> entry : source.entries()) {
       if (entryExist(target, entry)) {
         continue;
       }
-      target.put(entry.getKey(), entry.getValue());
+      target.put(entry.getKey(), new EntityCompletionCandidate(entry.getValue()));
     }
   }
 
-  private boolean entryExist(Multimap<String, Entity> entityMap, Map.Entry<String, Entity> entry) {
-    if (!entityMap.containsKey(entry.getKey())) {
+  private boolean entryExist(
+      Multimap<String, CompletionCandidate> candidateMap, Map.Entry<String, Entity> entry) {
+    if (!candidateMap.containsKey(entry.getKey())) {
       return false;
     }
 
@@ -67,8 +89,9 @@ class CompleteEntityAction implements CompletionAction {
       return false;
     }
 
-    for (Entity entity : entityMap.get(entry.getKey())) {
-      if (entity.getClass() == entry.getValue().getClass()) {
+    for (CompletionCandidate candidate : candidateMap.get(entry.getKey())) {
+      if (candidate.getKind()
+          == EntityCompletionCandidate.toCandidateKind(entry.getValue().getKind())) {
         return true;
       }
     }

@@ -1,5 +1,7 @@
 package org.javacomp.completion.testdata;
 
+import java.util.List;
+
 public class CompleteNewStatement {
   private static final String CONSTANT = "constant";
   private final int memberField = 1;

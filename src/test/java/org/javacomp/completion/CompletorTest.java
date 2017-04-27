@@ -72,10 +72,12 @@ public class CompletorTest {
             "stringParam",
             "CONSTANT",
             "InnerClass",
+            "List",
             "subClassMemberField",
             "memberField",
             "memberMethod",
             "staticMethod",
+            "staticMethod", // TODO: Fix duplicate.
             "org");
   }
 

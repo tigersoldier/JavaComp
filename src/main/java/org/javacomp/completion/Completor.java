@@ -1,14 +1,11 @@
 package org.javacomp.completion;
 
-import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Multimap;
 import com.sun.source.tree.LineMap;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
-import org.javacomp.model.Entity;
 import org.javacomp.model.EntityScope;
 import org.javacomp.model.FileScope;
 import org.javacomp.model.GlobalScope;
@@ -49,42 +46,11 @@ public class Completor {
     int position = (int) lineMap.getPosition(line, column);
     EntityScope completionPointScope = inputFileScope.get().getEntityScopeAt(position - 1);
     CompletionAction action = completionAst.getCompletionAction(compilationUnit, position);
-    Multimap<String, Entity> entities =
-        action.getVisibleEntities(globalScope, completionPointScope);
     // TODO: filter and sort candidates by query.
-    return FluentIterable.from(entities.entries())
-        .transform(
-            entry -> {
-              return CompletionCandidate.builder()
-                  .setName(entry.getKey())
-                  .setKind(entityToKind(entry.getValue()))
-                  .build();
-            })
+    return action
+        .getCompletionCandidates(globalScope, completionPointScope)
+        .stream()
         .filter(candidate -> !CONSTRUCTOR_NAME.equals(candidate.getName()))
-        .toList();
-  }
-
-  private static CompletionCandidate.Kind entityToKind(Entity entity) {
-    switch (entity.getKind()) {
-      case CLASS:
-        return CompletionCandidate.Kind.CLASS;
-      case ANNOTATION:
-      case INTERFACE:
-        return CompletionCandidate.Kind.INTERFACE;
-      case ENUM:
-        return CompletionCandidate.Kind.ENUM;
-      case METHOD:
-        return CompletionCandidate.Kind.METHOD;
-      case VARIABLE:
-      case PRIMITIVE:
-        return CompletionCandidate.Kind.VARIABLE;
-      case FIELD:
-        return CompletionCandidate.Kind.FIELD;
-      case QUALIFIER:
-        return CompletionCandidate.Kind.PACKAGE;
-      case REFERENCE:
-      default:
-        return CompletionCandidate.Kind.UNKNOWN;
-    }
+        .collect(ImmutableList.toImmutableList());
   }
 }

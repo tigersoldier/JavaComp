@@ -67,6 +67,10 @@ public class FileScope implements EntityScope {
     return Optional.ofNullable(importedClasses.get(simpleName));
   }
 
+  public List<List<String>> getAllImportedClasses() {
+    return ImmutableList.copyOf(importedClasses.values());
+  }
+
   public void addImportedClass(List<String> qualifiers) {
     if (qualifiers.isEmpty()) {
       return;
