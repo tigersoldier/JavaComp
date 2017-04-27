@@ -104,7 +104,7 @@ public class GlobalScope implements EntityScope {
     return rootPackage;
   }
 
-  private void addFileToPackage(FileScope fileScope) {
+  public synchronized PackageScope getPackageForFile(FileScope fileScope) {
     List<String> currentQualifiers = new ArrayList<>();
     PackageScope currentPackage = rootPackage;
     for (String qualifier : fileScope.getPackageQualifiers()) {
@@ -119,7 +119,11 @@ public class GlobalScope implements EntityScope {
       }
       currentQualifiers.add(qualifier);
     }
-    currentPackage.addFile(fileScope);
+    return currentPackage;
+  }
+
+  private void addFileToPackage(FileScope fileScope) {
+    getPackageForFile(fileScope).addFile(fileScope);
   }
 
   private void removeFileFromPacakge(FileScope fileScope) {

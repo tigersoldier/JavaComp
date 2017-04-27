@@ -32,7 +32,7 @@ class CompletionAst {
     if (treePath.getLeaf() instanceof MemberSelectTree) {
       return new CompleteMemberAction(treePath, typeSolver, expressionSolver);
     }
-    return new CompleteEntityAction();
+    return new CompleteEntityAction(typeSolver, expressionSolver);
   }
 
   /** An AST scanner that returns the last meaningful sub tree for completion. */

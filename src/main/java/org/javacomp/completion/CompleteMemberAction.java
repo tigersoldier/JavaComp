@@ -45,12 +45,8 @@ class CompleteMemberAction implements CompletionAction {
 
     Entity expressionEntity = solvedType.get().getEntity();
     if (expressionEntity instanceof ClassEntity) {
-      ClassEntity actualClassEntity = (ClassEntity) expressionEntity;
-      ImmutableMultimap.Builder<String, Entity> builder = new ImmutableMultimap.Builder<>();
-      for (ClassEntity classEntity : typeSolver.classHierarchy(actualClassEntity, globalScope)) {
-        builder.putAll(classEntity.getMemberEntities());
-      }
-      return builder.build();
+      return new ClassMemberCompletor(typeSolver, expressionSolver)
+          .getClassMembers((ClassEntity) expressionEntity, globalScope);
     }
 
     return solvedType.get().getEntity().getChildScope().getAllEntities();

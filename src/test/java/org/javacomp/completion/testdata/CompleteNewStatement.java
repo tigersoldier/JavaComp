@@ -8,7 +8,11 @@ public class CompleteNewStatement {
 
   public void staticMethod() {}
 
-  public void memberMethod(boolean param1, String stringParam) {
-    /** @complete */
+  public class InnerClass extends CompleteNewStatement {
+    private final String subClassMemberField;
+
+    public void memberMethod(boolean param1, String stringParam) {
+      /** @complete */
+    }
   }
 }

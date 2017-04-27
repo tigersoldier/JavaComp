@@ -68,10 +68,11 @@ public class CompletorTest {
     assertThat(getCandidateNames(completeTestFile("CompleteNewStatement.java")))
         .containsExactly(
             "CompleteNewStatement",
-            "CompleteNewStatement",
             "param1",
             "stringParam",
             "CONSTANT",
+            "InnerClass",
+            "subClassMemberField",
             "memberField",
             "memberMethod",
             "staticMethod",
