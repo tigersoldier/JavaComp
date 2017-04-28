@@ -72,6 +72,7 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
     this.fileScope = new FileScope(filename, this.currentQualifiers, compilationUnit);
     this.scopeRangeBuilder = new NestedRangeMapBuilder<>();
     this.endPosTable = compilationUnit.endPositions;
+    addScopeRange(compilationUnit, this.fileScope);
 
     // Handle imports
     for (ImportTree importTree : node.getImports()) {

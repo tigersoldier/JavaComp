@@ -109,6 +109,12 @@ public class AstScannerTest {
   }
 
   @Test
+  public void fileScopeRange() {
+    EntityScope scopeBeforeClass = getEntityScopeBefore("import foo");
+    assertThat(scopeBeforeClass).isEqualTo(fileScope);
+  }
+
+  @Test
   public void topLevelClassScopeRange() {
     EntityScope scopeAtStart = getEntityScopeAfter("public class TestData {");
     EntityScope scopeAtEnd = getEntityScopeBefore("} // class TestData");
