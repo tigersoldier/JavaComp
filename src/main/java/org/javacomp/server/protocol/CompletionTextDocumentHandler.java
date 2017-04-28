@@ -66,6 +66,8 @@ public class CompletionTextDocumentHandler extends RequestHandler<TextDocumentPo
         return CompletionItemKind.FIELD;
       case PACKAGE:
         return CompletionItemKind.MODULE;
+      case KEYWORD:
+        return CompletionItemKind.KEYWORD;
       default:
         return CompletionItemKind.UNKNOWN;
     }

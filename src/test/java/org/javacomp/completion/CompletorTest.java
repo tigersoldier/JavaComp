@@ -4,6 +4,8 @@ import static com.google.common.truth.Truth.assertThat;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.FluentIterable;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 import com.sun.source.tree.LineMap;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.parser.JavacParser;
@@ -13,6 +15,7 @@ import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Log;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.List;
 import org.javacomp.model.FileScope;
 import org.javacomp.model.GlobalScope;
@@ -65,8 +68,12 @@ public class CompletorTest {
 
   @Test
   public void completeNewStatement() throws Exception {
-    assertThat(getCandidateNames(completeTestFile("CompleteNewStatement.java")))
-        .containsExactly(
+    List<String> keywords =
+        Arrays.stream(KeywordCompletionCandidate.values())
+            .map(e -> e.getName())
+            .collect(ImmutableList.toImmutableList());
+    List<String> expectedMembers =
+        ImmutableList.of(
             "CompleteNewStatement",
             "param1",
             "stringParam",
@@ -79,6 +86,8 @@ public class CompletorTest {
             "staticMethod",
             "staticMethod", // TODO: Fix duplicate.
             "org");
+    assertThat(getCandidateNames(completeTestFile("CompleteNewStatement.java")))
+        .containsExactlyElementsIn(Iterables.concat(expectedMembers, keywords));
   }
 
   @Test

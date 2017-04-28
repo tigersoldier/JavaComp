@@ -3,7 +3,7 @@ package org.javacomp.completion;
 import org.javacomp.model.Entity;
 
 /** A {@link CompletionCandidate} backed by {@link Entity}. */
-class EntityCompletionCandidate extends CompletionCandidate {
+class EntityCompletionCandidate implements CompletionCandidate {
   private final Entity entity;
 
   EntityCompletionCandidate(Entity entity) {

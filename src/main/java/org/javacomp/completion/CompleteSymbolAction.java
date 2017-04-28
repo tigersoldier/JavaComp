@@ -26,6 +26,7 @@ class CompleteEntityAction implements CompletionAction {
   public List<CompletionCandidate> getCompletionCandidates(
       GlobalScope globalScope, EntityScope baseScope) {
     Multimap<String, CompletionCandidate> candidateMap = HashMultimap.create();
+    addKeywords(candidateMap);
     for (EntityScope currentScope = baseScope;
         currentScope != null;
         currentScope = currentScope.getParentScope().orElse(null)) {
@@ -57,13 +58,20 @@ class CompleteEntityAction implements CompletionAction {
       if (!candidateMap.containsKey(simpleName)) {
         candidateMap.put(
             simpleName,
-            CompletionCandidate.builder()
+            SimpleCompletionCandidate.builder()
                 .setName(simpleName)
                 .setKind(CompletionCandidate.Kind.CLASS)
                 .build());
       }
     }
     // TODO: support on-demand imports and static imports.
+  }
+
+  private void addKeywords(Multimap<String, CompletionCandidate> candidateMap) {
+    // TODO: add only keywords that are available for the current context.
+    for (KeywordCompletionCandidate keyword : KeywordCompletionCandidate.values()) {
+      candidateMap.put(keyword.getName(), keyword);
+    }
   }
 
   private void addEntries(

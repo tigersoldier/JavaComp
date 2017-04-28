@@ -1,9 +1,6 @@
 package org.javacomp.completion;
 
-import com.google.auto.value.AutoValue;
-
-@AutoValue
-public abstract class CompletionCandidate {
+public interface CompletionCandidate {
   public enum Kind {
     UNKNOWN,
     CLASS,
@@ -13,22 +10,10 @@ public abstract class CompletionCandidate {
     VARIABLE,
     FIELD,
     PACKAGE,
+    KEYWORD,
   }
 
   public abstract String getName();
 
   public abstract Kind getKind();
-
-  public static CompletionCandidate.Builder builder() {
-    return new AutoValue_CompletionCandidate.Builder();
-  }
-
-  @AutoValue.Builder
-  public abstract static class Builder {
-    public abstract Builder setName(String name);
-
-    public abstract Builder setKind(Kind kind);
-
-    public abstract CompletionCandidate build();
-  }
 }
