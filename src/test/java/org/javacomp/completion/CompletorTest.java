@@ -13,6 +13,7 @@ import com.sun.tools.javac.parser.ParserFactory;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Log;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -29,12 +30,25 @@ import org.junit.runners.JUnit4;
 public class CompletorTest {
   private static final String TEST_DATA_DIR = "src/test/java/org/javacomp/completion/testdata/";
   private static final String COMPLETION_POINT_MARK = "/** @complete */";
+  private static final String INSERTION_POINT_MARK = "/** @insert */";
 
-  private List<CompletionCandidate> completeTestFile(String filename) throws Exception {
-    Context javacContext = new Context();
+  private String getFileContent(String filename) {
     String inputFilePath = TEST_DATA_DIR + filename;
+    try {
+      return new String(Files.readAllBytes(Paths.get(inputFilePath)), UTF_8);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  private List<CompletionCandidate> completeTestFile(String filename) {
+    String testDataContent = getFileContent(filename);
+    return completeContent(filename, testDataContent);
+  }
+
+  private List<CompletionCandidate> completeContent(String inputFilePath, String testDataContent) {
+    Context javacContext = new Context();
     JavacFileManager fileManager = new JavacFileManager(javacContext, true /* register */, UTF_8);
-    String testDataContent = new String(Files.readAllBytes(Paths.get(inputFilePath)), UTF_8);
     int completionPoint = testDataContent.indexOf(COMPLETION_POINT_MARK);
     assertThat(completionPoint).isGreaterThan(-1);
 
@@ -92,7 +106,34 @@ public class CompletorTest {
 
   @Test
   public void completeMemberSelection() throws Exception {
-    assertThat(getCandidateNames(completeTestFile("CompleteMember.java")))
-        .containsExactly("field", "method");
+    String baseAboveCompletion = "above./** @complete */";
+    List<String> aboveCases =
+        ImmutableList.of(baseAboveCompletion, baseAboveCompletion + "\nabove.aboveMethod();");
+    for (String aboveCase : aboveCases) {
+      List<CompletionCandidate> candidates =
+          completeWithContent("CompleteInMethod.java", aboveCase);
+      assertThat(getCandidateNames(candidates)).containsExactly("aboveField", "aboveMethod");
+    }
+  }
+
+  @Test
+  public void completeImport() throws Exception {
+    String baseImportCompletion = "import org.javacomp./** @complete */";
+    List<String> cases =
+        ImmutableList.of(
+            baseImportCompletion,
+            baseImportCompletion + "\nimport java.util.List;",
+            "import java.util.List;\n" + baseImportCompletion);
+    for (String importCase : cases) {
+      List<CompletionCandidate> candidates =
+          completeWithContent("CompleteOutOfClass.java", importCase);
+      assertThat(getCandidateNames(candidates)).containsExactly("completion");
+    }
+  }
+
+  private List<CompletionCandidate> completeWithContent(String filename, String toInsert) {
+    String testDataContent = getFileContent(filename);
+    String newContent = testDataContent.replace(INSERTION_POINT_MARK, toInsert);
+    return completeContent(filename, newContent);
   }
 }

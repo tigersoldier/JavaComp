@@ -1,5 +1,6 @@
 package org.javacomp.completion;
 
+import com.sun.source.tree.ErroneousTree;
 import com.sun.source.tree.MemberSelectTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.util.TreePath;
@@ -67,7 +68,18 @@ class CompletionAst {
         return ret;
       }
 
-      return currentPath;
+      return (tree instanceof ErroneousTree) ? null : currentPath;
+    }
+
+    @Override
+    public TreePath visitErroneous(ErroneousTree node, Void unused) {
+      for (Tree tree : node.getErrorTrees()) {
+        TreePath ret = scan(tree, unused);
+        if (ret != null) {
+          return ret;
+        }
+      }
+      return null;
     }
 
     @Override
