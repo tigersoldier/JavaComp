@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.RangeMap;
+import com.sun.source.tree.LineMap;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -26,6 +27,7 @@ public class FileScope implements EntityScope {
   private final List<List<String>> onDemandClassImportQualifiers;
   private final JCCompilationUnit compilationUnit;
   private RangeMap<Integer, EntityScope> scopeRangeMap = null;
+  private LineMap adjustedLineMap = null;
 
   public FileScope(
       String filename, List<String> packageQualifiers, JCCompilationUnit compilationUnit) {
@@ -148,5 +150,22 @@ public class FileScope implements EntityScope {
 
   public JCCompilationUnit getCompilationUnit() {
     return compilationUnit;
+  }
+
+  public void setAdjustedLineMap(LineMap adjustedLineMap) {
+    this.adjustedLineMap = adjustedLineMap;
+  }
+
+  /**
+   * Gets the {@link LineMap} for this file.
+   *
+   * <p>Note: use this method instead of {@code getCompilationUnit().getLineMap()}. The line map may
+   * need adjustment if the source code is fixed by {@code FileContentFixer}.
+   */
+  public LineMap getLineMap() {
+    if (adjustedLineMap != null) {
+      return adjustedLineMap;
+    }
+    return compilationUnit.getLineMap();
   }
 }

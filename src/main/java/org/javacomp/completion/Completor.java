@@ -42,7 +42,7 @@ public class Completor {
     }
 
     JCCompilationUnit compilationUnit = inputFileScope.get().getCompilationUnit();
-    LineMap lineMap = compilationUnit.getLineMap();
+    LineMap lineMap = inputFileScope.get().getLineMap();
     int position = (int) lineMap.getPosition(line, column);
     EntityScope completionPointScope = inputFileScope.get().getEntityScopeAt(position - 1);
     CompletionAction action = completionAst.getCompletionAction(compilationUnit, position);

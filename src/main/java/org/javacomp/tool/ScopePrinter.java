@@ -13,27 +13,34 @@ import org.javacomp.model.MethodEntity;
 import org.javacomp.model.TypeReference;
 import org.javacomp.model.VariableEntity;
 import org.javacomp.parser.AstScanner;
+import org.javacomp.parser.FileContentFixer;
 import org.javacomp.parser.ParserContext;
 
 public class ScopePrinter {
   private static final Joiner QUALIFIER_JOINER = Joiner.on(".");
   private static final Joiner LINE_JOINER = Joiner.on("\n");
-  private final String filename;
   private final ParserContext parserContext;
   private final AstScanner astScanner;
+  private final FileContentFixer fileContentFixer;
 
-  public ScopePrinter(String filename) {
-    this.filename = filename;
+  public ScopePrinter() {
     this.parserContext = new ParserContext();
     this.astScanner = new AstScanner();
+    this.fileContentFixer = new FileContentFixer(this.parserContext);
   }
 
-  public void parse() {
-    String content;
+  public void parse(String filename, boolean fixFileContent) {
+    CharSequence content;
     try {
       content = LINE_JOINER.join(Files.readAllLines(Paths.get(filename)));
     } catch (IOException e) {
       throw new RuntimeException(e);
+    }
+
+    if (fixFileContent) {
+      content = fileContentFixer.fixFileContent(content).getContent();
+      System.out.println("Fixed content:");
+      System.out.println(content);
     }
     FileScope fileScope = astScanner.startScan(parserContext.parse(filename, content), filename);
     printScope(fileScope, 0 /* scope */);
@@ -105,9 +112,24 @@ public class ScopePrinter {
 
   public static void main(String[] args) {
     if (args.length < 1) {
-      System.out.println("Need at least one param.");
-      System.exit(1);
+      printHelp();
     }
-    new ScopePrinter(args[0]).parse();
+    boolean fixFileContent = false;
+    String filename;
+    if ("-f".equals(args[0])) {
+      if (args.length < 2) {
+        printHelp();
+      }
+      fixFileContent = true;
+      filename = args[1];
+    } else {
+      filename = args[0];
+    }
+    new ScopePrinter().parse(filename, fixFileContent);
+  }
+
+  private static void printHelp() {
+    System.out.println("Usage: ScopePrinter [-f] <file path>");
+    System.exit(1);
   }
 }

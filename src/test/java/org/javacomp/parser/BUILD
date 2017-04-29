@@ -20,3 +20,11 @@ java_test(
         ":tests",
     ],
 )
+
+java_test(
+    name = "AdjustedLineMapTest",
+    size = "small",
+    runtime_deps = [
+        ":tests",
+    ],
+)

@@ -1,5 +1,6 @@
 package org.javacomp.project;
 
+import com.sun.source.tree.LineMap;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
@@ -18,6 +19,8 @@ import org.javacomp.logging.JLogger;
 import org.javacomp.model.FileScope;
 import org.javacomp.model.GlobalScope;
 import org.javacomp.parser.AstScanner;
+import org.javacomp.parser.FileContentFixer;
+import org.javacomp.parser.FileContentFixer.FixedContent;
 import org.javacomp.parser.ParserContext;
 
 /** Handles all files in a project. */
@@ -32,6 +35,9 @@ public class Project {
   private final FileManager fileManager;
   private final URI rootUri;
   private final ParserContext parserContext;
+  private final FileContentFixer fileContentFixer;
+
+  private Path lastCompletedFile = null;
 
   private boolean initialized;
 
@@ -40,6 +46,7 @@ public class Project {
     astScanner = new AstScanner();
     completor = new Completor();
     parserContext = new ParserContext();
+    fileContentFixer = new FileContentFixer(parserContext);
     this.fileManager = fileManager;
     this.rootUri = rootUri;
   }
@@ -66,13 +73,23 @@ public class Project {
   }
 
   private void addOrUpdateFile(Path filePath) {
-    Optional<CharSequence> content = fileManager.getFileContent(filePath);
-    if (content.isPresent()) {
-      FileScope fileScope =
-          astScanner.startScan(
-              parserContext.parse(filePath.toString(), content.get()), filePath.toString());
-      globalScope.addOrReplaceFileScope(fileScope);
+    Optional<CharSequence> optionalContent = fileManager.getFileContent(filePath);
+    if (!optionalContent.isPresent()) {
+      return;
     }
+    CharSequence content = optionalContent.get();
+    LineMap adjustedLineMap = null;
+
+    if (lastCompletedFile != null && lastCompletedFile.equals(filePath)) {
+      FixedContent fixedContent = fileContentFixer.fixFileContent(content);
+      content = fixedContent.getContent();
+      adjustedLineMap = fixedContent.getAdjustedLineMap();
+    }
+    FileScope fileScope =
+        astScanner.startScan(
+            parserContext.parse(filePath.toString(), content), filePath.toString());
+    fileScope.setAdjustedLineMap(adjustedLineMap);
+    globalScope.addOrReplaceFileScope(fileScope);
   }
 
   private void removeFile(Path filePath) {
@@ -85,6 +102,11 @@ public class Project {
    * @param column 1-based character offset of the line
    */
   public List<CompletionCandidate> getCompletionCandidates(Path filePath, int line, int column) {
+    logger.severe("[DEBUG]last: %s, comp path: %s", lastCompletedFile, filePath);
+    if (!filePath.equals(lastCompletedFile)) {
+      lastCompletedFile = filePath;
+      addOrUpdateFile(filePath);
+    }
     return completor.getCompletionCandidates(globalScope, filePath, line, column);
   }
 

@@ -5,6 +5,8 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.parser.JavacParser;
 import com.sun.tools.javac.parser.ParserFactory;
+import com.sun.tools.javac.parser.Scanner;
+import com.sun.tools.javac.parser.ScannerFactory;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Log;
@@ -26,6 +28,8 @@ public class ParserContext {
    * @param content the content of the Java file
    */
   public JCCompilationUnit parse(String filename, CharSequence content) {
+    // Set source file of the log before parsing. If not set, IllegalArgumentException will be
+    // thrown if the parser enconters errors.
     SourceFileObject sourceFileObject = new SourceFileObject(filename);
     Log javacLog = Log.instance(javacContext);
     javacLog.useSource(sourceFileObject);
@@ -36,5 +40,9 @@ public class ParserContext {
             .newParser(
                 content, true /* keepDocComments */, true /* keepEndPos */, true /* keepLineMap */);
     return parser.parseCompilationUnit();
+  }
+
+  public Scanner tokenize(CharSequence content, boolean keepDocComments) {
+    return ScannerFactory.instance(javacContext).newScanner(content, keepDocComments);
   }
 }

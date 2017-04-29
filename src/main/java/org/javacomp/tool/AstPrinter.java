@@ -14,15 +14,12 @@ import com.sun.source.tree.Tree;
 import com.sun.source.tree.TypeParameterTree;
 import com.sun.source.tree.VariableTree;
 import com.sun.source.util.TreeScanner;
-import com.sun.tools.javac.file.JavacFileManager;
-import com.sun.tools.javac.parser.JavacParser;
-import com.sun.tools.javac.parser.ParserFactory;
-import com.sun.tools.javac.util.Context;
-import com.sun.tools.javac.util.Log;
+import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import org.javacomp.parser.SourceFileObject;
+import org.javacomp.parser.FileContentFixer;
+import org.javacomp.parser.ParserContext;
 
 /**
  * Print AST tree produced by javac parser.
@@ -30,39 +27,32 @@ import org.javacomp.parser.SourceFileObject;
  * <p>Usage:
  *
  * <pre>
- * bazel run //src/main/java/org/javacomp/tool:AstPrinter -- <java-file-name>
+ * bazel run //src/main/java/org/javacomp/tool:AstPrinter -- [-f] <java-file-name>
  * </pre>
  */
 public class AstPrinter extends TreeScanner<Void, Void> {
-  private final String filename;
-  private final Context javacContext;
-  private final JavacFileManager fileManager;
+  private final FileContentFixer fileContentFixer;
+  private final ParserContext parserContext;
 
   private int indent;
 
-  public AstPrinter(String filename) {
-    this.filename = filename;
+  public AstPrinter() {
     this.indent = 0;
-    this.javacContext = new Context();
-    this.fileManager = new JavacFileManager(javacContext, true /* register */, UTF_8);
+    this.parserContext = new ParserContext();
+    this.fileContentFixer = new FileContentFixer(this.parserContext);
   }
 
-  public void scan() {
+  public void scan(String filename, boolean fixFileContent) {
     try {
-      String input = new String(Files.readAllBytes(Paths.get(filename)), UTF_8);
+      CharSequence content = new String(Files.readAllBytes(Paths.get(filename)), UTF_8);
 
-      // Set source file of the log before parsing. If not set, IllegalArgumentException will be
-      // thrown if the parser enconters errors.
-      SourceFileObject sourceFileObject = new SourceFileObject(filename);
-      Log javacLog = Log.instance(javacContext);
-      javacLog.useSource(sourceFileObject);
-
-      // Create a parser and start parsing.
-      JavacParser parser =
-          ParserFactory.instance(javacContext)
-              .newParser(
-                  input, true /* keepDocComments */, true /* keepEndPos */, true /* keepLineMap */);
-      scan(parser.parseCompilationUnit(), null);
+      if (fixFileContent) {
+        content = fileContentFixer.fixFileContent(content).getContent();
+        System.out.println("Updated content:");
+        System.out.println(content);
+      }
+      JCCompilationUnit compilationUnit = parserContext.parse(filename, content.toString());
+      scan(compilationUnit, null);
       System.out.println("");
     } catch (IOException e) {
       System.exit(1);
@@ -194,9 +184,24 @@ public class AstPrinter extends TreeScanner<Void, Void> {
 
   public static void main(String[] args) {
     if (args.length < 1) {
-      System.out.println("Usage: AstPrinter <javafile>");
-      System.exit(1);
+      printHelp();
     }
-    new AstPrinter(args[0]).scan();
+    boolean fixFileContent = false;
+    String filename;
+    if ("-f".equals(args[0])) {
+      if (args.length < 2) {
+        printHelp();
+      }
+      fixFileContent = true;
+      filename = args[1];
+    } else {
+      filename = args[0];
+    }
+    new AstPrinter().scan(filename, fixFileContent);
+  }
+
+  private static void printHelp() {
+    System.out.println("Usage: AstPrinter <javafile>");
+    System.exit(1);
   }
 }

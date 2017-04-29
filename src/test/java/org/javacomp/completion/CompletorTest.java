@@ -7,12 +7,7 @@ import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.sun.source.tree.LineMap;
-import com.sun.tools.javac.file.JavacFileManager;
-import com.sun.tools.javac.parser.JavacParser;
-import com.sun.tools.javac.parser.ParserFactory;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
-import com.sun.tools.javac.util.Context;
-import com.sun.tools.javac.util.Log;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -21,7 +16,9 @@ import java.util.List;
 import org.javacomp.model.FileScope;
 import org.javacomp.model.GlobalScope;
 import org.javacomp.parser.AstScanner;
-import org.javacomp.parser.SourceFileObject;
+import org.javacomp.parser.FileContentFixer;
+import org.javacomp.parser.FileContentFixer.FixedContent;
+import org.javacomp.parser.ParserContext;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -47,28 +44,22 @@ public class CompletorTest {
   }
 
   private List<CompletionCandidate> completeContent(String inputFilePath, String testDataContent) {
-    Context javacContext = new Context();
-    JavacFileManager fileManager = new JavacFileManager(javacContext, true /* register */, UTF_8);
+    ParserContext parserContext = new ParserContext();
+    FileContentFixer fileContentFixer = new FileContentFixer(parserContext);
+
     int completionPoint = testDataContent.indexOf(COMPLETION_POINT_MARK);
     assertThat(completionPoint).isGreaterThan(-1);
 
-    // If source file not set, parser will throw IllegalArgumentException when errors occur.
-    SourceFileObject sourceFileObject = new SourceFileObject("/" + inputFilePath);
-    Log javacLog = Log.instance(javacContext);
-    javacLog.useSource(sourceFileObject);
-
-    JavacParser parser =
-        ParserFactory.instance(javacContext)
-            .newParser(
-                testDataContent,
-                true /* keepDocComments */,
-                true /* keepEndPos */,
-                true /* keepLineMap */);
-    JCCompilationUnit compilationUnit = parser.parseCompilationUnit();
-    LineMap lineMap = compilationUnit.getLineMap();
+    LineMap lineMap = parserContext.tokenize(testDataContent, false).getLineMap();
     int line = (int) lineMap.getLineNumber(completionPoint);
     int column = (int) lineMap.getColumnNumber(completionPoint);
+
+    FixedContent fixedContent = fileContentFixer.fixFileContent(testDataContent);
+
+    JCCompilationUnit compilationUnit =
+        parserContext.parse(inputFilePath, fixedContent.getContent());
     FileScope inputFileScope = new AstScanner().startScan(compilationUnit, inputFilePath);
+    inputFileScope.setAdjustedLineMap(fixedContent.getAdjustedLineMap());
     GlobalScope globalScope = new GlobalScope();
     globalScope.addOrReplaceFileScope(inputFileScope);
 
@@ -113,6 +104,20 @@ public class CompletorTest {
       List<CompletionCandidate> candidates =
           completeWithContent("CompleteInMethod.java", aboveCase);
       assertThat(getCandidateNames(candidates)).containsExactly("aboveField", "aboveMethod");
+    }
+
+    String baseBelowCompletion = "below./** @complete */";
+    List<String> belowCases =
+        ImmutableList.of(
+            baseBelowCompletion,
+            baseBelowCompletion + "\nbelow.belowMethod();",
+            "above.;" + baseBelowCompletion);
+    for (String belowCase : belowCases) {
+      List<CompletionCandidate> candidates =
+          completeWithContent("CompleteInMethod.java", belowCase);
+      assertThat(getCandidateNames(candidates))
+          .named(belowCase)
+          .containsExactly("belowField", "belowMethod");
     }
   }
 

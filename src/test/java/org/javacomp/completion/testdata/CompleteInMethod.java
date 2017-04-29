@@ -10,6 +10,7 @@ public class CompleteInMethod {
 
   public void completeMethod() {
     AboveClass above = new AboveClass();
+    BelowClass below = new BelowClass();
     /** @insert */
   }
 
