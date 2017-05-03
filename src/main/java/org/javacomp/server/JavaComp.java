@@ -10,9 +10,12 @@ import java.net.URI;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Level;
+import javax.annotation.Nullable;
 import org.javacomp.file.FileManager;
 import org.javacomp.file.FileManagerImpl;
 import org.javacomp.logging.JLogger;
+import org.javacomp.options.JavaCompOptions;
 import org.javacomp.project.Project;
 import org.javacomp.server.io.RequestReader;
 import org.javacomp.server.io.ResponseWriter;
@@ -79,13 +82,25 @@ public class JavaComp implements Server {
   }
 
   @Override
-  public synchronized void initialize(int clientProcessId, URI projectRootUri) {
+  public synchronized void initialize(
+      int clientProcessId, URI projectRootUri, @Nullable JavaCompOptions options) {
     checkState(!initialized, "Cannot initialize the server twice in a row.");
     initialized = true;
     executor = Executors.newFixedThreadPool(NUM_THREADS);
     fileManager = new FileManagerImpl(projectRootUri, executor);
     project = new Project(fileManager, projectRootUri);
     project.initialize();
+
+    if (options != null) {
+      Level logLevel = options.getLogLevel();
+      String logPath = options.getLogPath();
+      if (logPath != null) {
+        JLogger.setLogFile(logPath);
+      }
+      if (logLevel != null) {
+        JLogger.setLogLevel(logLevel);
+      }
+    }
     //TODO: Someday we should implement monitoring client process for all major platforms.
   }
 

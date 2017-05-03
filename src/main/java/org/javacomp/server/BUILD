@@ -14,7 +14,9 @@ java_library(
     name = "server",
     srcs = ["Server.java"],
     deps = [
+        "//external:jsr305",
         "//src/main/java/org/javacomp/file",
+        "//src/main/java/org/javacomp/options",
         "//src/main/java/org/javacomp/project",
     ],
 )
@@ -44,6 +46,7 @@ java_library(
         "//src/main/java/org/javacomp/file",
         "//src/main/java/org/javacomp/file:impl",
         "//src/main/java/org/javacomp/logging",
+        "//src/main/java/org/javacomp/options",
         "//src/main/java/org/javacomp/project",
         "//src/main/java/org/javacomp/server/io",
         "//src/main/java/org/javacomp/server/protocol",
@@ -58,9 +61,15 @@ java_library(
 )
 
 java_library(
+    name = "gsonenum",
+    srcs = ["GsonEnum.java"],
+)
+
+java_library(
     name = "gsonutils",
     srcs = ["GsonUtils.java"],
     deps = [
+        ":gsonenum",
         "//third_party:gson",
     ],
 )

@@ -30,6 +30,50 @@ public class GsonUtils {
         return null;
       }
 
+      GsonEnum.SerializeType serializeType = GsonEnum.SerializeType.ORDINAL;
+      GsonEnum annotation = rawType.getAnnotation(GsonEnum.class);
+      if (annotation != null && annotation.value() != null) {
+        serializeType = annotation.value();
+      }
+
+      switch (serializeType) {
+        case ORDINAL:
+          return createOrdinalTypeAdapter(rawType);
+        case LOWERCASE_NAME:
+          return createLowercaseTypeAdapter(rawType);
+      }
+      return null;
+    }
+
+    private <T> TypeAdapter<T> createLowercaseTypeAdapter(Class<T> rawType) {
+      final Map<String, T> lowercaseNameToConstant = new HashMap<>();
+      for (T constant : rawType.getEnumConstants()) {
+        @SuppressWarnings("unchecked")
+        Enum enumConstant = (Enum) constant;
+        lowercaseNameToConstant.put(enumConstant.name().toLowerCase(), constant);
+      }
+
+      return new TypeAdapter<T>() {
+        public void write(JsonWriter out, T value) throws IOException {
+          if (value == null) {
+            out.nullValue();
+          } else {
+            out.value(((Enum) value).name().toLowerCase());
+          }
+        }
+
+        public T read(JsonReader reader) throws IOException {
+          if (reader.peek() == JsonToken.NULL) {
+            reader.nextNull();
+            return null;
+          } else {
+            return lowercaseNameToConstant.get(reader.nextString());
+          }
+        }
+      };
+    }
+
+    private <T> TypeAdapter<T> createOrdinalTypeAdapter(Class<T> rawType) {
       final Map<Integer, T> ordinalToConstant = new HashMap<>();
       for (T constant : rawType.getEnumConstants()) {
         @SuppressWarnings("unchecked")
