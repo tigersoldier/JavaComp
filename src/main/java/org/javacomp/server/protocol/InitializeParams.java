@@ -39,6 +39,9 @@ public class InitializeParams implements RequestParams {
     @Override
     @Nullable
     public Level getLogLevel() {
+      if (logLevel == null) {
+        return null;
+      }
       switch (logLevel) {
         case SEVERE:
           return Level.SEVERE;
