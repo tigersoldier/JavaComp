@@ -2,12 +2,15 @@ package org.javacomp.typesolver.testdata;
 
 public class TestExpression {
   public final InnerA innerA = new InnerA();
+  public final TestClass testClass = new TestClass();
 
   public InnerB baseInnerB;
 
   public InnerC baseMethod();
 
   public InnerB baseMethod(int foo);
+
+  public TestClass getTestClass();
 
   public void method() {
     InnerA varA = new InnerA();

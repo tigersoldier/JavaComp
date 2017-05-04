@@ -6,6 +6,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.base.Joiner;
 import com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.tools.javac.file.JavacFileManager;
@@ -39,6 +40,10 @@ public class TestUtil {
 
   /** Create a global scope containing parsed files. */
   public static GlobalScope parseFiles(String dirName, String... javaFiles) {
+    return parseFiles(dirName, ImmutableList.copyOf(javaFiles));
+  }
+
+  public static GlobalScope parseFiles(String dirName, List<String> javaFiles) {
     GlobalScope globalScope = new GlobalScope();
     for (String filename : javaFiles) {
       Path inputFilePath = Paths.get(dirName, filename);

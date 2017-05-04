@@ -8,6 +8,7 @@ import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.IdentifierTree;
 import com.sun.source.tree.MemberSelectTree;
 import com.sun.source.tree.MethodInvocationTree;
+import com.sun.source.tree.NewClassTree;
 import com.sun.source.util.TreeScanner;
 import java.util.ArrayList;
 import java.util.List;
@@ -78,14 +79,31 @@ public class ExpressionSolver {
     }
 
     @Override
+    public SolvedType visitNewClass(NewClassTree node, Void unused) {
+      if (node.getEnclosingExpression() != null) {
+        // <EnclosingExpression>.new <identifier>(...).
+        SolvedType enclosingClassType = scan(node.getEnclosingExpression(), null);
+        if (enclosingClassType == null
+            || !(enclosingClassType.getEntity() instanceof ClassEntity)) {
+          return null;
+        }
+        return new ExpressionTypeScanner(
+                globalScope, enclosingClassType.getEntity().getChildScope())
+            .scan(node.getIdentifier(), null);
+      } else {
+        return scan(node.getIdentifier(), null);
+      }
+    }
+
+    @Override
     public SolvedType visitMemberSelect(MemberSelectTree node, Void unused) {
       List<Optional<SolvedType>> savedMethodArgs = methodArgs;
       methodArgs = null;
       SolvedType expressionType = scan(node.getExpression(), null);
+      methodArgs = savedMethodArgs;
       if (expressionType == null) {
         return null;
       }
-      methodArgs = savedMethodArgs;
 
       String identifier = node.getIdentifier().toString();
 
@@ -203,7 +221,7 @@ public class ExpressionSolver {
       @SuppressWarnings("unchecked")
       List<MethodEntity> methods = (List<MethodEntity>) (List) methodEntities;
       MethodEntity solvedMethod = overloadSolver.solve(methods, methodArgs, globalScope);
-      return typeSolver.solve(solvedMethod.getReturnType(), globalScope, baseScope).orElse(null);
+      return typeSolver.solve(solvedMethod.getReturnType(), globalScope, solvedMethod).orElse(null);
     }
 
     @Nullable

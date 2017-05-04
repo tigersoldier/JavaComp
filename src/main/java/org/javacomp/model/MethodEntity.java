@@ -7,6 +7,7 @@ import com.google.common.collect.Multimap;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import org.javacomp.model.util.QualifiedNames;
 
 /** Represents a method. */
 public class MethodEntity extends Entity implements EntityScope {
@@ -98,7 +99,7 @@ public class MethodEntity extends Entity implements EntityScope {
     return Optional.of(classEntity);
   }
 
-  /////////////// Non overriding methods ////////////////
+  /////////////// Other methods ////////////////
 
   public List<VariableEntity> getParameters() {
     return parameters;
@@ -110,5 +111,12 @@ public class MethodEntity extends Entity implements EntityScope {
 
   public ClassEntity getParentClass() {
     return classEntity;
+  }
+
+  @Override
+  public String toString() {
+    return "MethodEntity<"
+        + QualifiedNames.formatQualifiedName(getQualifiers(), getSimpleName())
+        + ">";
   }
 }

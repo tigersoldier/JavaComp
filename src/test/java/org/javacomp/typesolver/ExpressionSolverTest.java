@@ -2,8 +2,10 @@ package org.javacomp.typesolver;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.truth.Truth8;
 import com.sun.source.tree.ExpressionTree;
+import java.util.List;
 import java.util.Optional;
 import org.javacomp.model.ClassEntity;
 import org.javacomp.model.EntityScope;
@@ -19,9 +21,14 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public class ExpressionSolverTest {
   private static final String TEST_DIR = "src/test/java/org/javacomp/typesolver/testdata";
-  private static final String TEST_FILE = "TestExpression.java";
+  private static final List<String> TEST_FILES =
+      ImmutableList.of("TestExpression.java", "TestClass.java", "other/Shadow.java");
   private static final String TOP_LEVEL_CLASS_FULL_NAME =
       "org.javacomp.typesolver.testdata.TestExpression";
+  private static final String TEST_CLASS_CLASS_FULL_NAME =
+      "org.javacomp.typesolver.testdata.TestClass";
+  private static final String SHADOW_CLASS_FULL_NAME =
+      "org.javacomp.typesolver.testdata.other.Shadow";
 
   private final TypeSolver typeSolver = new TypeSolver();
   private final OverloadSolver overloadSolver = new OverloadSolver(typeSolver);
@@ -30,6 +37,9 @@ public class ExpressionSolverTest {
 
   private GlobalScope globalScope;
   private ClassEntity topLevelClass;
+  private ClassEntity testClassClass;
+  private ClassEntity testClassFactoryClass;
+  private ClassEntity shadowClass;
   private ClassEntity innerAClass;
   private ClassEntity innerBClass;
   private ClassEntity innerCClass;
@@ -37,8 +47,13 @@ public class ExpressionSolverTest {
 
   @Before
   public void setUpTestScope() throws Exception {
-    globalScope = TestUtil.parseFiles(TEST_DIR, TEST_FILE);
+    globalScope = TestUtil.parseFiles(TEST_DIR, TEST_FILES);
     topLevelClass = (ClassEntity) TestUtil.lookupEntity(TOP_LEVEL_CLASS_FULL_NAME, globalScope);
+    testClassClass = (ClassEntity) TestUtil.lookupEntity(TEST_CLASS_CLASS_FULL_NAME, globalScope);
+    testClassFactoryClass =
+        (ClassEntity)
+            TestUtil.lookupEntity(TEST_CLASS_CLASS_FULL_NAME + ".TestClassFactory", globalScope);
+    shadowClass = (ClassEntity) TestUtil.lookupEntity(SHADOW_CLASS_FULL_NAME, globalScope);
     innerAClass =
         (ClassEntity) TestUtil.lookupEntity(TOP_LEVEL_CLASS_FULL_NAME + ".InnerA", globalScope);
     innerBClass =
@@ -98,6 +113,14 @@ public class ExpressionSolverTest {
   }
 
   @Test
+  public void solveOtherClassMethodInvocation() {
+    assertThat(solveExpression("getTestClass()", methodScope).getEntity())
+        .isEqualTo(testClassClass);
+    assertThat(solveExpression("getTestClass().getShadow()", methodScope).getEntity())
+        .isEqualTo(shadowClass);
+  }
+
+  @Test
   public void solveSuperClassMethodInvocation() {
     assertThat(solveExpression("innerA.baseMethod()", topLevelClass).getEntity())
         .isEqualTo(innerCClass);
@@ -135,6 +158,17 @@ public class ExpressionSolverTest {
   public void solveClassMemberInMethod() {
     assertThat(solveExpression("innerA", methodScope).getEntity()).isSameAs(innerAClass);
     assertThat(solveExpression("this.innerA", methodScope).getEntity()).isSameAs(innerAClass);
+  }
+
+  @Test
+  public void solveNewClass() {
+    assertThat(solveExpression("new InnerA()", methodScope).getEntity()).isSameAs(innerAClass);
+    assertThat(solveExpression("new TestExpression()", methodScope).getEntity())
+        .isSameAs(topLevelClass);
+    assertThat(solveExpression("new TestClass()", methodScope).getEntity())
+        .isSameAs(testClassClass);
+    assertThat(solveExpression("testClass.new TestClassFactory()", methodScope).getEntity())
+        .isSameAs(testClassFactoryClass);
   }
 
   private SolvedType solveExpression(String expression, EntityScope baseScope) {

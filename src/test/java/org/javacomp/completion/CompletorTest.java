@@ -111,7 +111,8 @@ public class CompletorTest {
         ImmutableList.of(
             baseBelowCompletion,
             baseBelowCompletion + "\nbelow.belowMethod();",
-            "above.;" + baseBelowCompletion);
+            "above.;" + baseBelowCompletion,
+            "self.new BelowClass()./** @complete */");
     for (String belowCase : belowCases) {
       List<CompletionCandidate> candidates =
           completeWithContent("CompleteInMethod.java", belowCase);
