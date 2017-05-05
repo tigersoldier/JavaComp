@@ -46,7 +46,7 @@ public class BlockScope implements EntityScope {
 
   @Override
   public Multimap<String, Entity> getMemberEntities() {
-    return ImmutableMultimap.of();
+    return ImmutableMultimap.copyOf(entities);
   }
 
   @Override

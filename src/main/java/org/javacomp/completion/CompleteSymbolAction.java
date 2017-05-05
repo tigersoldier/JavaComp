@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multimap;
 import java.util.List;
 import java.util.Map;
+import org.javacomp.logging.JLogger;
 import org.javacomp.model.ClassEntity;
 import org.javacomp.model.Entity;
 import org.javacomp.model.EntityScope;
@@ -16,6 +17,8 @@ import org.javacomp.typesolver.TypeSolver;
 
 /** An action that returns any visible entities as completion candidates. */
 class CompleteEntityAction implements CompletionAction {
+  private final JLogger logger = JLogger.createForEnclosingClass();
+
   private final ClassMemberCompletor classMemberCompletor;
 
   CompleteEntityAction(TypeSolver typeSolver, ExpressionSolver expressionSolver) {
@@ -30,6 +33,7 @@ class CompleteEntityAction implements CompletionAction {
     for (EntityScope currentScope = baseScope;
         currentScope != null;
         currentScope = currentScope.getParentScope().orElse(null)) {
+      logger.fine("Adding member entities in scope: %s", currentScope);
       if (currentScope instanceof ClassEntity) {
         addEntries(
             candidateMap,

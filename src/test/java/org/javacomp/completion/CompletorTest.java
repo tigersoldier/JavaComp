@@ -137,6 +137,17 @@ public class CompletorTest {
     }
   }
 
+  @Test
+  public void completeInBlock() throws Exception {
+    String content =
+        "if (true) {\n"
+            + "  AboveClass innerAboveClass;\n"
+            + "  innerAboveClass./** @complete */\n"
+            + "}";
+    List<CompletionCandidate> candidates = completeWithContent("CompleteInMethod.java", content);
+    assertThat(getCandidateNames(candidates)).containsExactly("aboveField", "aboveMethod");
+  }
+
   private List<CompletionCandidate> completeWithContent(String filename, String toInsert) {
     String testDataContent = getFileContent(filename);
     String newContent = testDataContent.replace(INSERTION_POINT_MARK, toInsert);
