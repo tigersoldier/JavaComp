@@ -13,6 +13,7 @@ java_library(
         "//external:jsr305",
         "//src/main/java/org/javacomp/completion",
         "//src/main/java/org/javacomp/file",
+        "//src/main/java/org/javacomp/logging",
         "//src/main/java/org/javacomp/options",
         "//src/main/java/org/javacomp/project",
         "//src/main/java/org/javacomp/server",

@@ -104,6 +104,7 @@ public class RequestDispatcher {
     RequestHandler handler = handlerRegistry.get(requestContent.getMethod());
 
     Request typedRequest = convertRawToRequest(rawRequest, handler);
+    logger.info("Handling request %s", requestContent.getMethod());
     @SuppressWarnings("unchecked")
     Object result = handler.handleRequest(typedRequest);
     return result;

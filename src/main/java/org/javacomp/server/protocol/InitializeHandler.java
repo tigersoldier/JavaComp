@@ -23,6 +23,9 @@ public class InitializeHandler extends RequestHandler<InitializeParams> {
     server.initialize(params.processId, params.rootUri, params.initializationOptions);
     InitializeResult result = new InitializeResult();
     result.capabilities = new InitializeResult.ServerCapabilities();
+    result.capabilities.textDocumentSync = new InitializeResult.TextDocumentSyncOptions();
+    result.capabilities.textDocumentSync.openClose = true;
+    result.capabilities.textDocumentSync.change = InitializeResult.TextDocumentSyncKind.INCREMENTAL;
     result.capabilities.completionProvider = new InitializeResult.CompletionOptions();
     result.capabilities.completionProvider.triggerCharacters = new String[] {"."};
     return result;

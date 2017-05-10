@@ -32,5 +32,10 @@ public class DidChangeTextDocumentParams implements RequestParams {
 
     /** The new text of the range/document. */
     public String text;
+
+    @Override
+    public String toString() {
+      return String.format("{range: %s, rangeLength: %s, text: %s}", range, rangeLength, text);
+    }
   }
 }

@@ -85,11 +85,15 @@ public class Project {
       content = fixedContent.getContent();
       adjustedLineMap = fixedContent.getAdjustedLineMap();
     }
-    FileScope fileScope =
-        astScanner.startScan(
-            parserContext.parse(filePath.toString(), content), filePath.toString());
-    fileScope.setAdjustedLineMap(adjustedLineMap);
-    globalScope.addOrReplaceFileScope(fileScope);
+    try {
+      FileScope fileScope =
+          astScanner.startScan(
+              parserContext.parse(filePath.toString(), content), filePath.toString());
+      fileScope.setAdjustedLineMap(adjustedLineMap);
+      globalScope.addOrReplaceFileScope(fileScope);
+    } catch (Throwable t) {
+      logger.warning(t, "Failed to parse file %s", filePath);
+    }
   }
 
   private void removeFile(Path filePath) {
@@ -98,11 +102,10 @@ public class Project {
 
   /**
    * @param filePath the path of the file beging completed
-   * @param line 1-based line number
-   * @param column 1-based character offset of the line
+   * @param line 0-based line number
+   * @param column 0-based character offset of the line
    */
   public List<CompletionCandidate> getCompletionCandidates(Path filePath, int line, int column) {
-    logger.severe("[DEBUG]last: %s, comp path: %s", lastCompletedFile, filePath);
     if (!filePath.equals(lastCompletedFile)) {
       lastCompletedFile = filePath;
       addOrUpdateFile(filePath);

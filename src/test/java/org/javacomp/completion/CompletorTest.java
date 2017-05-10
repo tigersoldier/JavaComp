@@ -51,8 +51,9 @@ public class CompletorTest {
     assertThat(completionPoint).isGreaterThan(-1);
 
     LineMap lineMap = parserContext.tokenize(testDataContent, false).getLineMap();
-    int line = (int) lineMap.getLineNumber(completionPoint);
-    int column = (int) lineMap.getColumnNumber(completionPoint);
+    // Completion line and column numbers are 0-based, while LineMap values are 1-based.
+    int line = (int) lineMap.getLineNumber(completionPoint) - 1;
+    int column = (int) lineMap.getColumnNumber(completionPoint) - 1;
 
     FixedContent fixedContent = fileContentFixer.fixFileContent(testDataContent);
 

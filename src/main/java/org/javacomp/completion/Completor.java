@@ -30,9 +30,9 @@ public class Completor {
 
   /**
    * @param globalScope the global scope of the project
-   * @param inputFileScope the parsed file scope of the input file
-   * @param completionUnit the parsed completion unit of the input file
-   * @param input the partial content of the input file, ended at the completion point
+   * @param filePath normalized path of the file to be completed
+   * @param line 0-based line number of the completion point
+   * @param column 0-based character offset from the beginning of the line to the completion point
    */
   public List<CompletionCandidate> getCompletionCandidates(
       GlobalScope globalScope, Path filePath, int line, int column) {
@@ -43,7 +43,8 @@ public class Completor {
 
     JCCompilationUnit compilationUnit = inputFileScope.get().getCompilationUnit();
     LineMap lineMap = inputFileScope.get().getLineMap();
-    int position = (int) lineMap.getPosition(line, column);
+    // LineMap accepts 1-based line and column numbers.
+    int position = (int) lineMap.getPosition(line + 1, column + 1);
     EntityScope completionPointScope = inputFileScope.get().getEntityScopeAt(position - 1);
     CompletionAction action = completionAst.getCompletionAction(compilationUnit, position);
     // TODO: filter and sort candidates by query.
