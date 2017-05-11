@@ -3,6 +3,7 @@ package org.javacomp.server.protocol;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import org.javacomp.completion.CompletionCandidate;
 import org.javacomp.project.Project;
 import org.javacomp.server.Request;
@@ -45,6 +46,10 @@ public class CompletionTextDocumentHandler extends RequestHandler<TextDocumentPo
       item.label = candidate.getName();
       item.insertTextFormat = InsertTextFormat.PLAINTEXT;
       item.kind = getCompletionItemKind(candidate.getKind());
+      Optional<String> detail = candidate.getDetail();
+      if (detail.isPresent()) {
+        item.detail = detail.get();
+      }
       completionList.items.add(item);
     }
     return completionList;

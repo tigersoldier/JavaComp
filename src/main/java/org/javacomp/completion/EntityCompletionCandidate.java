@@ -1,6 +1,9 @@
 package org.javacomp.completion;
 
+import java.util.Optional;
 import org.javacomp.model.Entity;
+import org.javacomp.model.MethodEntity;
+import org.javacomp.model.VariableEntity;
 
 /** A {@link CompletionCandidate} backed by {@link Entity}. */
 class EntityCompletionCandidate implements CompletionCandidate {
@@ -18,6 +21,39 @@ class EntityCompletionCandidate implements CompletionCandidate {
   @Override
   public Kind getKind() {
     return toCandidateKind(entity.getKind());
+  }
+
+  @Override
+  public Optional<String> getDetail() {
+    switch (entity.getKind()) {
+      case METHOD:
+        {
+          StringBuilder sb = new StringBuilder();
+          MethodEntity method = (MethodEntity) entity;
+          sb.append("(");
+          boolean firstParam = true;
+          for (VariableEntity param : method.getParameters()) {
+            if (firstParam) {
+              firstParam = false;
+            } else {
+              sb.append(", ");
+            }
+            sb.append(param.getType().toSimpleString());
+            sb.append(" ");
+            sb.append(param.getSimpleName());
+          }
+          sb.append("): ");
+          sb.append(method.getReturnType().toSimpleString());
+          return Optional.of(sb.toString());
+        }
+      case VARIABLE:
+      case FIELD:
+        {
+          VariableEntity variable = (VariableEntity) entity;
+          return Optional.of(variable.getType().toSimpleString());
+        }
+    }
+    return Optional.ofNullable(null);
   }
 
   public static Kind toCandidateKind(Entity.Kind entityKind) {

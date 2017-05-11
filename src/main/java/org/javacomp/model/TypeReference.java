@@ -25,12 +25,19 @@ public abstract class TypeReference {
 
   public String getSimpleName() {
     ImmutableList<String> fullName = getFullName();
+    if (fullName.isEmpty()) {
+      return "";
+    }
     return fullName.get(fullName.size() - 1);
   }
 
   @Override
   public String toString() {
     return "TypeReference<" + JOINER.join(getFullName()) + (isArray() ? "[]>" : ">");
+  }
+
+  public String toSimpleString() {
+    return getSimpleName();
   }
 
   @AutoValue.Builder

@@ -1,5 +1,7 @@
 package org.javacomp.completion;
 
+import java.util.Optional;
+
 enum KeywordCompletionCandidate implements CompletionCandidate {
   ABSTRACT,
   ASSERT,
@@ -61,5 +63,10 @@ enum KeywordCompletionCandidate implements CompletionCandidate {
   @Override
   public Kind getKind() {
     return Kind.KEYWORD;
+  }
+
+  @Override
+  public Optional<String> getDetail() {
+    return Optional.ofNullable(null);
   }
 }
