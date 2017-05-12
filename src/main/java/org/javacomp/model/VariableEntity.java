@@ -12,12 +12,18 @@ public class VariableEntity extends Entity {
       EnumSet.of(Entity.Kind.VARIABLE, Entity.Kind.FIELD);
 
   private final TypeReference type;
+  private final EntityScope parentScope;
 
   public VariableEntity(
-      String simpleName, Entity.Kind kind, List<String> qualifiers, TypeReference type) {
+      String simpleName,
+      Entity.Kind kind,
+      List<String> qualifiers,
+      TypeReference type,
+      EntityScope parentScope) {
     super(simpleName, kind, qualifiers);
     checkArgument(ALLOWED_KINDS.contains(kind), "Kind %s is not allowed for variables.", kind);
     this.type = type;
+    this.parentScope = parentScope;
   }
 
   public TypeReference getType() {
@@ -27,5 +33,9 @@ public class VariableEntity extends Entity {
   @Override
   public EmptyScope getChildScope() {
     return EmptyScope.INSTANCE;
+  }
+
+  public EntityScope getParentScope() {
+    return parentScope;
   }
 }

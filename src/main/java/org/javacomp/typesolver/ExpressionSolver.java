@@ -230,8 +230,9 @@ public class ExpressionSolver {
         return null;
       }
       if (entity instanceof VariableEntity) {
+        VariableEntity variableEntity = (VariableEntity) entity;
         return typeSolver
-            .solve(((VariableEntity) entity).getType(), globalScope, baseScope)
+            .solve(variableEntity.getType(), globalScope, variableEntity.getParentScope())
             .orElse(null);
       }
       if (entity instanceof ClassEntity) {

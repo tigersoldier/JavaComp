@@ -43,7 +43,8 @@ public class CompletorTest {
     return completeContent(filename, testDataContent);
   }
 
-  private List<CompletionCandidate> completeContent(String inputFilePath, String testDataContent) {
+  private List<CompletionCandidate> completeContent(
+      String inputFilePath, String testDataContent, String... otherFiles) {
     ParserContext parserContext = new ParserContext();
     FileContentFixer fileContentFixer = new FileContentFixer(parserContext);
 
@@ -63,6 +64,13 @@ public class CompletorTest {
     inputFileScope.setAdjustedLineMap(fixedContent.getAdjustedLineMap());
     GlobalScope globalScope = new GlobalScope();
     globalScope.addOrReplaceFileScope(inputFileScope);
+
+    for (String otherFile : otherFiles) {
+      String content = getFileContent(otherFile);
+      JCCompilationUnit otherCompilationUnit = parserContext.parse(otherFile, content);
+      FileScope fileScope = new AstScanner().startScan(otherCompilationUnit, otherFile);
+      globalScope.addOrReplaceFileScope(fileScope);
+    }
 
     return new Completor()
         .getCompletionCandidates(globalScope, Paths.get(inputFilePath), line, column);
@@ -124,6 +132,17 @@ public class CompletorTest {
   }
 
   @Test
+  public void completeMemberSelectionInOtherFile() throws Exception {
+    List<CompletionCandidate> candidates =
+        completeWithContent(
+            "CompleteInMethod.java",
+            "new OtherClass().innerClass./** @complete */",
+            "OtherClass.java");
+    assertThat(getCandidateNames(candidates))
+        .containsExactly("innerInnerClass", "getInnerInnerClass", "InnerInnerClass");
+  }
+
+  @Test
   public void completeImport() throws Exception {
     String baseImportCompletion = "import org.javacomp./** @complete */";
     List<String> cases =
@@ -149,9 +168,10 @@ public class CompletorTest {
     assertThat(getCandidateNames(candidates)).containsExactly("aboveField", "aboveMethod");
   }
 
-  private List<CompletionCandidate> completeWithContent(String filename, String toInsert) {
+  private List<CompletionCandidate> completeWithContent(
+      String filename, String toInsert, String... otherFiles) {
     String testDataContent = getFileContent(filename);
     String newContent = testDataContent.replace(INSERTION_POINT_MARK, toInsert);
-    return completeContent(filename, newContent);
+    return completeContent(filename, newContent, otherFiles);
   }
 }

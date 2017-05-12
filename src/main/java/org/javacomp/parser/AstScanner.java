@@ -167,7 +167,7 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
     }
     ImmutableList.Builder<VariableEntity> parameterListBuilder = new ImmutableList.Builder<>();
     for (Tree parameter : node.getParameters()) {
-      parameterListBuilder.add(parameterScanner.getParameter(parameter));
+      parameterListBuilder.add(parameterScanner.getParameter(parameter, currentScope));
     }
 
     MethodEntity methodEntity =
@@ -199,7 +199,8 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
             node.getName().toString(),
             variableKind,
             this.currentQualifiers,
-            typeReferenceScanner.getTypeReference(node.getType()));
+            typeReferenceScanner.getTypeReference(node.getType()),
+            currentScope);
     logger.fine("adding variable %s to scope %s", variableEntity, currentScope);
     currentScope.addEntity(variableEntity);
     // TODO: add entity to global scope if it's a non-private static entity.
@@ -302,12 +303,12 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
       this.typeReferenceScanner = typeReferenceScanner;
     }
 
-    private VariableEntity getParameter(Tree node) {
+    private VariableEntity getParameter(Tree node, EntityScope currentScope) {
       name = "";
       type = TypeReference.EMPTY_TYPE;
       scan(node, null);
       return new VariableEntity(
-          name, Entity.Kind.VARIABLE, ImmutableList.of() /* qualifiers */, type);
+          name, Entity.Kind.VARIABLE, ImmutableList.of() /* qualifiers */, type, currentScope);
     }
 
     @Override

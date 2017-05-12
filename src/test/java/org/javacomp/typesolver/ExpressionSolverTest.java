@@ -73,6 +73,14 @@ public class ExpressionSolverTest {
   }
 
   @Test
+  public void solveOtherClassMemberSelection() {
+    assertThat(solveExpression("testClass", methodScope).getEntity()).isEqualTo(testClassClass);
+    assertThat(solveExpression("testClass.shadow", methodScope).getEntity()).isEqualTo(shadowClass);
+    assertThat(solveExpression("testClass.FACTORY", methodScope).getEntity())
+        .isEqualTo(testClassFactoryClass);
+  }
+
+  @Test
   public void solvedInheritedField() {
     assertThat(solveExpression("baseInnerB", innerAClass).getEntity()).isEqualTo(innerBClass);
     assertThat(solveExpression("innerA.baseInnerB", topLevelClass).getEntity())
