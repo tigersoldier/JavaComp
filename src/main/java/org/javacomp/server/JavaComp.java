@@ -20,6 +20,7 @@ import org.javacomp.project.Project;
 import org.javacomp.server.io.RequestReader;
 import org.javacomp.server.io.ResponseWriter;
 import org.javacomp.server.protocol.CompletionTextDocumentHandler;
+import org.javacomp.server.protocol.DefinitionTextDocumentHandler;
 import org.javacomp.server.protocol.DidChangeTextDocumentHandler;
 import org.javacomp.server.protocol.DidCloseTextDocumentHandler;
 import org.javacomp.server.protocol.DidOpenTextDocumentHandler;
@@ -66,6 +67,7 @@ public class JavaComp implements Server {
             .registerHandler(new DidChangeTextDocumentHandler(this))
             .registerHandler(new DidCloseTextDocumentHandler(this))
             .registerHandler(new CompletionTextDocumentHandler(this))
+            .registerHandler(new DefinitionTextDocumentHandler(this))
             .build();
   }
 

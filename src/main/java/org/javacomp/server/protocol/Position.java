@@ -24,6 +24,13 @@ public class Position extends TextPosition {
     this.character = character;
   }
 
+  public static Position createFromTextPosition(TextPosition pos) {
+    if (pos instanceof Position) {
+      return (Position) pos;
+    }
+    return new Position(pos.getLine(), pos.getCharacter());
+  }
+
   @Override
   public int getLine() {
     return line;

@@ -1,5 +1,6 @@
 package org.javacomp.model;
 
+import com.google.common.collect.Range;
 import java.util.List;
 
 /** Represents a name referencing a entity. */
@@ -7,7 +8,7 @@ public class ReferenceEntity extends Entity {
   private Entity reference; // The entity it references to.
 
   public ReferenceEntity(String simpleName, List<String> qualifiers) {
-    super(simpleName, Entity.Kind.REFERENCE, qualifiers);
+    super(simpleName, Entity.Kind.REFERENCE, qualifiers, Range.closedOpen(0, 0));
     this.reference = null;
   }
 

@@ -1,4 +1,4 @@
-package org.javacomp.completion;
+package org.javacomp.parser;
 
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.IdentifierTree;

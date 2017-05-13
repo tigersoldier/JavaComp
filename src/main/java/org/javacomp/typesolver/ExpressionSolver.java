@@ -44,10 +44,13 @@ public class ExpressionSolver {
 
   private final TypeSolver typeSolver;
   private final OverloadSolver overloadSolver;
+  private final MemberSolver memberSolver;
 
-  public ExpressionSolver(TypeSolver typeSolver, OverloadSolver overloadSolver) {
+  public ExpressionSolver(
+      TypeSolver typeSolver, OverloadSolver overloadSolver, MemberSolver memberSolver) {
     this.typeSolver = typeSolver;
     this.overloadSolver = overloadSolver;
+    this.memberSolver = memberSolver;
   }
 
   public Optional<SolvedType> solve(
@@ -107,46 +110,25 @@ public class ExpressionSolver {
 
       String identifier = node.getIdentifier().toString();
 
-      ///////
-      // OuterClass.this
-      if (IDENT_THIS.equals(identifier)) {
-        return expressionType;
-      }
-
-      ////////
-      //  someArray.length
-      if (expressionType.isArray() && IDENT_LENGTH.equals(identifier)) {
-        return SolvedType.builder()
-            .setEntity(PrimitiveEntity.INT)
-            .setPrimitive(true)
-            .setArray(false)
-            .build();
-      }
-
-      ///////
-      //  foo.bar(baz)
       if (isMethodInvocation()) {
-        // Methods must be defined in classes.
-        if (expressionType.getEntity() instanceof ClassEntity) {
-          return solveMethodReturnType(
-              typeSolver.findClassMethods(
-                  node.getIdentifier().toString(),
-                  (ClassEntity) expressionType.getEntity(),
-                  globalScope));
+        Optional<MethodEntity> method =
+            memberSolver.findMethodMember(identifier, methodArgs, expressionType, globalScope);
+        if (method.isPresent()) {
+          return typeSolver
+              .solve(method.get().getReturnType(), globalScope, method.get())
+              .orElse(null);
+        } else {
+          return null;
         }
-        return null;
+      } else {
+        Optional<Entity> entity =
+            memberSolver.findNonMethodMember(identifier, expressionType, globalScope);
+        if (entity.isPresent()) {
+          return solveNonMethodEntityType(entity.get());
+        } else {
+          return null;
+        }
       }
-
-      ////////
-      //  foo.bar
-      Entity memberEntity =
-          typeSolver.findEntityMember(
-              node.getIdentifier().toString(),
-              expressionType.getEntity(),
-              globalScope,
-              ALLOWED_KINDS_NON_METHOD);
-
-      return solveNonMethodEntityType(memberEntity);
     }
 
     @Override
@@ -240,6 +222,9 @@ public class ExpressionSolver {
       }
       if (entity instanceof PackageEntity) {
         return SolvedType.builder().setEntity(entity).setPrimitive(false).setArray(false).build();
+      }
+      if (entity instanceof PrimitiveEntity) {
+        return SolvedType.builder().setEntity(entity).setPrimitive(true).setArray(false).build();
       }
       return null;
     }

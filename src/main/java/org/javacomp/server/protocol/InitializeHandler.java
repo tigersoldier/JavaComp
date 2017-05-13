@@ -28,6 +28,7 @@ public class InitializeHandler extends RequestHandler<InitializeParams> {
     result.capabilities.textDocumentSync.change = InitializeResult.TextDocumentSyncKind.INCREMENTAL;
     result.capabilities.completionProvider = new InitializeResult.CompletionOptions();
     result.capabilities.completionProvider.triggerCharacters = new String[] {"."};
+    result.capabilities.definitionProvider = true;
     return result;
   }
 }

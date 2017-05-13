@@ -1,6 +1,7 @@
 package org.javacomp.model;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Range;
 import java.util.List;
 import org.javacomp.model.util.QualifiedNames;
 
@@ -33,11 +34,14 @@ public abstract class Entity {
   private final String simpleName;
   private final List<String> qualifiers;
   private final Kind kind;
+  private final Range<Integer> symbolRange;
 
-  protected Entity(String simpleName, Kind kind, List<String> qualifiers) {
+  protected Entity(
+      String simpleName, Kind kind, List<String> qualifiers, Range<Integer> symbolRange) {
     this.simpleName = simpleName;
     this.kind = kind;
     this.qualifiers = ImmutableList.copyOf(qualifiers);
+    this.symbolRange = symbolRange;
   }
 
   /**
@@ -60,6 +64,10 @@ public abstract class Entity {
 
   public Kind getKind() {
     return kind;
+  }
+
+  public Range<Integer> getSymbolRange() {
+    return symbolRange;
   }
 
   /**

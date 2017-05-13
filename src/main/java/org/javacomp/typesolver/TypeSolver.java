@@ -111,7 +111,7 @@ public class TypeSolver {
         findEntitiesInScope(name, globalScope, baseScope, allowedKinds), null);
   }
 
-  List<Entity> findEntitiesInScope(
+  public List<Entity> findEntitiesInScope(
       String name, GlobalScope globalScope, EntityScope baseScope, Set<Entity.Kind> allowedKinds) {
     // Search class from the narrowest scope to wider scope.
     List<Entity> foundEntities = ImmutableList.of();

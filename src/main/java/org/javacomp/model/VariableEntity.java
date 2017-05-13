@@ -2,6 +2,7 @@ package org.javacomp.model;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import com.google.common.collect.Range;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
@@ -19,8 +20,9 @@ public class VariableEntity extends Entity {
       Entity.Kind kind,
       List<String> qualifiers,
       TypeReference type,
-      EntityScope parentScope) {
-    super(simpleName, kind, qualifiers);
+      EntityScope parentScope,
+      Range<Integer> variableNameRange) {
+    super(simpleName, kind, qualifiers, variableNameRange);
     checkArgument(ALLOWED_KINDS.contains(kind), "Kind %s is not allowed for variables.", kind);
     this.type = type;
     this.parentScope = parentScope;
@@ -31,11 +33,16 @@ public class VariableEntity extends Entity {
   }
 
   @Override
-  public EmptyScope getChildScope() {
-    return EmptyScope.INSTANCE;
+  public EntityScope getChildScope() {
+    return parentScope;
   }
 
   public EntityScope getParentScope() {
     return parentScope;
+  }
+
+  @Override
+  public String toString() {
+    return "VariableEntity<" + getSimpleName() + ">";
   }
 }

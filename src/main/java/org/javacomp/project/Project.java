@@ -1,5 +1,7 @@
 package org.javacomp.project;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Range;
 import com.sun.source.tree.LineMap;
 import java.io.IOException;
 import java.net.URI;
@@ -14,14 +16,20 @@ import org.javacomp.completion.CompletionCandidate;
 import org.javacomp.completion.Completor;
 import org.javacomp.file.FileChangeListener;
 import org.javacomp.file.FileManager;
+import org.javacomp.file.FileTextLocation;
 import org.javacomp.file.PathUtils;
+import org.javacomp.file.TextPosition;
+import org.javacomp.file.TextRange;
 import org.javacomp.logging.JLogger;
+import org.javacomp.model.Entity;
+import org.javacomp.model.EntityScope;
 import org.javacomp.model.FileScope;
 import org.javacomp.model.GlobalScope;
 import org.javacomp.parser.AstScanner;
 import org.javacomp.parser.FileContentFixer;
 import org.javacomp.parser.FileContentFixer.FixedContent;
 import org.javacomp.parser.ParserContext;
+import org.javacomp.reference.DefinitionSolver;
 
 /** Handles all files in a project. */
 public class Project {
@@ -32,6 +40,7 @@ public class Project {
   private final GlobalScope globalScope;
   private final AstScanner astScanner;
   private final Completor completor;
+  private final DefinitionSolver definitionSolver;
   private final FileManager fileManager;
   private final URI rootUri;
   private final ParserContext parserContext;
@@ -49,6 +58,7 @@ public class Project {
     fileContentFixer = new FileContentFixer(parserContext);
     this.fileManager = fileManager;
     this.rootUri = rootUri;
+    this.definitionSolver = new DefinitionSolver();
   }
 
   public synchronized void initialize() {
@@ -111,6 +121,44 @@ public class Project {
       addOrUpdateFile(filePath);
     }
     return completor.getCompletionCandidates(globalScope, filePath, line, column);
+  }
+
+  /**
+   * @param filePath the path of the file beging completed
+   * @param line 0-based line number
+   * @param column 0-based character offset of the line
+   */
+  public List<FileTextLocation> findDefinitions(Path filePath, int line, int column) {
+    List<? extends Entity> entities =
+        definitionSolver.getDefinitionEntities(globalScope, filePath, line, column);
+    return entities
+        .stream()
+        .map(
+            entity -> {
+              Range<Integer> range = entity.getSymbolRange();
+              EntityScope scope = entity.getChildScope();
+              while (!(scope instanceof FileScope) && scope.getParentScope().isPresent()) {
+                scope = scope.getParentScope().get();
+              }
+
+              if (!(scope instanceof FileScope)) {
+                throw new RuntimeException("Cannot reach file scope for " + entity);
+              }
+
+              FileScope fileScope = (FileScope) scope;
+              LineMap lineMap = fileScope.getLineMap();
+              TextPosition start =
+                  TextPosition.create(
+                      (int) lineMap.getLineNumber(range.lowerEndpoint()) - 1,
+                      (int) lineMap.getColumnNumber(range.lowerEndpoint()) - 1);
+              TextPosition end =
+                  TextPosition.create(
+                      (int) lineMap.getLineNumber(range.upperEndpoint()) - 1,
+                      (int) lineMap.getColumnNumber(range.upperEndpoint()) - 1);
+              TextRange textRange = TextRange.create(start, end);
+              return FileTextLocation.create(Paths.get(fileScope.getFilename()), textRange);
+            })
+        .collect(ImmutableList.toImmutableList());
   }
 
   public GlobalScope getGlobalScope() {

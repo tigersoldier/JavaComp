@@ -8,6 +8,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;
+import com.google.common.collect.Range;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
@@ -37,8 +38,9 @@ public class ClassEntity extends Entity implements EntityScope {
       List<String> qualifiers,
       EntityScope parentScope,
       Optional<TypeReference> superClass,
-      ImmutableList<TypeReference> interfaces) {
-    super(simpleName, kind, qualifiers);
+      ImmutableList<TypeReference> interfaces,
+      Range<Integer> classNameRage) {
+    super(simpleName, kind, qualifiers, classNameRage);
     checkArgument(
         ALLOWED_KINDS.contains(kind),
         "Invalid entity kind %s, allowed kinds are %s",

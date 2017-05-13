@@ -2,6 +2,7 @@ package org.javacomp.model;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Range;
 import java.util.Map;
 
 /** Represents primitive types. */
@@ -36,7 +37,11 @@ public class PrimitiveEntity extends Entity {
   }
 
   private PrimitiveEntity(String simpleName) {
-    super(simpleName, Entity.Kind.PRIMITIVE, ImmutableList.<String>of() /* qualifiers */);
+    super(
+        simpleName,
+        Entity.Kind.PRIMITIVE,
+        ImmutableList.<String>of() /* qualifiers */,
+        Range.closedOpen(0, 0));
   }
 
   @Override

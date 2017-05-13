@@ -32,8 +32,9 @@ public class ExpressionSolverTest {
 
   private final TypeSolver typeSolver = new TypeSolver();
   private final OverloadSolver overloadSolver = new OverloadSolver(typeSolver);
+  private final MemberSolver memberSolver = new MemberSolver(typeSolver, overloadSolver);
   private final ExpressionSolver expressionSolver =
-      new ExpressionSolver(typeSolver, overloadSolver);
+      new ExpressionSolver(typeSolver, overloadSolver, memberSolver);
 
   private GlobalScope globalScope;
   private ClassEntity topLevelClass;

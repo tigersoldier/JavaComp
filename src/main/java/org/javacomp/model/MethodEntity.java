@@ -4,6 +4,7 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
+import com.google.common.collect.Range;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -22,8 +23,9 @@ public class MethodEntity extends Entity implements EntityScope {
       List<String> qualifiers,
       TypeReference returnType,
       List<VariableEntity> parameters,
-      ClassEntity classEntity) {
-    super(simpleName, Entity.Kind.METHOD, qualifiers);
+      ClassEntity classEntity,
+      Range<Integer> methodNamelRange) {
+    super(simpleName, Entity.Kind.METHOD, qualifiers, methodNamelRange);
     this.returnType = returnType;
     this.parameters = ImmutableList.copyOf(parameters);
     this.entities = HashMultimap.create();

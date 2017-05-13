@@ -28,6 +28,16 @@ public class Range extends TextRange {
     this.end = end;
   }
 
+  public static Range createFromTextRange(TextRange textRange) {
+    if (textRange instanceof Range) {
+      return (Range) textRange;
+    }
+
+    return new Range(
+        Position.createFromTextPosition(textRange.getStart()),
+        Position.createFromTextPosition(textRange.getEnd()));
+  }
+
   @Override
   public Position getStart() {
     return start;

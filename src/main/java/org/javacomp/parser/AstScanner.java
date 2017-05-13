@@ -128,6 +128,8 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
     for (Tree implementClause : node.getImplementsClause()) {
       interfaceBuilder.add(typeReferenceScanner.getTypeReference(implementClause));
     }
+    // TODO: find the real range of the class name token.
+    Range<Integer> range = getNodeRange((JCTree) node);
     ClassEntity classEntity =
         new ClassEntity(
             node.getSimpleName().toString(),
@@ -135,7 +137,8 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
             this.currentQualifiers,
             currentScope,
             superClass,
-            interfaceBuilder.build());
+            interfaceBuilder.build(),
+            range);
     currentScope.addEntity(classEntity);
     addScopeRange((JCTree) node, classEntity);
     if (this.currentQualifiers != UNAVAILABLE_QUALIFIERS) {
@@ -170,13 +173,16 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
       parameterListBuilder.add(parameterScanner.getParameter(parameter, currentScope));
     }
 
+    // TODO: find the real range of the class name token.
+    Range<Integer> range = getNodeRange((JCTree) node);
     MethodEntity methodEntity =
         new MethodEntity(
             node.getName().toString(),
             this.currentQualifiers,
             returnType,
             parameterListBuilder.build(),
-            (ClassEntity) currentScope);
+            (ClassEntity) currentScope,
+            range);
     // TODO: distinguish between static and non-static methods.
     currentScope.addEntity(methodEntity);
     List<String> previousQualifiers = this.currentQualifiers;
@@ -194,13 +200,16 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
   public Void visitVariable(VariableTree node, EntityScope currentScope) {
     Entity.Kind variableKind =
         (currentScope instanceof ClassEntity) ? Entity.Kind.FIELD : Entity.Kind.VARIABLE;
+    // TODO: find the real range of the class name token.
+    Range<Integer> range = getNodeRange((JCTree) node);
     VariableEntity variableEntity =
         new VariableEntity(
             node.getName().toString(),
             variableKind,
             this.currentQualifiers,
             typeReferenceScanner.getTypeReference(node.getType()),
-            currentScope);
+            currentScope,
+            range);
     logger.fine("adding variable %s to scope %s", variableEntity, currentScope);
     currentScope.addEntity(variableEntity);
     // TODO: add entity to global scope if it's a non-private static entity.
@@ -233,8 +242,12 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
     return ImmutableList.copyOf(stack);
   }
 
+  private Range<Integer> getNodeRange(JCTree node) {
+    return Range.closed(node.getStartPosition(), node.getEndPosition(endPosTable));
+  }
+
   private void addScopeRange(JCTree node, EntityScope scope) {
-    Range<Integer> range = Range.closed(node.getStartPosition(), node.getEndPosition(endPosTable));
+    Range<Integer> range = getNodeRange(node);
     scopeRangeBuilder.put(range, scope);
   }
 
@@ -294,7 +307,7 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
     }
   }
 
-  private static class ParameterScanner extends TreeScanner<Void, Void> {
+  private class ParameterScanner extends TreeScanner<Void, Void> {
     private final TypeReferenceScanner typeReferenceScanner;
     private String name = "";
     private TypeReference type = TypeReference.EMPTY_TYPE;
@@ -307,8 +320,16 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
       name = "";
       type = TypeReference.EMPTY_TYPE;
       scan(node, null);
+
+      // TODO: find the real range of the class name token.
+      Range<Integer> range = getNodeRange((JCTree) node);
       return new VariableEntity(
-          name, Entity.Kind.VARIABLE, ImmutableList.of() /* qualifiers */, type, currentScope);
+          name,
+          Entity.Kind.VARIABLE,
+          ImmutableList.of() /* qualifiers */,
+          type,
+          currentScope,
+          range);
     }
 
     @Override
