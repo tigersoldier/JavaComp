@@ -93,6 +93,11 @@ public class DefinitionSolverTest {
         "InnerClassB ignore = innerB;",
         "innerB",
         TEST_CLASS_FULL_NAME + ".innerB");
+    assertDefinition(
+        TEST_CLASS_FILE,
+        "methodWithArgs(innerA, innerAParam.testClassInA);",
+        "innerA",
+        TEST_CLASS_FULL_NAME + ".innerA");
   }
 
   @Test
@@ -131,6 +136,11 @@ public class DefinitionSolverTest {
         "testClassInA.getOtherPackageClass().innerA;",
         "innerA",
         OTHER_PACKAGE_CLASS_FULL_NAME + ".innerA");
+    assertDefinition(
+        TEST_CLASS_FILE,
+        "methodWithArgs(innerA, innerAParam.testClassInA);",
+        "testClassInA",
+        TEST_CLASS_FULL_NAME + ".InnerClassA.testClassInA");
   }
 
   @Test
@@ -191,30 +201,34 @@ public class DefinitionSolverTest {
         "OtherClass",
         OTHER_CLASS_FULL_NAME);
     assertDefinition(
+        TEST_CLASS_FILE, "OtherClass otherClassParam", "OtherClass", OTHER_CLASS_FULL_NAME);
+    assertDefinition(
         TEST_CLASS_FILE,
         "OtherClass.InnerClassA otherInnerAVar",
         "InnerClassA",
         OTHER_CLASS_FULL_NAME + ".InnerClassA");
   }
 
-  // TODO: implement and enable
-  // @Test
-  // public void testMethodReturnType() {
-  //   assertDefinition(
-  //       TEST_CLASS_FILE,
-  //       "InnerClassB getTestBInA()",
-  //       "InnerClassB",
-  //       TEST_CLASS_FULL_NAME + ".InnerClassB");
-  //   assertDefinition(
-  //       TEST_CLASS_FILE, "InnerClassA getInnerA()", "InnerA", TEST_CLASS_FULL_NAME + ".InnerClassA");
-  //   assertDefinition(
-  //       TEST_CLASS_FILE, "OtherClass getOtherClass()", "OtherClass", OTHER_CLASS_FULL_NAME);
-  //   assertDefinition(
-  //       TEST_CLASS_FILE,
-  //       "OtherPackageClass getOtherPackageClass()",
-  //       "OtherPackageClass",
-  //       OTHER_PACKAGE_CLASS_FULL_NAME);
-  // }
+  @Test
+  public void testMethodReturnType() {
+    assertDefinition(
+        TEST_CLASS_FILE,
+        "InnerClassB getTestBInA()",
+        "InnerClassB",
+        TEST_CLASS_FULL_NAME + ".InnerClassB");
+    assertDefinition(
+        TEST_CLASS_FILE,
+        "InnerClassA getInnerA()",
+        "InnerClassA",
+        TEST_CLASS_FULL_NAME + ".InnerClassA");
+    assertDefinition(
+        TEST_CLASS_FILE, "OtherClass getOtherClass()", "OtherClass", OTHER_CLASS_FULL_NAME);
+    assertDefinition(
+        TEST_CLASS_FILE,
+        "OtherPackageClass getOtherPackageClass()",
+        "OtherPackageClass",
+        OTHER_PACKAGE_CLASS_FULL_NAME);
+  }
 
   private void assertDefinition(
       String filename, String symbolContext, String symbol, Entity expected) {
@@ -245,7 +259,7 @@ public class DefinitionSolverTest {
   private TextPosition locateSymbol(SymbolLocator symbolLocator) {
     String fileContent = getFileContent(symbolLocator.filename);
     int start = fileContent.indexOf(symbolLocator.symbolContext);
-    assertThat(start).named("start").isGreaterThan(-1);
+    assertThat(start).named("location of " + symbolLocator.symbolContext).isGreaterThan(-1);
     int pos = fileContent.indexOf(symbolLocator.symbol, start);
     assertThat(pos).named("pos").isGreaterThan(-1);
     FileScope fileScope = globalScope.getFileScope(symbolLocator.filename).get();

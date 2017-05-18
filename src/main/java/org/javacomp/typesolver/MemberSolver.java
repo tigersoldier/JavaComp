@@ -38,6 +38,14 @@ public class MemberSolver {
 
   public Optional<Entity> findNonMethodMember(
       String identifier, SolvedType baseType, GlobalScope globalScope) {
+    return findNonMethodMember(identifier, baseType, globalScope, ALLOWED_KINDS_NON_METHOD);
+  }
+
+  public Optional<Entity> findNonMethodMember(
+      String identifier,
+      SolvedType baseType,
+      GlobalScope globalScope,
+      Set<Entity.Kind> allowedKinds) {
     ///////
     // OuterClass.this
     if (IDENT_THIS.equals(identifier)) {
@@ -53,8 +61,7 @@ public class MemberSolver {
     ////////
     //  foo.bar
     Entity memberEntity =
-        typeSolver.findEntityMember(
-            identifier, baseType.getEntity(), globalScope, ALLOWED_KINDS_NON_METHOD);
+        typeSolver.findEntityMember(identifier, baseType.getEntity(), globalScope, allowedKinds);
     return Optional.ofNullable(memberEntity);
   }
 

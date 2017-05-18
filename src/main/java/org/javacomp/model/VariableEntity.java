@@ -9,7 +9,7 @@ import java.util.Set;
 
 /** Represents a variable. */
 public class VariableEntity extends Entity {
-  private static final Set<Entity.Kind> ALLOWED_KINDS =
+  public static final Set<Entity.Kind> ALLOWED_KINDS =
       EnumSet.of(Entity.Kind.VARIABLE, Entity.Kind.FIELD);
 
   private final TypeReference type;

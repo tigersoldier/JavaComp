@@ -32,10 +32,13 @@ public class TestClass {
   public OtherClass getOtherClass() {}
 
   public OtherClass otherClass;
+  public OtherClass OtherClass;
 
   public OtherPackageClass getOtherPackageClass() {}
 
   public OtherPackageClass otherPackageClass;
+
+  public void methodWithArgs(InnerClassA innerClassA, OtherClass innerClassB) {}
 
   public void testMethod(InnerClassA innerAParam, OtherClass otherClassParam) {
     InnerClassA innerAVar = innerAParam.getTestBInA().testAInB.getTestClassInA().innerA;
@@ -45,5 +48,6 @@ public class TestClass {
 
     getInnerA().innerBInA;
     getOtherClass().getTestClass();
+    methodWithArgs(innerA, innerAParam.testClassInA);
   }
 }
