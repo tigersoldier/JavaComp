@@ -21,7 +21,10 @@ import com.sun.source.util.TreePathScanner;
 import com.sun.source.util.TreeScanner;
 import com.sun.tools.javac.tree.EndPosTable;
 import com.sun.tools.javac.tree.JCTree;
+import com.sun.tools.javac.tree.JCTree.JCClassDecl;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
+import com.sun.tools.javac.tree.JCTree.JCMethodDecl;
+import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
@@ -52,11 +55,14 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
   private EndPosTable endPosTable = null;
   private NestedRangeMapBuilder<EntityScope> scopeRangeBuilder = null;
   private String filename = null;
+  private String content = null;
 
-  public FileScope startScan(JCCompilationUnit node, String filename) {
+  public FileScope startScan(JCCompilationUnit node, String filename, CharSequence content) {
     this.filename = filename;
+    this.content = content.toString();
     super.scan(node, null);
     this.filename = null;
+    this.content = null;
     return this.fileScope;
   }
 
@@ -128,8 +134,7 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
     for (Tree implementClause : node.getImplementsClause()) {
       interfaceBuilder.add(typeReferenceScanner.getTypeReference(implementClause));
     }
-    // TODO: find the real range of the class name token.
-    Range<Integer> range = getNodeRange((JCTree) node);
+    Range<Integer> range = getClassNameRange((JCClassDecl) node);
     ClassEntity classEntity =
         new ClassEntity(
             node.getSimpleName().toString(),
@@ -173,8 +178,7 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
       parameterListBuilder.add(parameterScanner.getParameter(parameter, currentScope));
     }
 
-    // TODO: find the real range of the class name token.
-    Range<Integer> range = getNodeRange((JCTree) node);
+    Range<Integer> range = getMethodNameRange((JCMethodDecl) node);
     MethodEntity methodEntity =
         new MethodEntity(
             node.getName().toString(),
@@ -200,8 +204,7 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
   public Void visitVariable(VariableTree node, EntityScope currentScope) {
     Entity.Kind variableKind =
         (currentScope instanceof ClassEntity) ? Entity.Kind.FIELD : Entity.Kind.VARIABLE;
-    // TODO: find the real range of the class name token.
-    Range<Integer> range = getNodeRange((JCTree) node);
+    Range<Integer> range = getVariableNameRange((JCVariableDecl) node);
     VariableEntity variableEntity =
         new VariableEntity(
             node.getName().toString(),
@@ -307,6 +310,70 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
     }
   }
 
+  private Range<Integer> getVariableNameRange(JCVariableDecl node) {
+    if (node.getName() != null) {
+      String name = node.getName().toString();
+      List<? extends JCTree> precedentNodes;
+      if (node.getType() != null) {
+        precedentNodes = ImmutableList.of(node.getType());
+      } else {
+        precedentNodes = ImmutableList.of();
+      }
+      return getNodeNameRangeAfter(node, name, precedentNodes);
+    } else if (node.getNameExpression() != null) {
+      return getNodeRange(node.getNameExpression());
+    }
+    return getNodeRange(node);
+  }
+
+  private Range<Integer> getClassNameRange(JCClassDecl node) {
+    if (node.getSimpleName() == null) {
+      return getNodeRange(node);
+    }
+
+    String name = node.getSimpleName().toString();
+    List<? extends JCTree> precedentNodes;
+    if (node.getModifiers() != null && node.getModifiers().getAnnotations() != null) {
+      precedentNodes = node.getModifiers().getAnnotations();
+    } else {
+      precedentNodes = ImmutableList.of();
+    }
+    return getNodeNameRangeAfter(node, name, precedentNodes);
+  }
+
+  private Range<Integer> getMethodNameRange(JCMethodDecl node) {
+    if (node.getName() == null) {
+      return getNodeRange(node);
+    }
+
+    String name = node.getName().toString();
+    List<JCTree> precedentNodes = new ArrayList<>();
+    if (node.getModifiers() != null && node.getModifiers().getAnnotations() != null) {
+      precedentNodes.addAll(node.getModifiers().getAnnotations());
+    }
+    if (node.getTypeParameters() != null) {
+      precedentNodes.addAll(node.getTypeParameters());
+    }
+    if (node.getReturnType() != null) {
+      precedentNodes.add(node.getReturnType());
+    }
+    return getNodeNameRangeAfter(node, name, precedentNodes);
+  }
+
+  private Range<Integer> getNodeNameRangeAfter(
+      JCTree node, String name, List<? extends JCTree> precedentNodes) {
+    int start = node.getStartPosition();
+    for (JCTree precedentNode : precedentNodes) {
+      start = Math.max(start, precedentNode.getEndPosition(endPosTable));
+    }
+    start = content.indexOf(name, start);
+    if (start > -1 && start < node.getEndPosition(endPosTable)) {
+      return Range.closedOpen(start, start + name.length());
+    }
+
+    return getNodeRange(node);
+  }
+
   private class ParameterScanner extends TreeScanner<Void, Void> {
     private final TypeReferenceScanner typeReferenceScanner;
     private String name = "";
@@ -321,8 +388,7 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
       type = TypeReference.EMPTY_TYPE;
       scan(node, null);
 
-      // TODO: find the real range of the class name token.
-      Range<Integer> range = getNodeRange((JCTree) node);
+      Range<Integer> range = getVariableNameRange((JCVariableDecl) node);
       return new VariableEntity(
           name,
           Entity.Kind.VARIABLE,

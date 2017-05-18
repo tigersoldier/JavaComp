@@ -4,6 +4,7 @@ import foo.Bar.Baz;
 import foo.bar.*;
 import foo.bar.baz.*;
 
+@Annotation
 public class TestData {
   public static final int publicStaticIntField;
   private final boolean privateMemberBooleanField;
@@ -29,7 +30,7 @@ public class TestData {
   } // publicIfBlockMethod
 
   protected int protectedWhileBlockMethod(int number) {
-    int ret = 0;
+    int ret = 0;  // variable
     while (number > 0) {
       int whileScopeVar;
       number--;

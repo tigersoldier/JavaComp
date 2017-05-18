@@ -57,7 +57,7 @@ public class AstScannerTest {
                 true /* keepEndPos */,
                 true /* keepLineMap */);
     compilationUnit = parser.parseCompilationUnit();
-    fileScope = scanner.startScan(compilationUnit, TEST_DATA_PATH);
+    fileScope = scanner.startScan(compilationUnit, TEST_DATA_PATH, testDataContent);
   }
 
   @Test
@@ -257,6 +257,56 @@ public class AstScannerTest {
         (MethodEntity) lookupEntity(fileScope, "TestData.privateForBlockMethod");
     TypeReference intReference = methodEntity.getParameters().get(0).getType();
     assertThat(intReference.getFullName()).containsExactly("java", "util", "List").inOrder();
+  }
+
+  @Test
+  public void classNameRange() {
+    assertEntityNameRange(lookupEntity(fileScope, "TestData"), "class TestData");
+    assertEntityNameRange(
+        lookupEntity(fileScope, "TestData.PublicInnerInterface"),
+        "public interface PublicInnerInterface");
+  }
+
+  @Test
+  public void methodNameRange() {
+    assertEntityNameRange(
+        lookupEntity(fileScope, "TestData.publicIfBlockMethod"),
+        "public boolean publicIfBlockMethod");
+  }
+
+  @Test
+  public void fieldNameRange() {
+    assertEntityNameRange(
+        lookupEntity(fileScope, "TestData.publicStaticIntField"),
+        "public static final int publicStaticIntField");
+  }
+
+  @Test
+  public void parameterNameRange() {
+    Entity method = lookupEntity(fileScope, "TestData.protectedWhileBlockMethod");
+    Entity parameter =
+        Iterables.getOnlyElement(method.getChildScope().getMemberEntities().get("number"));
+    assertEntityNameRange(parameter, "protected int protectedWhileBlockMethod(int number)");
+  }
+
+  @Test
+  public void variableNameRange() {
+    Entity method = lookupEntity(fileScope, "TestData.protectedWhileBlockMethod");
+    Entity parameter =
+        Iterables.getOnlyElement(method.getChildScope().getMemberEntities().get("ret"));
+    assertEntityNameRange(parameter, "int ret = 0;  // variable");
+  }
+
+  private void assertEntityNameRange(Entity entity, String locator) {
+    assertThat(locator).contains(entity.getSimpleName());
+    int start = testDataContent.indexOf(locator);
+    assertThat(start).isGreaterThan(-1);
+    start = testDataContent.indexOf(entity.getSimpleName(), start);
+    assertThat(entity.getSymbolRange().lowerEndpoint()).isEqualTo(start);
+    assertThat(
+            testDataContent.substring(
+                entity.getSymbolRange().lowerEndpoint(), entity.getSymbolRange().upperEndpoint()))
+        .isEqualTo(entity.getSimpleName());
   }
 
   @Test

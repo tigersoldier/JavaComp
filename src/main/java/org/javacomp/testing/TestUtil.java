@@ -73,7 +73,7 @@ public class TestUtil {
                 true /* keepEndPos */,
                 true /* keepLineMap */);
     JCCompilationUnit compilationUnit = parser.parseCompilationUnit();
-    return new AstScanner().startScan(compilationUnit, filePath.toString());
+    return new AstScanner().startScan(compilationUnit, filePath.toString(), fileContent);
   }
 
   /** Lookup an entity from global scope with qualified name. */

@@ -98,7 +98,7 @@ public class Project {
     try {
       FileScope fileScope =
           astScanner.startScan(
-              parserContext.parse(filePath.toString(), content), filePath.toString());
+              parserContext.parse(filePath.toString(), content), filePath.toString(), content);
       fileScope.setAdjustedLineMap(adjustedLineMap);
       globalScope.addOrReplaceFileScope(fileScope);
     } catch (Throwable t) {

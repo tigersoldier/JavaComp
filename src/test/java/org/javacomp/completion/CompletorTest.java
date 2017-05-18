@@ -60,7 +60,8 @@ public class CompletorTest {
 
     JCCompilationUnit compilationUnit =
         parserContext.parse(inputFilePath, fixedContent.getContent());
-    FileScope inputFileScope = new AstScanner().startScan(compilationUnit, inputFilePath);
+    FileScope inputFileScope =
+        new AstScanner().startScan(compilationUnit, inputFilePath, fixedContent.getContent());
     inputFileScope.setAdjustedLineMap(fixedContent.getAdjustedLineMap());
     GlobalScope globalScope = new GlobalScope();
     globalScope.addOrReplaceFileScope(inputFileScope);
@@ -68,7 +69,7 @@ public class CompletorTest {
     for (String otherFile : otherFiles) {
       String content = getFileContent(otherFile);
       JCCompilationUnit otherCompilationUnit = parserContext.parse(otherFile, content);
-      FileScope fileScope = new AstScanner().startScan(otherCompilationUnit, otherFile);
+      FileScope fileScope = new AstScanner().startScan(otherCompilationUnit, otherFile, content);
       globalScope.addOrReplaceFileScope(fileScope);
     }
 

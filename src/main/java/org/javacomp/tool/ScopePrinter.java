@@ -42,7 +42,8 @@ public class ScopePrinter {
       System.out.println("Fixed content:");
       System.out.println(content);
     }
-    FileScope fileScope = astScanner.startScan(parserContext.parse(filename, content), filename);
+    FileScope fileScope =
+        astScanner.startScan(parserContext.parse(filename, content), filename, content);
     printScope(fileScope, 0 /* scope */);
   }
 

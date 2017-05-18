@@ -55,7 +55,7 @@ public class DefinitionSolverTest {
     for (String filename : ALL_FILES) {
       String content = getFileContent(filename);
       JCCompilationUnit compilationUnit = parserContext.parse(filename, content);
-      FileScope fileScope = new AstScanner().startScan(compilationUnit, filename);
+      FileScope fileScope = new AstScanner().startScan(compilationUnit, filename, content);
       globalScope.addOrReplaceFileScope(fileScope);
     }
 
