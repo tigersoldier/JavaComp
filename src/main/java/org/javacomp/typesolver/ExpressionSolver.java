@@ -1,7 +1,6 @@
 package org.javacomp.typesolver;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.sun.source.tree.ArrayAccessTree;
 import com.sun.source.tree.ExpressionTree;
@@ -11,6 +10,7 @@ import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.NewClassTree;
 import com.sun.source.util.TreeScanner;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -30,6 +30,7 @@ import org.javacomp.model.VariableEntity;
 public class ExpressionSolver {
   private static final JLogger logger = JLogger.createForEnclosingClass();
 
+  private static final Set<Entity.Kind> ALL_ENTITY_KINDS = EnumSet.allOf(Entity.Kind.class);
   private static final Set<Entity.Kind> ALLOWED_KINDS_METHOD = ImmutableSet.of(Entity.Kind.METHOD);
   private static final Set<Entity.Kind> ALLOWED_KINDS_NON_METHOD =
       new ImmutableSet.Builder<Entity.Kind>()
@@ -55,43 +56,101 @@ public class ExpressionSolver {
 
   public Optional<SolvedType> solve(
       ExpressionTree expression, GlobalScope globalScope, EntityScope baseScope) {
-    return Optional.ofNullable(
-        new ExpressionTypeScanner(globalScope, baseScope).scan(expression, null /* unused */));
+    List<Entity> definitions =
+        solveDefinitions(expression, globalScope, baseScope, ALL_ENTITY_KINDS);
+    return Optional.ofNullable(solveEntityType(definitions, globalScope));
   }
 
-  private class ExpressionTypeScanner extends TreeScanner<SolvedType, Void> {
+  /**
+   * Solve all entities that defines the given expression.
+   *
+   * <p>For methods, all overloads are returned. The best matched method is the first element.
+   */
+  public List<Entity> solveDefinitions(
+      ExpressionTree expression,
+      GlobalScope globalScope,
+      EntityScope baseScope,
+      Set<Entity.Kind> allowedKinds) {
+    List<Entity> entities =
+        new ExpressionDefinitionScanner(globalScope, baseScope, allowedKinds)
+            .scan(expression, null /* unused */);
+    if (entities == null) {
+      logger.warning(new Throwable(), "Unsupported expression: %s", expression);
+      return ImmutableList.of();
+    }
+    return entities
+        .stream()
+        .filter(entity -> allowedKinds.contains(entity.getKind()))
+        .collect(ImmutableList.toImmutableList());
+  }
+
+  @Nullable
+  private SolvedType solveEntityType(List<Entity> foundEntities, GlobalScope globalScope) {
+    if (foundEntities.isEmpty()) {
+      return null;
+    }
+
+    Entity entity = foundEntities.get(0);
+    if (entity instanceof MethodEntity) {
+      MethodEntity methodEntity = (MethodEntity) entity;
+      return typeSolver.solve(methodEntity.getReturnType(), globalScope, methodEntity).orElse(null);
+    }
+    if (entity instanceof VariableEntity) {
+      VariableEntity variableEntity = (VariableEntity) entity;
+      return typeSolver
+          .solve(variableEntity.getType(), globalScope, variableEntity.getParentScope())
+          .orElse(null);
+    }
+    if (entity instanceof ClassEntity) {
+      return SolvedType.builder().setEntity(entity).setPrimitive(false).setArray(false).build();
+    }
+    if (entity instanceof PackageEntity) {
+      return SolvedType.builder().setEntity(entity).setPrimitive(false).setArray(false).build();
+    }
+    if (entity instanceof PrimitiveEntity) {
+      return SolvedType.builder().setEntity(entity).setPrimitive(true).setArray(false).build();
+    }
+    return null;
+  }
+
+  private class ExpressionDefinitionScanner extends TreeScanner<List<Entity>, Void> {
     private final EntityScope baseScope;
     private final GlobalScope globalScope;
+    private final ImmutableSet<Entity.Kind> allowedEntityKinds;
+
     private List<Optional<SolvedType>> methodArgs;
 
-    private ExpressionTypeScanner(GlobalScope globalScope, EntityScope baseScope) {
+    private ExpressionDefinitionScanner(
+        GlobalScope globalScope, EntityScope baseScope, Set<Entity.Kind> allowedEntityKinds) {
       this.globalScope = globalScope;
       this.baseScope = baseScope;
+      this.allowedEntityKinds = ImmutableSet.copyOf(allowedEntityKinds);
       this.methodArgs = null;
     }
 
     @Override
-    public SolvedType visitMethodInvocation(MethodInvocationTree node, Void unused) {
+    public List<Entity> visitMethodInvocation(MethodInvocationTree node, Void unused) {
       methodArgs = new ArrayList<>(node.getArguments().size());
       for (ExpressionTree arg : node.getArguments()) {
         methodArgs.add(solve(arg, globalScope, baseScope));
       }
-      SolvedType solvedType = scan(node.getMethodSelect(), null);
+      List<Entity> methods = scan(node.getMethodSelect(), null);
       methodArgs = null;
-      return solvedType;
+      return methods;
     }
 
     @Override
-    public SolvedType visitNewClass(NewClassTree node, Void unused) {
+    public List<Entity> visitNewClass(NewClassTree node, Void unused) {
       if (node.getEnclosingExpression() != null) {
         // <EnclosingExpression>.new <identifier>(...).
-        SolvedType enclosingClassType = scan(node.getEnclosingExpression(), null);
+        SolvedType enclosingClassType =
+            solveEntityType(scan(node.getEnclosingExpression(), null), globalScope);
         if (enclosingClassType == null
             || !(enclosingClassType.getEntity() instanceof ClassEntity)) {
           return null;
         }
-        return new ExpressionTypeScanner(
-                globalScope, enclosingClassType.getEntity().getChildScope())
+        return new ExpressionDefinitionScanner(
+                globalScope, enclosingClassType.getEntity().getChildScope(), allowedEntityKinds)
             .scan(node.getIdentifier(), null);
       } else {
         return scan(node.getIdentifier(), null);
@@ -99,10 +158,10 @@ public class ExpressionSolver {
     }
 
     @Override
-    public SolvedType visitMemberSelect(MemberSelectTree node, Void unused) {
+    public List<Entity> visitMemberSelect(MemberSelectTree node, Void unused) {
       List<Optional<SolvedType>> savedMethodArgs = methodArgs;
       methodArgs = null;
-      SolvedType expressionType = scan(node.getExpression(), null);
+      SolvedType expressionType = solveEntityType(scan(node.getExpression(), null), globalScope);
       methodArgs = savedMethodArgs;
       if (expressionType == null) {
         return null;
@@ -111,53 +170,41 @@ public class ExpressionSolver {
       String identifier = node.getIdentifier().toString();
 
       if (isMethodInvocation()) {
-        Optional<MethodEntity> method =
-            memberSolver.findMethodMember(identifier, methodArgs, expressionType, globalScope);
-        if (method.isPresent()) {
-          return typeSolver
-              .solve(method.get().getReturnType(), globalScope, method.get())
-              .orElse(null);
-        } else {
-          return null;
-        }
+        return ImmutableList.copyOf(
+            memberSolver.findMethodMembers(identifier, methodArgs, expressionType, globalScope));
       } else {
-        Optional<Entity> entity =
-            memberSolver.findNonMethodMember(identifier, expressionType, globalScope);
-        if (entity.isPresent()) {
-          return solveNonMethodEntityType(entity.get());
-        } else {
-          return null;
-        }
+        return toList(memberSolver.findNonMethodMember(identifier, expressionType, globalScope));
       }
     }
 
     @Override
-    public SolvedType visitArrayAccess(ArrayAccessTree node, Void unused) {
-      SolvedType expType = scan(node.getExpression(), null);
+    public List<Entity> visitArrayAccess(ArrayAccessTree node, Void unused) {
+      SolvedType expType = solveEntityType(scan(node.getExpression(), null), globalScope);
       if (expType == null || !expType.isArray()) {
-        return null;
+        return ImmutableList.of();
       }
 
-      return expType.toBuilder().setArray(false).build();
+      return ImmutableList.of(expType.getEntity());
     }
 
     @Override
-    public SolvedType visitIdentifier(IdentifierTree node, Void unused) {
+    public List<Entity> visitIdentifier(IdentifierTree node, Void unused) {
       String identifier = node.getName().toString();
 
       if (IDENT_THIS.equals(identifier)) {
-        return solveNonMethodEntityType(findEnclosingClass(baseScope));
+        return toList(findEnclosingClass(baseScope));
       }
 
       if (IDENT_SUPER.equals(identifier)) {
         ClassEntity enclosingClass = findEnclosingClass(baseScope);
         if (enclosingClass != null && enclosingClass.getSuperClass().isPresent()) {
-          return typeSolver
-              .solve(
-                  enclosingClass.getSuperClass().get(),
-                  globalScope,
-                  enclosingClass.getParentScope().get())
-              .orElse(null);
+          return toList(
+              typeSolver
+                  .solve(
+                      enclosingClass.getSuperClass().get(),
+                      globalScope,
+                      enclosingClass.getParentScope().get())
+                  .map(solvedType -> solvedType.getEntity()));
         }
       }
 
@@ -166,67 +213,24 @@ public class ExpressionSolver {
               node.getName().toString(), globalScope, baseScope, getAllowedEntityKinds());
 
       if (!entities.isEmpty()) {
-        return solveEntityType(entities);
+        if (isMethodInvocation()) {
+          return overloadSolver.prioritizeMatchedMethod(entities, methodArgs, globalScope);
+        }
+        return entities;
       }
 
       if (isMethodInvocation()) {
         // Method cannot be direct memeber of root package.
-        return null;
+        return ImmutableList.of();
       }
-      return solveNonMethodEntityType(
+
+      return toList(
           typeSolver.findDirectMember(
               node.getName().toString(), globalScope, ALLOWED_KINDS_NON_METHOD));
     }
 
     private Set<Entity.Kind> getAllowedEntityKinds() {
-      return methodArgs == null ? ALLOWED_KINDS_NON_METHOD : ALLOWED_KINDS_METHOD;
-    }
-
-    @Nullable
-    private SolvedType solveEntityType(List<Entity> foundEntities) {
-      if (isMethodInvocation()) {
-        return solveMethodReturnType(foundEntities);
-      } else {
-        // Non-method entities have no overload
-        return solveNonMethodEntityType(foundEntities.get(0));
-      }
-    }
-
-    @Nullable
-    private SolvedType solveMethodReturnType(List<Entity> methodEntities) {
-      if (methodEntities.isEmpty()) {
-        return null;
-      }
-      for (Entity entity : methodEntities) {
-        checkArgument(entity instanceof MethodEntity, "Entity %s is not a method", entity);
-      }
-      @SuppressWarnings("unchecked")
-      List<MethodEntity> methods = (List<MethodEntity>) (List) methodEntities;
-      MethodEntity solvedMethod = overloadSolver.solve(methods, methodArgs, globalScope);
-      return typeSolver.solve(solvedMethod.getReturnType(), globalScope, solvedMethod).orElse(null);
-    }
-
-    @Nullable
-    private SolvedType solveNonMethodEntityType(@Nullable Entity entity) {
-      if (entity == null) {
-        return null;
-      }
-      if (entity instanceof VariableEntity) {
-        VariableEntity variableEntity = (VariableEntity) entity;
-        return typeSolver
-            .solve(variableEntity.getType(), globalScope, variableEntity.getParentScope())
-            .orElse(null);
-      }
-      if (entity instanceof ClassEntity) {
-        return SolvedType.builder().setEntity(entity).setPrimitive(false).setArray(false).build();
-      }
-      if (entity instanceof PackageEntity) {
-        return SolvedType.builder().setEntity(entity).setPrimitive(false).setArray(false).build();
-      }
-      if (entity instanceof PrimitiveEntity) {
-        return SolvedType.builder().setEntity(entity).setPrimitive(true).setArray(false).build();
-      }
-      return null;
+      return methodArgs == null ? allowedEntityKinds : ALLOWED_KINDS_METHOD;
     }
 
     @Nullable
@@ -241,6 +245,17 @@ public class ExpressionSolver {
 
     private boolean isMethodInvocation() {
       return methodArgs != null;
+    }
+
+    private List<Entity> toList(Optional<Entity> optionalEntity) {
+      return toList(optionalEntity.orElse(null));
+    }
+
+    private List<Entity> toList(@Nullable Entity entity) {
+      if (entity == null) {
+        return ImmutableList.of();
+      }
+      return ImmutableList.of(entity);
     }
   }
 }

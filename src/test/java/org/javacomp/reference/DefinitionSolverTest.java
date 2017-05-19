@@ -103,10 +103,7 @@ public class DefinitionSolverTest {
   @Test
   public void testMethodInvocation() {
     assertDefinition(
-        TEST_CLASS_FILE,
-        "getInnerA().innerBInA;",
-        "getInnerA",
-        TEST_CLASS_FULL_NAME + ".getInnerA");
+        TEST_CLASS_FILE, "getInnerA().testBInA;", "getInnerA", TEST_CLASS_FULL_NAME + ".getInnerA");
     assertDefinition(
         TEST_CLASS_FILE,
         "getOtherClass().getTestClass();",

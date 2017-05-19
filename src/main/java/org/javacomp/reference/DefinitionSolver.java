@@ -3,7 +3,6 @@ package org.javacomp.reference;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.sun.source.tree.ExpressionTree;
-import com.sun.source.tree.IdentifierTree;
 import com.sun.source.tree.MemberSelectTree;
 import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.MethodTree;
@@ -11,7 +10,6 @@ import com.sun.source.tree.Tree;
 import com.sun.source.tree.VariableTree;
 import com.sun.source.util.TreePath;
 import java.nio.file.Path;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -20,7 +18,6 @@ import org.javacomp.model.ClassEntity;
 import org.javacomp.model.Entity;
 import org.javacomp.model.EntityScope;
 import org.javacomp.model.GlobalScope;
-import org.javacomp.model.MethodEntity;
 import org.javacomp.model.SolvedType;
 import org.javacomp.model.VariableEntity;
 import org.javacomp.parser.PositionContext;
@@ -32,11 +29,16 @@ import org.javacomp.typesolver.TypeSolver;
 /** Finds the definition of a symbol at a given position */
 public class DefinitionSolver {
   private static final JLogger logger = JLogger.createForEnclosingClass();
-  private static final Set<Entity.Kind> ENTITY_KINDS_METHOD_ONLY = EnumSet.of(Entity.Kind.METHOD);
-  private static final Set<Entity.Kind> ENTITY_KINDS_VARIABLE_AND_CLASS =
+  private static final Set<Entity.Kind> ALLOWED_ENTITY_KINDS =
       new ImmutableSet.Builder<Entity.Kind>()
           .addAll(VariableEntity.ALLOWED_KINDS)
           .addAll(ClassEntity.ALLOWED_KINDS)
+          .add(Entity.Kind.METHOD)
+          .build();
+  private static final Set<Entity.Kind> ALLOWED_ENTITY_KINDS_FOR_TYPE_REFERENCE =
+      new ImmutableSet.Builder<Entity.Kind>()
+          .addAll(ClassEntity.ALLOWED_KINDS)
+          .add(Entity.Kind.QUALIFIER)
           .build();
 
   private final TypeSolver typeSolver;
@@ -68,101 +70,24 @@ public class DefinitionSolver {
 
     TreePath treePath = positionContext.get().getTreePath();
     Tree leafTree = treePath.getLeaf();
-
-    if (leafTree instanceof MemberSelectTree) {
-      return getMemberSelectDefinition(
-          positionContext.get(), (MemberSelectTree) leafTree, treePath);
-    } else if (leafTree instanceof IdentifierTree) {
-      return getIdentifierDefinition(positionContext.get(), (IdentifierTree) leafTree, treePath);
-    } else {
-      return ImmutableList.of();
-    }
-  }
-
-  private List<Entity> getMemberSelectDefinition(
-      PositionContext positionContext, MemberSelectTree tree, TreePath treePath) {
     TreePath parentPath = treePath.getParentPath();
     Tree parentTree = parentPath != null ? parentPath.getLeaf() : null;
 
-    GlobalScope globalScope = positionContext.getGlobalScope();
-    String identifier = tree.getIdentifier().toString();
-    Optional<SolvedType> solvedType =
-        expressionSolver.solve(
-            tree.getExpression(),
-            positionContext.getGlobalScope(),
-            positionContext.getScopeAtPosition());
-    if (!solvedType.isPresent()) {
-      return ImmutableList.of();
+    if (leafTree instanceof ExpressionTree) {
+      Set<Entity.Kind> allowedKinds = ALLOWED_ENTITY_KINDS;
+      if (treeIsMethodName(leafTree, parentTree)) {
+        // parentTree is the method we need to solve.
+        leafTree = parentTree;
+      } else if (treeIsTypeReference(treePath)) {
+        allowedKinds = ALLOWED_ENTITY_KINDS_FOR_TYPE_REFERENCE;
+      }
+      return expressionSolver.solveDefinitions(
+          (ExpressionTree) leafTree,
+          positionContext.get().getGlobalScope(),
+          positionContext.get().getScopeAtPosition(),
+          allowedKinds);
     }
-
-    if (treeIsMethodName(tree, parentTree)) {
-      List<? extends ExpressionTree> args = ((MethodInvocationTree) parentTree).getArguments();
-      return getMethodDefinition(identifier, args, solvedType.get(), globalScope);
-    } else {
-      Set<Entity.Kind> allowedKinds =
-          treeIsTypeReference(treePath)
-              ? ClassEntity.ALLOWED_KINDS
-              : this.ENTITY_KINDS_VARIABLE_AND_CLASS;
-      return toEntityList(
-          memberSolver.findNonMethodMember(
-              identifier, solvedType.get(), globalScope, allowedKinds));
-    }
-  }
-
-  private List<Entity> getMethodDefinition(
-      String identifier,
-      List<? extends ExpressionTree> args,
-      SolvedType baseType,
-      GlobalScope globalScope) {
-    Optional<? extends Entity> entity =
-        memberSolver.findMethodMember(
-            identifier,
-            solveMethodArgs(args, baseType.getEntity().getChildScope(), globalScope),
-            baseType,
-            globalScope);
-    return toEntityList(entity);
-  }
-
-  private List<? extends Entity> getIdentifierDefinition(
-      PositionContext positionContext, IdentifierTree identifier, TreePath treePath) {
-    TreePath parentPath = treePath.getParentPath();
-    Tree parentTree = parentPath != null ? parentPath.getLeaf() : null;
-    if (treeIsMethodName(identifier, parentTree)) {
-      return getMethodDefinition(positionContext, identifier, (MethodInvocationTree) parentTree);
-    }
-
-    Set<Entity.Kind> allowedKinds =
-        treeIsTypeReference(treePath) ? ClassEntity.ALLOWED_KINDS : ENTITY_KINDS_VARIABLE_AND_CLASS;
-    return typeSolver.findEntitiesInScope(
-        identifier.getName().toString(),
-        positionContext.getGlobalScope(),
-        positionContext.getScopeAtPosition(),
-        allowedKinds);
-  }
-
-  private List<? extends Entity> getMethodDefinition(
-      PositionContext positionContext, IdentifierTree identifier, MethodInvocationTree method) {
-    // Method invocation without member selection.
-    @SuppressWarnings("unchecked")
-    List<MethodEntity> methods =
-        (List<MethodEntity>)
-            (List)
-                typeSolver.findEntitiesInScope(
-                    identifier.getName().toString(),
-                    positionContext.getGlobalScope(),
-                    positionContext.getScopeAtPosition(),
-                    ENTITY_KINDS_METHOD_ONLY);
-    if (methods.isEmpty()) {
-      return ImmutableList.of();
-    }
-    return ImmutableList.of(
-        overloadSolver.solve(
-            methods,
-            solveMethodArgs(
-                method.getArguments(),
-                positionContext.getScopeAtPosition(),
-                positionContext.getGlobalScope()),
-            positionContext.getGlobalScope()));
+    return ImmutableList.of();
   }
 
   private boolean treeIsMethodName(Tree tree, Tree parentTree) {

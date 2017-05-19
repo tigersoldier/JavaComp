@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import org.javacomp.logging.JLogger;
 import org.javacomp.model.ClassEntity;
+import org.javacomp.model.Entity;
 import org.javacomp.model.GlobalScope;
 import org.javacomp.model.MethodEntity;
 import org.javacomp.model.PrimitiveEntity;
@@ -119,9 +120,14 @@ public class OverloadSolver {
    * @return one of the methods in {@code methods}
    */
   public MethodEntity solve(
-      List<MethodEntity> methods,
-      List<Optional<SolvedType>> argumentTypes,
-      GlobalScope globalScope) {
+      List<Entity> entities, List<Optional<SolvedType>> argumentTypes, GlobalScope globalScope) {
+    List<MethodEntity> methods =
+        entities
+            .stream()
+            .filter(entity -> entity instanceof MethodEntity)
+            .map(entity -> (MethodEntity) entity)
+            .collect(ImmutableList.toImmutableList());
+
     checkArgument(!methods.isEmpty(), "must contain at least one method");
     if (methods.size() == 1) {
       return methods.get(0);
@@ -477,6 +483,25 @@ public class OverloadSolver {
       return -1;
     }
     return 0;
+  }
+
+  /** Moves the best matched method to the first element. */
+  public List<Entity> prioritizeMatchedMethod(
+      List<Entity> entities, List<Optional<SolvedType>> argumentTypes, GlobalScope globalScope) {
+    if (entities.isEmpty()) {
+      return entities;
+    }
+    MethodEntity matchedMethod = solve(entities, argumentTypes, globalScope);
+
+    ImmutableList.Builder<Entity> builder = new ImmutableList.Builder<>();
+    builder.add(matchedMethod);
+
+    for (Entity entity : entities) {
+      if (entity != matchedMethod) {
+        builder.add(entity);
+      }
+    }
+    return builder.build();
   }
 
   /** Determines if {@code lhs} method is more specific than {@code rhs} method. */

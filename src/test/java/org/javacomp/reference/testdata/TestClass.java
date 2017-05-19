@@ -46,7 +46,7 @@ public class TestClass {
     OtherPackageClass otherPackageInnerAVar = innerAVar.testClassInA.getOtherPackageClass().innerA;
     InnerClassB ignore = innerB;
 
-    getInnerA().innerBInA;
+    getInnerA().testBInA;
     getOtherClass().getTestClass();
     methodWithArgs(innerA, innerAParam.testClassInA);
   }

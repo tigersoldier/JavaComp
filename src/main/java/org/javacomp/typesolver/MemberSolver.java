@@ -1,7 +1,6 @@
 package org.javacomp.typesolver;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import java.util.List;
 import java.util.Optional;
@@ -13,6 +12,7 @@ import org.javacomp.model.GlobalScope;
 import org.javacomp.model.MethodEntity;
 import org.javacomp.model.PrimitiveEntity;
 import org.javacomp.model.SolvedType;
+import org.javacomp.model.VariableEntity;
 
 /** Logic for finding the entity that defines the member of a class. */
 public class MemberSolver {
@@ -23,8 +23,7 @@ public class MemberSolver {
   private static final Set<Entity.Kind> ALLOWED_KINDS_NON_METHOD =
       new ImmutableSet.Builder<Entity.Kind>()
           .addAll(ClassEntity.ALLOWED_KINDS)
-          .add(Entity.Kind.VARIABLE)
-          .add(Entity.Kind.FIELD)
+          .addAll(VariableEntity.ALLOWED_KINDS)
           .add(Entity.Kind.QUALIFIER)
           .build();
 
@@ -65,7 +64,11 @@ public class MemberSolver {
     return Optional.ofNullable(memberEntity);
   }
 
-  public Optional<MethodEntity> findMethodMember(
+  /**
+   * @return a list of {@link MethodEntity} instances. The best match is the first element if not
+   *     empty.
+   */
+  public List<Entity> findMethodMembers(
       String identifier,
       List<Optional<SolvedType>> arguments,
       SolvedType baseType,
@@ -74,21 +77,15 @@ public class MemberSolver {
     if (!(baseType.getEntity() instanceof ClassEntity)) {
       logger.warning(
           new Throwable(), "Cannot find method of non-class entities %s", baseType.getEntity());
-      return Optional.empty();
+      return ImmutableList.of();
     }
 
     List<Entity> methodEntities =
         typeSolver.findClassMethods(identifier, (ClassEntity) baseType.getEntity(), globalScope);
     if (methodEntities.isEmpty()) {
-      return Optional.empty();
+      return ImmutableList.of();
     }
 
-    for (Entity entity : methodEntities) {
-      checkArgument(entity instanceof MethodEntity, "Entity %s is not a method", entity);
-    }
-
-    @SuppressWarnings("unchecked")
-    List<MethodEntity> methods = (List<MethodEntity>) (List) methodEntities;
-    return Optional.of(overloadSolver.solve(methods, arguments, globalScope));
+    return overloadSolver.prioritizeMatchedMethod(methodEntities, arguments, globalScope);
   }
 }

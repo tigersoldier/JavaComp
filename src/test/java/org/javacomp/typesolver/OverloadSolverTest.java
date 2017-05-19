@@ -6,8 +6,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.javacomp.model.ClassEntity;
+import org.javacomp.model.Entity;
 import org.javacomp.model.GlobalScope;
-import org.javacomp.model.MethodEntity;
 import org.javacomp.model.SolvedType;
 import org.javacomp.model.TypeReference;
 import org.javacomp.testing.TestUtil;
@@ -120,9 +120,8 @@ public class OverloadSolverTest {
    */
   private String solveOverload(TypeReference... argumentTypes) {
     @SuppressWarnings("unchecked")
-    List<MethodEntity> methods =
-        (List<MethodEntity>)
-            (List) typeSolver.findClassMethods(OVERLOAD_METHOD_NAME, topLevelClass, globalScope);
+    List<Entity> methods =
+        typeSolver.findClassMethods(OVERLOAD_METHOD_NAME, topLevelClass, globalScope);
     List<Optional<SolvedType>> solvedArgumentTypes = new ArrayList<>();
     for (TypeReference argumentType : argumentTypes) {
       solvedArgumentTypes.add(typeSolver.solve(argumentType, globalScope, topLevelClass));
