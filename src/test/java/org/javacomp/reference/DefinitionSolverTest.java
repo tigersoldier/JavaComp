@@ -1,75 +1,19 @@
 package org.javacomp.reference;
 
 import static com.google.common.truth.Truth.assertThat;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
-import com.sun.source.tree.LineMap;
-import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
 import org.javacomp.file.TextPosition;
 import org.javacomp.model.Entity;
-import org.javacomp.model.FileScope;
-import org.javacomp.model.GlobalScope;
-import org.javacomp.model.MethodEntity;
-import org.javacomp.model.VariableEntity;
-import org.javacomp.parser.AstScanner;
-import org.javacomp.parser.ParserContext;
 import org.javacomp.testing.TestUtil;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
-public class DefinitionSolverTest {
-  private static final String TEST_DATA_DIR = "src/test/java/org/javacomp/reference/testdata/";
-  private static final String TEST_CLASS_FILE = "TestClass.java";
-  private static final String OTHER_CLASS_FILE = "OtherClass.java";
-  private static final String OTHER_PACKAGE_CLASS_FILE = "other/OtherPackageClass.java";
-  private static final List<String> ALL_FILES =
-      ImmutableList.of(TEST_CLASS_FILE, OTHER_CLASS_FILE, OTHER_PACKAGE_CLASS_FILE);
-
-  private static final String TEST_CLASS_FULL_NAME = "org.javacomp.reference.testdata.TestClass";
-  private static final String OTHER_CLASS_FULL_NAME = "org.javacomp.reference.testdata.OtherClass";
-  private static final String OTHER_PACKAGE_CLASS_FULL_NAME =
-      "org.javacomp.reference.testdata.other.OtherPackageClass";
+public class DefinitionSolverTest extends BaseTest {
 
   private final DefinitionSolver definitionSolver = new DefinitionSolver();
-
-  private GlobalScope globalScope;
-
-  private VariableEntity innerAParam;
-  private VariableEntity otherClassParam;
-  private VariableEntity innerAVar;
-
-  @Before
-  public void parseJavaFiles() {
-    ParserContext parserContext = new ParserContext();
-    globalScope = new GlobalScope();
-    for (String filename : ALL_FILES) {
-      String content = getFileContent(filename);
-      JCCompilationUnit compilationUnit = parserContext.parse(filename, content);
-      FileScope fileScope = new AstScanner().startScan(compilationUnit, filename, content);
-      globalScope.addOrReplaceFileScope(fileScope);
-    }
-
-    MethodEntity testMethod =
-        (MethodEntity) TestUtil.lookupEntity(TEST_CLASS_FULL_NAME + ".testMethod", globalScope);
-    innerAParam =
-        (VariableEntity)
-            Iterables.getOnlyElement(testMethod.getMemberEntities().get("innerAParam"));
-    innerAVar =
-        (VariableEntity) Iterables.getOnlyElement(testMethod.getMemberEntities().get("innerAVar"));
-    otherClassParam =
-        (VariableEntity)
-            Iterables.getOnlyElement(testMethod.getMemberEntities().get("otherClassParam"));
-  }
 
   @Test
   public void testIndexVariable() {
@@ -95,7 +39,7 @@ public class DefinitionSolverTest {
         TEST_CLASS_FULL_NAME + ".innerB");
     assertDefinition(
         TEST_CLASS_FILE,
-        "methodWithArgs(innerA, innerAParam.testClassInA);",
+        "overloadMethod(innerA, innerAParam.testClassInA);",
         "innerA",
         TEST_CLASS_FULL_NAME + ".innerA");
   }
@@ -135,7 +79,7 @@ public class DefinitionSolverTest {
         OTHER_PACKAGE_CLASS_FULL_NAME + ".innerA");
     assertDefinition(
         TEST_CLASS_FILE,
-        "methodWithArgs(innerA, innerAParam.testClassInA);",
+        "overloadMethod(innerA, innerAParam.testClassInA);",
         "testClassInA",
         TEST_CLASS_FULL_NAME + ".InnerClassA.testClassInA");
   }
@@ -242,45 +186,5 @@ public class DefinitionSolverTest {
       String filename, String symbolContext, String symbol, String expectedQualifiedNamed) {
     Entity expected = TestUtil.lookupEntity(expectedQualifiedNamed, globalScope);
     assertDefinition(filename, symbolContext, symbol, expected);
-  }
-
-  private String getFileContent(String filename) {
-    Path inputFilePath = Paths.get(TEST_DATA_DIR, filename);
-    try {
-      return new String(Files.readAllBytes(inputFilePath), UTF_8);
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  private TextPosition locateSymbol(SymbolLocator symbolLocator) {
-    String fileContent = getFileContent(symbolLocator.filename);
-    int start = fileContent.indexOf(symbolLocator.symbolContext);
-    assertThat(start).named("location of " + symbolLocator.symbolContext).isGreaterThan(-1);
-    int pos = fileContent.indexOf(symbolLocator.symbol, start);
-    assertThat(pos).named("pos").isGreaterThan(-1);
-    FileScope fileScope = globalScope.getFileScope(symbolLocator.filename).get();
-    LineMap lineMap = fileScope.getLineMap();
-    // LineMap line and column are 1-indexed, while our API is 0-indexed.
-    return TextPosition.create(
-        (int) lineMap.getLineNumber(pos) - 1, (int) lineMap.getColumnNumber(pos) - 1);
-  }
-
-  private static class SymbolLocator {
-    private final String filename;
-    private final String symbolContext;
-    private final String symbol;
-
-    private SymbolLocator(String filename, String symbolContext, String symbol) {
-      this.filename = filename;
-      this.symbolContext = symbolContext;
-      this.symbol = symbol;
-    }
-
-    @Override
-    public String toString() {
-      return String.format(
-          "{filename: %s, symbolContext: %s, symbol: %s", filename, symbolContext, symbol);
-    }
   }
 }

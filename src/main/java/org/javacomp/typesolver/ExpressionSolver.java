@@ -75,9 +75,15 @@ public class ExpressionSolver {
         new ExpressionDefinitionScanner(globalScope, baseScope, allowedKinds)
             .scan(expression, null /* unused */);
     if (entities == null) {
-      logger.warning(new Throwable(), "Unsupported expression: %s", expression);
+      logger.warning(
+          new Throwable(),
+          "Unsupported expression: (%s) %s",
+          expression.getClass().getSimpleName(),
+          expression);
       return ImmutableList.of();
     }
+
+    logger.fine("Found definitions for %s: %s", expression, entities);
     return entities
         .stream()
         .filter(entity -> allowedKinds.contains(entity.getKind()))
@@ -147,7 +153,7 @@ public class ExpressionSolver {
             solveEntityType(scan(node.getEnclosingExpression(), null), globalScope);
         if (enclosingClassType == null
             || !(enclosingClassType.getEntity() instanceof ClassEntity)) {
-          return null;
+          return ImmutableList.of();
         }
         return new ExpressionDefinitionScanner(
                 globalScope, enclosingClassType.getEntity().getChildScope(), allowedEntityKinds)
@@ -164,7 +170,7 @@ public class ExpressionSolver {
       SolvedType expressionType = solveEntityType(scan(node.getExpression(), null), globalScope);
       methodArgs = savedMethodArgs;
       if (expressionType == null) {
-        return null;
+        return ImmutableList.of();
       }
 
       String identifier = node.getIdentifier().toString();

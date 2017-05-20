@@ -1,5 +1,6 @@
 package org.javacomp.server.protocol;
 
+import com.google.common.collect.ImmutableList;
 import org.javacomp.server.Request;
 import org.javacomp.server.Server;
 
@@ -29,6 +30,8 @@ public class InitializeHandler extends RequestHandler<InitializeParams> {
     result.capabilities.completionProvider = new InitializeResult.CompletionOptions();
     result.capabilities.completionProvider.triggerCharacters = new String[] {"."};
     result.capabilities.definitionProvider = true;
+    result.capabilities.signatureHelpProvider = new InitializeResult.SignatureHelpOptions();
+    result.capabilities.signatureHelpProvider.triggerCharacters = ImmutableList.of("(", ",");
     return result;
   }
 }

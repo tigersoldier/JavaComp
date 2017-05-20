@@ -38,7 +38,9 @@ public class TestClass {
 
   public OtherPackageClass otherPackageClass;
 
-  public void methodWithArgs(InnerClassA innerClassA, OtherClass innerClassB) {}
+  public void overloadMethod(InnerClassA innerClassA, OtherClass otherClass) {}
+  public void overloadMethod(InnerClassA innerClassA) {}
+  public void overloadMethod() {}
 
   public void testMethod(InnerClassA innerAParam, OtherClass otherClassParam) {
     InnerClassA innerAVar = innerAParam.getTestBInA().testAInB.getTestClassInA().innerA;
@@ -48,6 +50,8 @@ public class TestClass {
 
     getInnerA().testBInA;
     getOtherClass().getTestClass();
-    methodWithArgs(innerA, innerAParam.testClassInA);
+    overloadMethod(innerA, innerAParam.testClassInA);
+    overloadMethod(getInnerA());
+    overloadMethod();
   }
 }

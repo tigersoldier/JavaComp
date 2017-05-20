@@ -1,7 +1,9 @@
 package org.javacomp.server.protocol;
 
 import com.google.gson.JsonElement;
+import java.util.List;
 import javax.annotation.Nullable;
+
 /**
  * The result returned by "initialize" method.
  *
@@ -25,7 +27,7 @@ public class InitializeResult {
   /** Signature help options. */
   public static class SignatureHelpOptions {
     /** The characters that trigger signature help automatically. */
-    @Nullable public String[] triggerCharacters;
+    @Nullable public List<String> triggerCharacters;
   }
 
   /** Code Lens options. */

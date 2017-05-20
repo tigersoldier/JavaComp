@@ -30,6 +30,8 @@ import org.javacomp.parser.FileContentFixer;
 import org.javacomp.parser.FileContentFixer.FixedContent;
 import org.javacomp.parser.ParserContext;
 import org.javacomp.reference.DefinitionSolver;
+import org.javacomp.reference.MethodSignatures;
+import org.javacomp.reference.SignatureSolver;
 
 /** Handles all files in a project. */
 public class Project {
@@ -41,6 +43,7 @@ public class Project {
   private final AstScanner astScanner;
   private final Completor completor;
   private final DefinitionSolver definitionSolver;
+  private final SignatureSolver signatureSolver;
   private final FileManager fileManager;
   private final URI rootUri;
   private final ParserContext parserContext;
@@ -59,6 +62,7 @@ public class Project {
     this.fileManager = fileManager;
     this.rootUri = rootUri;
     this.definitionSolver = new DefinitionSolver();
+    this.signatureSolver = new SignatureSolver();
   }
 
   public synchronized void initialize() {
@@ -159,6 +163,10 @@ public class Project {
               return FileTextLocation.create(Paths.get(fileScope.getFilename()), textRange);
             })
         .collect(ImmutableList.toImmutableList());
+  }
+
+  public MethodSignatures findMethodSignatures(Path filePath, int line, int column) {
+    return signatureSolver.getMethodSignatures(globalScope, filePath, line, column);
   }
 
   public GlobalScope getGlobalScope() {

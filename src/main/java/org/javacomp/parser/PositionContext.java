@@ -27,6 +27,10 @@ public abstract class PositionContext {
 
   public abstract TreePath getTreePath();
 
+  public abstract int getPosition();
+
+  public abstract EndPosTable getEndPosTable();
+
   /**
    * Creates a {@link PositionContext} instance based on the given file path and position.
    *
@@ -52,7 +56,9 @@ public abstract class PositionContext {
     TreePath treePath = scanner.scan(compilationUnit, null);
     logger.fine("TreePath for position: %s", TreePathFormatter.formatTreePath(treePath));
 
-    return Optional.of(new AutoValue_PositionContext(scopeAtPosition, globalScope, treePath));
+    return Optional.of(
+        new AutoValue_PositionContext(
+            scopeAtPosition, globalScope, treePath, position, compilationUnit.endPositions));
   }
 
   /** A {@link TreePathScanner} that returns the tree path enclosing the given position. */
