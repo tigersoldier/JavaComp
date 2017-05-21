@@ -4,8 +4,10 @@ import static com.google.common.truth.Truth.assertThat;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.FluentIterable;
+import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Multimap;
 import com.sun.source.tree.LineMap;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import java.io.IOException;
@@ -110,11 +112,7 @@ public class CompletorTest {
     String baseAboveCompletion = "above./** @complete */";
     List<String> aboveCases =
         ImmutableList.of(baseAboveCompletion, baseAboveCompletion + "\nabove.aboveMethod();");
-    for (String aboveCase : aboveCases) {
-      List<CompletionCandidate> candidates =
-          completeWithContent("CompleteInMethod.java", aboveCase);
-      assertThat(getCandidateNames(candidates)).containsExactly("aboveField", "aboveMethod");
-    }
+    assertCompletion("CompleteInMethod.java", aboveCases, "aboveField", "aboveMethod");
 
     String baseBelowCompletion = "below./** @complete */";
     List<String> belowCases =
@@ -123,13 +121,7 @@ public class CompletorTest {
             baseBelowCompletion + "\nbelow.belowMethod();",
             "above.;" + baseBelowCompletion,
             "self.new BelowClass()./** @complete */");
-    for (String belowCase : belowCases) {
-      List<CompletionCandidate> candidates =
-          completeWithContent("CompleteInMethod.java", belowCase);
-      assertThat(getCandidateNames(candidates))
-          .named(belowCase)
-          .containsExactly("belowField", "belowMethod");
-    }
+    assertCompletion("CompleteInMethod.java", belowCases, "belowField", "belowMethod");
   }
 
   @Test
@@ -151,11 +143,7 @@ public class CompletorTest {
             baseImportCompletion,
             baseImportCompletion + "\nimport java.util.List;",
             "import java.util.List;\n" + baseImportCompletion);
-    for (String importCase : cases) {
-      List<CompletionCandidate> candidates =
-          completeWithContent("CompleteOutOfClass.java", importCase);
-      assertThat(getCandidateNames(candidates)).containsExactly("completion");
-    }
+    assertCompletion("CompleteOutOfClass.java", cases, "completion");
   }
 
   @Test
@@ -165,8 +153,43 @@ public class CompletorTest {
             + "  AboveClass innerAboveClass;\n"
             + "  innerAboveClass./** @complete */\n"
             + "}";
-    List<CompletionCandidate> candidates = completeWithContent("CompleteInMethod.java", content);
-    assertThat(getCandidateNames(candidates)).containsExactly("aboveField", "aboveMethod");
+    assertCompletion("CompleteInMethod.java", content, "aboveField", "aboveMethod");
+  }
+
+  private void assertCompletion(String filename, String toComplete, String... expectedCandidates) {
+    assertCompletion(filename, ImmutableList.of(toComplete), expectedCandidates);
+  }
+
+  private void assertCompletion(
+      String filename, List<String> toCompleteCases, String... expectedCandidates) {
+    for (String toComplete : toCompleteCases) {
+      List<CompletionCandidate> candidates = completeWithContent(filename, toComplete);
+      assertThat(getCandidateNames(candidates))
+          .named("Candidates of '" + toComplete + "'")
+          .containsExactly((Object[]) expectedCandidates);
+    }
+
+    Multimap<Character, String> candidatePrefixMap = HashMultimap.create();
+    for (String candidate : expectedCandidates) {
+      char prefix = candidate.charAt(0);
+      candidatePrefixMap.put(prefix, candidate);
+    }
+
+    for (String toComplete : toCompleteCases) {
+      int dotPos = toComplete.indexOf("." + COMPLETION_POINT_MARK);
+      if (dotPos == -1) {
+        continue;
+      }
+
+      for (char prefix : candidatePrefixMap.keySet()) {
+        String toCompleteWithMember =
+            toComplete.substring(0, dotPos + 1) + prefix + toComplete.substring(dotPos + 1);
+        List<CompletionCandidate> candidates = completeWithContent(filename, toCompleteWithMember);
+        assertThat(getCandidateNames(candidates))
+            .named("candidates of '" + toCompleteWithMember + "'")
+            .containsExactlyElementsIn(candidatePrefixMap.get(prefix));
+      }
+    }
   }
 
   private List<CompletionCandidate> completeWithContent(

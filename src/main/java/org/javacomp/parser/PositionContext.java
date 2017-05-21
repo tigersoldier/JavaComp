@@ -78,13 +78,15 @@ public abstract class PositionContext {
       }
 
       JCTree jcTree = (JCTree) tree;
+      boolean positionInNodeRange =
+          jcTree.getStartPosition() <= position && position < jcTree.getEndPosition(endPosTable);
       logger.fine(
-          "PositionAstScanner: visiting node: %s, start: %s, end: %s.",
+          "PositionAstScanner: visiting node: %s, start: %s, end: %s.%s",
           tree.accept(new TreePathFormatter.TreeFormattingVisitor(), null),
           jcTree.getStartPosition(),
-          jcTree.getEndPosition(endPosTable));
-      if (!(jcTree.getStartPosition() <= position
-          && position < jcTree.getEndPosition(endPosTable))) {
+          jcTree.getEndPosition(endPosTable),
+          positionInNodeRange ? " ✔" : "");
+      if (!positionInNodeRange) {
         return null;
       }
       TreePath currentPath = new TreePath(getCurrentPath(), tree);

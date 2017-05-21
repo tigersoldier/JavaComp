@@ -37,6 +37,14 @@ public class Completor {
    */
   public List<CompletionCandidate> getCompletionCandidates(
       GlobalScope globalScope, Path filePath, int line, int column) {
+    if (column > 0) {
+      // PositionContext gets the tree path whose leaf node includes the position
+      // (position < node's endPosition). However, for completions, we want the leaf node either
+      // includes the position, or just before the position (position == node's endPosition).
+      // Decresing column by 1 will decrease position by 1, which makes
+      // adjustedPosition == node's endPosition - 1 if the node is just before the actual position.
+      column--;
+    }
     Optional<PositionContext> positionContext =
         PositionContext.createForPosition(globalScope, filePath, line, column);
 
