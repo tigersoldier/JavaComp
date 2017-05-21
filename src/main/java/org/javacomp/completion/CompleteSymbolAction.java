@@ -12,6 +12,7 @@ import org.javacomp.model.EntityScope;
 import org.javacomp.model.FileScope;
 import org.javacomp.model.GlobalScope;
 import org.javacomp.model.PackageScope;
+import org.javacomp.parser.PositionContext;
 import org.javacomp.typesolver.ExpressionSolver;
 import org.javacomp.typesolver.TypeSolver;
 
@@ -26,27 +27,27 @@ class CompleteEntityAction implements CompletionAction {
   }
 
   @Override
-  public List<CompletionCandidate> getCompletionCandidates(
-      GlobalScope globalScope, EntityScope baseScope) {
+  public List<CompletionCandidate> getCompletionCandidates(PositionContext positionContext) {
     Multimap<String, CompletionCandidate> candidateMap = HashMultimap.create();
     addKeywords(candidateMap);
-    for (EntityScope currentScope = baseScope;
+    for (EntityScope currentScope = positionContext.getScopeAtPosition();
         currentScope != null;
         currentScope = currentScope.getParentScope().orElse(null)) {
       logger.fine("Adding member entities in scope: %s", currentScope);
       if (currentScope instanceof ClassEntity) {
         addEntries(
             candidateMap,
-            classMemberCompletor.getClassMembers((ClassEntity) currentScope, globalScope));
+            classMemberCompletor.getClassMembers(
+                (ClassEntity) currentScope, positionContext.getGlobalScope()));
       } else if (currentScope instanceof FileScope) {
         FileScope fileScope = (FileScope) currentScope;
-        addEntries(candidateMap, getPackageMembers(fileScope, globalScope));
+        addEntries(candidateMap, getPackageMembers(fileScope, positionContext.getGlobalScope()));
         addImportedEntities(candidateMap, fileScope);
       } else {
         addEntries(candidateMap, currentScope.getMemberEntities());
       }
     }
-    addEntries(candidateMap, globalScope.getAllEntities());
+    addEntries(candidateMap, positionContext.getGlobalScope().getAllEntities());
     return ImmutableList.copyOf(candidateMap.values());
   }
 

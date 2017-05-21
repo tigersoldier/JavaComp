@@ -52,15 +52,17 @@ public class TestUtil {
     return globalScope;
   }
 
-  public static FileScope parseFile(Path filePath) {
-    Log javacLog = Log.instance(javacContext);
-    String fileContent;
+  public static String readFileContent(Path filePath) {
     try {
-      fileContent = new String(Files.readAllBytes(filePath), UTF_8);
+      return new String(Files.readAllBytes(filePath), UTF_8);
     } catch (IOException e) {
       throw Throwables.propagate(e);
     }
+  }
 
+  public static FileScope parseFile(Path filePath) {
+    Log javacLog = Log.instance(javacContext);
+    String fileContent = readFileContent(filePath);
     // If source file not set, parser will throw IllegalArgumentException when errors occur.
     SourceFileObject sourceFileObject = new SourceFileObject(filePath.toString());
     javacLog.useSource(sourceFileObject);

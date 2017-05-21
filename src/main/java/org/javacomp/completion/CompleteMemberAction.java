@@ -11,9 +11,8 @@ import java.util.List;
 import java.util.Optional;
 import org.javacomp.model.ClassEntity;
 import org.javacomp.model.Entity;
-import org.javacomp.model.EntityScope;
-import org.javacomp.model.GlobalScope;
 import org.javacomp.model.SolvedType;
+import org.javacomp.parser.PositionContext;
 import org.javacomp.typesolver.ExpressionSolver;
 import org.javacomp.typesolver.TypeSolver;
 
@@ -36,10 +35,13 @@ class CompleteMemberAction implements CompletionAction {
   }
 
   @Override
-  public List<CompletionCandidate> getCompletionCandidates(
-      GlobalScope globalScope, EntityScope completionPointScope) {
+  public List<CompletionCandidate> getCompletionCandidates(PositionContext positionContext) {
     Optional<SolvedType> solvedType =
-        expressionSolver.solve(memberExpression, globalScope, completionPointScope);
+        expressionSolver.solve(
+            memberExpression,
+            positionContext.getGlobalScope(),
+            positionContext.getScopeAtPosition(),
+            positionContext.getPosition());
     if (!solvedType.isPresent()) {
       return ImmutableList.of();
     }
@@ -48,7 +50,7 @@ class CompleteMemberAction implements CompletionAction {
     if (expressionEntity instanceof ClassEntity) {
       Collection<Entity> classMembers =
           new ClassMemberCompletor(typeSolver, expressionSolver)
-              .getClassMembers((ClassEntity) expressionEntity, globalScope)
+              .getClassMembers((ClassEntity) expressionEntity, positionContext.getGlobalScope())
               .values();
       return createCompletionCandidates(classMembers);
     }

@@ -41,7 +41,13 @@ public class TypeSolver {
 
     List<String> fullName = typeReference.getFullName();
     ClassEntity currentClass =
-        (ClassEntity) findEntityInScope(fullName.get(0), globalScope, parentScope, CLASS_KINDS);
+        (ClassEntity)
+            findEntityInScope(
+                fullName.get(0),
+                globalScope,
+                parentScope,
+                -1 /* position not useful for solving types */,
+                CLASS_KINDS);
     // Find the rest of the name parts, if exist.
     for (int i = 1; currentClass != null && i < fullName.size(); i++) {
       String innerClassName = fullName.get(i);
@@ -104,15 +110,31 @@ public class TypeSolver {
     return null;
   }
 
+  /**
+   * @param position the position in the file that the expression is being solved. It's useful for
+   *     filtering out variables defined after the position. It's ignored if set to negative value.
+   */
   @Nullable
   Entity findEntityInScope(
-      String name, GlobalScope globalScope, EntityScope baseScope, Set<Entity.Kind> allowedKinds) {
+      String name,
+      GlobalScope globalScope,
+      EntityScope baseScope,
+      int position,
+      Set<Entity.Kind> allowedKinds) {
     return Iterables.getFirst(
-        findEntitiesInScope(name, globalScope, baseScope, allowedKinds), null);
+        findEntitiesInScope(name, globalScope, baseScope, position, allowedKinds), null);
   }
 
+  /**
+   * @param position the position in the file that the expression is being solved. It's useful for
+   *     filtering out variables defined after the position. It's ignored if set to negative value.
+   */
   public List<Entity> findEntitiesInScope(
-      String name, GlobalScope globalScope, EntityScope baseScope, Set<Entity.Kind> allowedKinds) {
+      String name,
+      GlobalScope globalScope,
+      EntityScope baseScope,
+      int position,
+      Set<Entity.Kind> allowedKinds) {
     // Search class from the narrowest scope to wider scope.
     List<Entity> foundEntities = ImmutableList.of();
     FileScope fileScope = null;
@@ -137,7 +159,8 @@ public class TypeSolver {
         }
       } else {
         // Block-like scopes (method, if, for, etc...)
-        foundEntities = findEntitiesInBlock(name, currentScope.get(), globalScope, allowedKinds);
+        foundEntities =
+            findEntitiesInBlock(name, currentScope.get(), globalScope, position, allowedKinds);
         if (!foundEntities.isEmpty()) {
           return foundEntities;
         }
@@ -255,13 +278,37 @@ public class TypeSolver {
     return builder.build();
   }
 
+  /**
+   * @param position the position in the file that the expression is being solved. It's useful for
+   *     filtering out variables defined after the position. It's ignored if set to negative value.
+   */
   private List<Entity> findEntitiesInBlock(
-      String name, EntityScope baseScope, GlobalScope globalScope, Set<Entity.Kind> allowedKinds) {
+      String name,
+      EntityScope baseScope,
+      GlobalScope globalScope,
+      int position,
+      Set<Entity.Kind> allowedKinds) {
     ImmutableList.Builder<Entity> builder = new ImmutableList.Builder<>();
     if (allowedKinds.contains(Entity.Kind.VARIABLE)) {
       allowedKinds = Sets.difference(allowedKinds, EnumSet.of(Entity.Kind.VARIABLE));
+
       while (baseScope != null && !(baseScope instanceof ClassEntity)) {
-        builder.addAll(baseScope.getMemberEntities().get(name));
+        baseScope
+            .getMemberEntities()
+            .get(name)
+            .stream()
+            .filter(
+                entity -> {
+                  if (position >= 0
+                      && entity.getKind() == Entity.Kind.VARIABLE
+                      && entity.getSymbolRange().lowerEndpoint() > position) {
+                    // Filter out variables defined after position.
+                    return false;
+                  }
+                  return true;
+                })
+            .forEach(entity -> builder.add(entity));
+
         baseScope = baseScope.getParentScope().orElse(null);
       }
     }

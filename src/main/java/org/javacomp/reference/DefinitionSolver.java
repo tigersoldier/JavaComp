@@ -9,6 +9,7 @@ import com.sun.source.tree.MethodTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.tree.VariableTree;
 import com.sun.source.util.TreePath;
+import com.sun.tools.javac.tree.JCTree;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
@@ -85,6 +86,7 @@ public class DefinitionSolver {
           (ExpressionTree) leafTree,
           positionContext.get().getGlobalScope(),
           positionContext.get().getScopeAtPosition(),
+          positionContext.get().getPosition(),
           allowedKinds);
     }
     return ImmutableList.of();
@@ -124,7 +126,10 @@ public class DefinitionSolver {
   private List<Optional<SolvedType>> solveMethodArgs(
       List<? extends ExpressionTree> args, EntityScope baseScope, GlobalScope globalScope) {
     return args.stream()
-        .map(expression -> expressionSolver.solve(expression, globalScope, baseScope))
+        .map(
+            expression ->
+                expressionSolver.solve(
+                    expression, globalScope, baseScope, ((JCTree) expression).getStartPosition()))
         .collect(ImmutableList.toImmutableList());
   }
 

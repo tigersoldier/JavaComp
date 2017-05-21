@@ -93,6 +93,7 @@ public class SignatureSolver {
                 method,
                 positionContext.getGlobalScope(),
                 positionContext.getScopeAtPosition(),
+                -1 /* position doesn't matter for solving methods. */,
                 METHOD_KIND_SET)
             .stream()
             .map(entity -> (MethodEntity) entity)

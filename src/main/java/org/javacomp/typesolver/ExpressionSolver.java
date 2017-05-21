@@ -9,6 +9,7 @@ import com.sun.source.tree.MemberSelectTree;
 import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.NewClassTree;
 import com.sun.source.util.TreeScanner;
+import com.sun.tools.javac.tree.JCTree;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
@@ -54,10 +55,14 @@ public class ExpressionSolver {
     this.memberSolver = memberSolver;
   }
 
+  /**
+   * @param position the position in the file that the expression is being solved. It's useful for
+   *     filtering out variables defined after the position. It's ignored if set to negative value.
+   */
   public Optional<SolvedType> solve(
-      ExpressionTree expression, GlobalScope globalScope, EntityScope baseScope) {
+      ExpressionTree expression, GlobalScope globalScope, EntityScope baseScope, int position) {
     List<Entity> definitions =
-        solveDefinitions(expression, globalScope, baseScope, ALL_ENTITY_KINDS);
+        solveDefinitions(expression, globalScope, baseScope, position, ALL_ENTITY_KINDS);
     return Optional.ofNullable(solveEntityType(definitions, globalScope));
   }
 
@@ -65,14 +70,18 @@ public class ExpressionSolver {
    * Solve all entities that defines the given expression.
    *
    * <p>For methods, all overloads are returned. The best matched method is the first element.
+   *
+   * @param position the position in the file that the expression is being solved. It's useful for
+   *     filtering out variables defined after the position. It's ignored if set to negative value.
    */
   public List<Entity> solveDefinitions(
       ExpressionTree expression,
       GlobalScope globalScope,
       EntityScope baseScope,
+      int position,
       Set<Entity.Kind> allowedKinds) {
     List<Entity> entities =
-        new ExpressionDefinitionScanner(globalScope, baseScope, allowedKinds)
+        new ExpressionDefinitionScanner(globalScope, baseScope, position, allowedKinds)
             .scan(expression, null /* unused */);
     if (entities == null) {
       logger.warning(
@@ -123,22 +132,27 @@ public class ExpressionSolver {
     private final EntityScope baseScope;
     private final GlobalScope globalScope;
     private final ImmutableSet<Entity.Kind> allowedEntityKinds;
+    private final int position;
 
     private List<Optional<SolvedType>> methodArgs;
 
     private ExpressionDefinitionScanner(
-        GlobalScope globalScope, EntityScope baseScope, Set<Entity.Kind> allowedEntityKinds) {
+        GlobalScope globalScope,
+        EntityScope baseScope,
+        int position,
+        Set<Entity.Kind> allowedEntityKinds) {
       this.globalScope = globalScope;
       this.baseScope = baseScope;
       this.allowedEntityKinds = ImmutableSet.copyOf(allowedEntityKinds);
       this.methodArgs = null;
+      this.position = position;
     }
 
     @Override
     public List<Entity> visitMethodInvocation(MethodInvocationTree node, Void unused) {
       methodArgs = new ArrayList<>(node.getArguments().size());
       for (ExpressionTree arg : node.getArguments()) {
-        methodArgs.add(solve(arg, globalScope, baseScope));
+        methodArgs.add(solve(arg, globalScope, baseScope, ((JCTree) arg).getStartPosition()));
       }
       List<Entity> methods = scan(node.getMethodSelect(), null);
       methodArgs = null;
@@ -156,7 +170,10 @@ public class ExpressionSolver {
           return ImmutableList.of();
         }
         return new ExpressionDefinitionScanner(
-                globalScope, enclosingClassType.getEntity().getChildScope(), allowedEntityKinds)
+                globalScope,
+                enclosingClassType.getEntity().getChildScope(),
+                -1 /* position is useless for solving classes. */,
+                allowedEntityKinds)
             .scan(node.getIdentifier(), null);
       } else {
         return scan(node.getIdentifier(), null);
@@ -216,7 +233,7 @@ public class ExpressionSolver {
 
       List<Entity> entities =
           typeSolver.findEntitiesInScope(
-              node.getName().toString(), globalScope, baseScope, getAllowedEntityKinds());
+              node.getName().toString(), globalScope, baseScope, position, getAllowedEntityKinds());
 
       if (!entities.isEmpty()) {
         if (isMethodInvocation()) {

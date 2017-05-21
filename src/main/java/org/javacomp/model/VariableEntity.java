@@ -43,6 +43,6 @@ public class VariableEntity extends Entity {
 
   @Override
   public String toString() {
-    return "VariableEntity<" + getSimpleName() + ">";
+    return "VariableEntity<" + getType().getSimpleName() + ' ' + getSimpleName() + ">";
   }
 }

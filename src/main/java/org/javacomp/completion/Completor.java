@@ -54,7 +54,7 @@ public class Completor {
 
     // TODO: filter and sort candidates by query.
     return action
-        .getCompletionCandidates(globalScope, positionContext.get().getScopeAtPosition())
+        .getCompletionCandidates(positionContext.get())
         .stream()
         .filter(candidate -> !CONSTRUCTOR_NAME.equals(candidate.getName()))
         .collect(ImmutableList.toImmutableList());

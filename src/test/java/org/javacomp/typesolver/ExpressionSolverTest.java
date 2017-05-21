@@ -5,6 +5,7 @@ import static com.google.common.truth.Truth.assertThat;
 import com.google.common.collect.ImmutableList;
 import com.google.common.truth.Truth8;
 import com.sun.source.tree.ExpressionTree;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
 import org.javacomp.model.ClassEntity;
@@ -160,7 +161,18 @@ public class ExpressionSolverTest {
 
   @Test
   public void solveLocalVariable() {
-    assertThat(solveExpression("varA", methodScope).getEntity()).isSameAs(innerAClass);
+    String fileContent = TestUtil.readFileContent(Paths.get(TEST_DIR, "TestExpression.java"));
+    int posBeforeVarA = fileContent.indexOf("InnerA varA") - 1;
+    int posAfterVarA = fileContent.indexOf(";", posBeforeVarA) + 1;
+    int posBeforeVarB = fileContent.indexOf("InnerB varB") - 1;
+    int posAfterVarB = fileContent.indexOf(";", posBeforeVarB) + 1;
+
+    assertExpressionNotSolved("varA", methodScope, posBeforeVarA);
+    assertExpressionNotSolved("varB", methodScope, posBeforeVarB);
+    assertThat(solveExpression("varA", methodScope, posAfterVarA).getEntity())
+        .isSameAs(innerAClass);
+    assertThat(solveExpression("varB", methodScope, posAfterVarB).getEntity())
+        .isSameAs(innerBClass);
   }
 
   @Test
@@ -181,10 +193,21 @@ public class ExpressionSolverTest {
   }
 
   private SolvedType solveExpression(String expression, EntityScope baseScope) {
+    return solveExpression(expression, baseScope, -1 /* position */);
+  }
+
+  private SolvedType solveExpression(String expression, EntityScope baseScope, int position) {
     ExpressionTree expressionTree = TestUtil.parseExpression(expression);
     Optional<SolvedType> solvedExpression =
-        expressionSolver.solve(expressionTree, globalScope, baseScope);
+        expressionSolver.solve(expressionTree, globalScope, baseScope, position);
     Truth8.assertThat(solvedExpression).named(expression).isPresent();
     return solvedExpression.get();
+  }
+
+  private void assertExpressionNotSolved(String expression, EntityScope baseScope, int position) {
+    ExpressionTree expressionTree = TestUtil.parseExpression(expression);
+    Optional<SolvedType> solvedExpression =
+        expressionSolver.solve(expressionTree, globalScope, baseScope, position);
+    Truth8.assertThat(solvedExpression).named(expression).isEmpty();
   }
 }
