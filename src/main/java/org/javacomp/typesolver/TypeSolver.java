@@ -90,9 +90,9 @@ public class TypeSolver {
         }
         currentScope = Iterables.getOnlyElement(entities).getChildScope();
       } else if (currentScope instanceof ClassEntity) {
-        currentScope =
-            findClassMember(qualifier, (ClassEntity) currentScope, globalScope, CLASS_KINDS)
-                .getChildScope();
+        Entity classMember =
+            findClassMember(qualifier, (ClassEntity) currentScope, globalScope, CLASS_KINDS);
+        currentScope = classMember != null ? classMember.getChildScope() : null;
         if (currentScope == null) {
           return null;
         }

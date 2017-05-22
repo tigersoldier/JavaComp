@@ -127,6 +127,15 @@ public class TypeSolverTest {
         .isSameAs(TestUtil.lookupEntity(BASE_CLASS_FULL_NAME, globalScope));
   }
 
+  @Test
+  public void solveNonExistentType() {
+    // Should not throw exceptions.
+    assertNotSolved(TEST_CLASS_FULL_NAME + ".returnTypeNotExistMethod");
+    assertNotSolved(TEST_CLASS_FULL_NAME + ".returnInnerTypeNotExistMethod");
+    assertNotSolved(TEST_CLASS_FULL_NAME + ".returnTypePackageNotExistMethod");
+    assertNotSolved(TEST_CLASS_FULL_NAME + ".returnTypeRootPackageNotExistMethod");
+  }
+
   private SolvedType solveMethodReturnType(String qualifiedMethodName) {
     MethodEntity method = (MethodEntity) TestUtil.lookupEntity(qualifiedMethodName, globalScope);
     assertThat(method).named(qualifiedMethodName).isNotNull();
@@ -136,5 +145,15 @@ public class TypeSolverTest {
             methodReturnType, globalScope, method.getChildScope().getParentScope().get());
     Truth8.assertThat(solvedType).named(methodReturnType.toString()).isPresent();
     return solvedType.get();
+  }
+
+  private void assertNotSolved(String qualifiedMethodName) {
+    MethodEntity method = (MethodEntity) TestUtil.lookupEntity(qualifiedMethodName, globalScope);
+    assertThat(method).named(qualifiedMethodName).isNotNull();
+    TypeReference methodReturnType = method.getReturnType();
+    Optional<SolvedType> solvedType =
+        typeSolver.solve(
+            methodReturnType, globalScope, method.getChildScope().getParentScope().get());
+    Truth8.assertThat(solvedType).named(methodReturnType.toString()).isEmpty();
   }
 }

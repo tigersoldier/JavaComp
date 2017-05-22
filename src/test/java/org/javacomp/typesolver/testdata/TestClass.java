@@ -24,5 +24,13 @@ public class TestClass extends BaseClass implements BaseInterface {
     return this;
   }
 
+  public NotExist returnTypeNotExistMethod() {}
+
+  public org.doesnotexist.Type returnTypePackageNotExistMethod() {}
+
+  public doesnotexist.Type returnTypeRootPackageNotExistMethod() {}
+
+  public org.javacomp.typesolver.testdata.TestClass.NotExist returnInnerTypeNotExistMethod() {}
+
   public class TestClassFactory extends BaseInnerClass implements BaseInterfaceFactory {}
 }
