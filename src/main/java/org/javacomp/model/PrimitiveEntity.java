@@ -28,6 +28,10 @@ public class PrimitiveEntity extends Entity {
           .put(BOOLEAN.getSimpleName(), BOOLEAN)
           .build();
 
+  public static boolean isPrimitive(String typeName) {
+    return TYPE_MAP.containsKey(typeName);
+  }
+
   public static PrimitiveEntity get(String simpleName) {
     if (!TYPE_MAP.containsKey(simpleName)) {
       // How can this happen?

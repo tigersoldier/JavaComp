@@ -47,7 +47,7 @@ class CompleteEntityAction implements CompletionAction {
         addEntries(candidateMap, currentScope.getMemberEntities());
       }
     }
-    addEntries(candidateMap, positionContext.getGlobalScope().getAllEntities());
+    addEntries(candidateMap, positionContext.getGlobalScope().getMemberEntities());
     return ImmutableList.copyOf(candidateMap.values());
   }
 

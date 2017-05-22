@@ -2,6 +2,7 @@ package org.javacomp.model;
 
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.HashMultimap;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multimap;
 import java.nio.file.Path;
 import java.util.ArrayDeque;
@@ -120,6 +121,10 @@ public class GlobalScope implements EntityScope {
       currentQualifiers.add(qualifier);
     }
     return currentPackage;
+  }
+
+  public synchronized List<FileScope> getAllFiles() {
+    return ImmutableList.copyOf(fileScopeMap.values());
   }
 
   private void addFileToPackage(FileScope fileScope) {

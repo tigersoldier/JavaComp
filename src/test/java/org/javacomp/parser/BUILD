@@ -7,6 +7,7 @@ java_library(
         "//external:javac",
         "//external:jsr305",
         "//src/main/java/org/javacomp/model",
+        "//src/main/java/org/javacomp/options",
         "//src/main/java/org/javacomp/parser",
         "//third_party:junit4",
         "//third_party:truth",

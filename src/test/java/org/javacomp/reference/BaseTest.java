@@ -18,6 +18,7 @@ import org.javacomp.model.FileScope;
 import org.javacomp.model.GlobalScope;
 import org.javacomp.model.MethodEntity;
 import org.javacomp.model.VariableEntity;
+import org.javacomp.options.IndexOptions;
 import org.javacomp.parser.AstScanner;
 import org.javacomp.parser.ParserContext;
 import org.javacomp.testing.TestUtil;
@@ -50,7 +51,9 @@ public class BaseTest {
     for (String filename : ALL_FILES) {
       String content = getFileContent(filename);
       JCCompilationUnit compilationUnit = parserContext.parse(filename, content);
-      FileScope fileScope = new AstScanner().startScan(compilationUnit, filename, content);
+      FileScope fileScope =
+          new AstScanner(IndexOptions.FULL_INDEX_BUILDER.build())
+              .startScan(compilationUnit, filename, content);
       globalScope.addOrReplaceFileScope(fileScope);
     }
 

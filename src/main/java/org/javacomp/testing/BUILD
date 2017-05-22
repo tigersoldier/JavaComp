@@ -10,6 +10,7 @@ java_library(
         "//external:guava",
         "//external:javac",
         "//src/main/java/org/javacomp/model",
+        "//src/main/java/org/javacomp/options",
         "//src/main/java/org/javacomp/parser",
         "//third_party:truth",
     ],

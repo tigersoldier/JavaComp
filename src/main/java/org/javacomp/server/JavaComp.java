@@ -15,6 +15,7 @@ import javax.annotation.Nullable;
 import org.javacomp.file.FileManager;
 import org.javacomp.file.FileManagerImpl;
 import org.javacomp.logging.JLogger;
+import org.javacomp.options.IndexOptions;
 import org.javacomp.options.JavaCompOptions;
 import org.javacomp.project.Project;
 import org.javacomp.server.io.RequestReader;
@@ -90,6 +91,7 @@ public class JavaComp implements Server {
       int clientProcessId, URI projectRootUri, @Nullable JavaCompOptions options) {
     checkState(!initialized, "Cannot initialize the server twice in a row.");
     initialized = true;
+
     if (options != null) {
       Level logLevel = options.getLogLevel();
       String logPath = options.getLogPath();
@@ -102,7 +104,11 @@ public class JavaComp implements Server {
     }
     executor = Executors.newFixedThreadPool(NUM_THREADS);
     fileManager = new FileManagerImpl(projectRootUri, executor);
-    project = new Project(fileManager, projectRootUri, options.getIgnorePaths());
+    project =
+        new Project(
+            fileManager,
+            projectRootUri,
+            IndexOptions.FULL_INDEX_BUILDER.setIgnorePaths(options.getIgnorePaths()).build());
     project.initialize();
 
     //TODO: Someday we should implement monitoring client process for all major platforms.

@@ -22,6 +22,7 @@ import org.javacomp.model.FileScope;
 import org.javacomp.model.MethodEntity;
 import org.javacomp.model.TypeReference;
 import org.javacomp.model.VariableEntity;
+import org.javacomp.options.IndexOptions;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -32,7 +33,7 @@ public class AstScannerTest {
   private static final String TEST_DATA_PATH =
       "src/test/java/org/javacomp/parser/testdata/TestData.java";
 
-  private final AstScanner scanner = new AstScanner();
+  private final AstScanner scanner = new AstScanner(IndexOptions.FULL_INDEX_BUILDER.build());
 
   private JCCompilationUnit compilationUnit;
   private String testDataContent;

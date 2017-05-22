@@ -9,6 +9,7 @@ java_library(
         "//src/main/java/org/javacomp/file",
         "//src/main/java/org/javacomp/logging",
         "//src/main/java/org/javacomp/model",
+        "//src/main/java/org/javacomp/options",
         "//src/main/java/org/javacomp/parser",
         "//src/main/java/org/javacomp/reference",
     ],

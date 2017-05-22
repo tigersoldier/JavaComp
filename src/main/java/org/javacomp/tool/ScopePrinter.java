@@ -12,6 +12,7 @@ import org.javacomp.model.FileScope;
 import org.javacomp.model.MethodEntity;
 import org.javacomp.model.TypeReference;
 import org.javacomp.model.VariableEntity;
+import org.javacomp.options.IndexOptions;
 import org.javacomp.parser.AstScanner;
 import org.javacomp.parser.FileContentFixer;
 import org.javacomp.parser.ParserContext;
@@ -25,7 +26,7 @@ public class ScopePrinter {
 
   public ScopePrinter() {
     this.parserContext = new ParserContext();
-    this.astScanner = new AstScanner();
+    this.astScanner = new AstScanner(IndexOptions.FULL_INDEX_BUILDER.build());
     this.fileContentFixer = new FileContentFixer(this.parserContext);
   }
 

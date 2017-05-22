@@ -30,6 +30,7 @@ import org.javacomp.model.Entity;
 import org.javacomp.model.EntityScope;
 import org.javacomp.model.FileScope;
 import org.javacomp.model.GlobalScope;
+import org.javacomp.options.IndexOptions;
 import org.javacomp.parser.AstScanner;
 import org.javacomp.parser.FileContentFixer;
 import org.javacomp.parser.FileContentFixer.FixedContent;
@@ -59,9 +60,9 @@ public class Project {
 
   private boolean initialized;
 
-  public Project(FileManager fileManager, URI rootUri, List<String> ignorePaths) {
+  public Project(FileManager fileManager, URI rootUri, IndexOptions indexOptions) {
     globalScope = new GlobalScope();
-    astScanner = new AstScanner();
+    astScanner = new AstScanner(indexOptions);
     completor = new Completor();
     parserContext = new ParserContext();
     fileContentFixer = new FileContentFixer(parserContext);
@@ -70,7 +71,11 @@ public class Project {
     this.definitionSolver = new DefinitionSolver();
     this.signatureSolver = new SignatureSolver();
     this.ignorePaths =
-        ignorePaths.stream().map(p -> Paths.get(p)).collect(ImmutableSet.toImmutableSet());
+        indexOptions
+            .ignorePaths()
+            .stream()
+            .map(p -> Paths.get(p))
+            .collect(ImmutableSet.toImmutableSet());
   }
 
   public synchronized void initialize() {
@@ -111,26 +116,26 @@ public class Project {
   }
 
   private void addOrUpdateFile(Path filePath) {
-    Optional<CharSequence> optionalContent = fileManager.getFileContent(filePath);
-    if (!optionalContent.isPresent()) {
-      return;
-    }
-    CharSequence content = optionalContent.get();
-    LineMap adjustedLineMap = null;
-
-    if (lastCompletedFile != null && lastCompletedFile.equals(filePath)) {
-      FixedContent fixedContent = fileContentFixer.fixFileContent(content);
-      content = fixedContent.getContent();
-      adjustedLineMap = fixedContent.getAdjustedLineMap();
-    }
     try {
+      Optional<CharSequence> optionalContent = fileManager.getFileContent(filePath);
+      if (!optionalContent.isPresent()) {
+        return;
+      }
+      CharSequence content = optionalContent.get();
+      LineMap adjustedLineMap = null;
+
+      if (lastCompletedFile != null && lastCompletedFile.equals(filePath)) {
+        FixedContent fixedContent = fileContentFixer.fixFileContent(content);
+        content = fixedContent.getContent();
+        adjustedLineMap = fixedContent.getAdjustedLineMap();
+      }
       FileScope fileScope =
           astScanner.startScan(
               parserContext.parse(filePath.toString(), content), filePath.toString(), content);
       fileScope.setAdjustedLineMap(adjustedLineMap);
       globalScope.addOrReplaceFileScope(fileScope);
-    } catch (Throwable t) {
-      logger.warning(t, "Failed to parse file %s", filePath);
+    } catch (Throwable e) {
+      logger.warning(e, "Failed to process file %s", filePath);
     }
   }
 

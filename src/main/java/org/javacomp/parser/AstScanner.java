@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 import java.util.Optional;
+import javax.lang.model.element.Modifier;
 import org.javacomp.logging.JLogger;
 import org.javacomp.model.BlockScope;
 import org.javacomp.model.ClassEntity;
@@ -40,6 +41,7 @@ import org.javacomp.model.MethodEntity;
 import org.javacomp.model.TypeReference;
 import org.javacomp.model.VariableEntity;
 import org.javacomp.model.util.NestedRangeMapBuilder;
+import org.javacomp.options.IndexOptions;
 
 public class AstScanner extends TreePathScanner<Void, EntityScope> {
   private static final List<String> UNAVAILABLE_QUALIFIERS = ImmutableList.of();
@@ -47,8 +49,9 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
 
   private static final JLogger logger = JLogger.createForEnclosingClass();
 
-  private final TypeReferenceScanner typeReferenceScanner = new TypeReferenceScanner();
-  private final ParameterScanner parameterScanner = new ParameterScanner(typeReferenceScanner);
+  private final TypeReferenceScanner typeReferenceScanner;
+  private final ParameterScanner parameterScanner;
+  private final IndexOptions indexOptions;
 
   private FileScope fileScope = null;
   private List<String> currentQualifiers = new ArrayList<>();
@@ -56,6 +59,12 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
   private NestedRangeMapBuilder<EntityScope> scopeRangeBuilder = null;
   private String filename = null;
   private String content = null;
+
+  public AstScanner(IndexOptions indexOptions) {
+    this.typeReferenceScanner = new TypeReferenceScanner();
+    this.parameterScanner = new ParameterScanner(typeReferenceScanner);
+    this.indexOptions = indexOptions;
+  }
 
   public FileScope startScan(JCCompilationUnit node, String filename, CharSequence content) {
     this.filename = filename;
@@ -108,6 +117,11 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
 
   @Override
   public Void visitClass(ClassTree node, EntityScope currentScope) {
+    if (!indexOptions.shouldIndexNonPublic()
+        && !node.getModifiers().getFlags().contains(Modifier.PUBLIC)) {
+      return null;
+    }
+
     Entity.Kind entityKind;
     switch (node.getKind()) {
       case CLASS:
@@ -164,6 +178,11 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
 
   @Override
   public Void visitMethod(MethodTree node, EntityScope currentScope) {
+    if (!indexOptions.shouldIndexNonPublic()
+        && !node.getModifiers().getFlags().contains(Modifier.PUBLIC)) {
+      return null;
+    }
+
     checkArgument(
         currentScope instanceof ClassEntity, "Method's parent scope must be a class entity");
     TypeReference returnType;
@@ -192,7 +211,7 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
     List<String> previousQualifiers = this.currentQualifiers;
     // No entity defined inside method scope is qualified.
     this.currentQualifiers = UNAVAILABLE_QUALIFIERS;
-    if (node.getBody() != null) {
+    if (node.getBody() != null && indexOptions.shouldIndexMethodContent()) {
       scan(node.getBody(), methodEntity);
       addScopeRange((JCTree) node, methodEntity);
     }
@@ -202,6 +221,11 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
 
   @Override
   public Void visitVariable(VariableTree node, EntityScope currentScope) {
+    if (!indexOptions.shouldIndexNonPublic()
+        && !node.getModifiers().getFlags().contains(Modifier.PUBLIC)) {
+      return null;
+    }
+
     Entity.Kind variableKind =
         (currentScope instanceof ClassEntity) ? Entity.Kind.FIELD : Entity.Kind.VARIABLE;
     Range<Integer> range = getVariableNameRange((JCVariableDecl) node);

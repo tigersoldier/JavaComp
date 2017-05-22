@@ -26,6 +26,7 @@ import org.javacomp.model.Entity;
 import org.javacomp.model.EntityScope;
 import org.javacomp.model.FileScope;
 import org.javacomp.model.GlobalScope;
+import org.javacomp.options.IndexOptions;
 import org.javacomp.parser.AstScanner;
 import org.javacomp.parser.SourceFileObject;
 
@@ -75,7 +76,8 @@ public class TestUtil {
                 true /* keepEndPos */,
                 true /* keepLineMap */);
     JCCompilationUnit compilationUnit = parser.parseCompilationUnit();
-    return new AstScanner().startScan(compilationUnit, filePath.toString(), fileContent);
+    return new AstScanner(IndexOptions.FULL_INDEX_BUILDER.build())
+        .startScan(compilationUnit, filePath.toString(), fileContent);
   }
 
   /** Lookup an entity from global scope with qualified name. */

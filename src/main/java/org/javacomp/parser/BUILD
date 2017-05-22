@@ -9,6 +9,7 @@ java_library(
         "//src/main/java/org/javacomp/logging",
         "//src/main/java/org/javacomp/model",
         "//src/main/java/org/javacomp/model/util",
+        "//src/main/java/org/javacomp/options",
         "//third_party:auto_value",
     ],
 )
