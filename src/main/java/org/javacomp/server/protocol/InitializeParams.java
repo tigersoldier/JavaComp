@@ -2,7 +2,9 @@ package org.javacomp.server.protocol;
 
 import static org.javacomp.server.GsonEnum.SerializeType.LOWERCASE_NAME;
 
+import com.google.common.collect.ImmutableList;
 import java.net.URI;
+import java.util.List;
 import java.util.logging.Level;
 import javax.annotation.Nullable;
 import org.javacomp.options.JavaCompOptions;
@@ -29,6 +31,8 @@ public class InitializeParams implements RequestParams {
 
     /** The minimum log level. Logs with the level and above will be logged. */
     @Nullable public LogLevel logLevel;
+
+    @Nullable public List<String> ignorePaths;
 
     @Override
     @Nullable
@@ -58,6 +62,13 @@ public class InitializeParams implements RequestParams {
         default:
           return null;
       }
+    }
+
+    public List<String> getIgnorePaths() {
+      if (ignorePaths == null) {
+        return ImmutableList.of();
+      }
+      return ImmutableList.copyOf(ignorePaths);
     }
   }
 

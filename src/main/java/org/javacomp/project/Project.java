@@ -1,6 +1,7 @@
 package org.javacomp.project;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Range;
 import com.sun.source.tree.LineMap;
 import java.io.IOException;
@@ -10,8 +11,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardWatchEventKinds;
 import java.nio.file.WatchEvent;
+import java.util.Deque;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Stream;
 import org.javacomp.completion.CompletionCandidate;
 import org.javacomp.completion.Completor;
 import org.javacomp.file.FileChangeListener;
@@ -48,12 +53,13 @@ public class Project {
   private final URI rootUri;
   private final ParserContext parserContext;
   private final FileContentFixer fileContentFixer;
+  private final Set<Path> ignorePaths;
 
   private Path lastCompletedFile = null;
 
   private boolean initialized;
 
-  public Project(FileManager fileManager, URI rootUri) {
+  public Project(FileManager fileManager, URI rootUri, List<String> ignorePaths) {
     globalScope = new GlobalScope();
     astScanner = new AstScanner();
     completor = new Completor();
@@ -63,6 +69,8 @@ public class Project {
     this.rootUri = rootUri;
     this.definitionSolver = new DefinitionSolver();
     this.signatureSolver = new SignatureSolver();
+    this.ignorePaths =
+        ignorePaths.stream().map(p -> Paths.get(p)).collect(ImmutableSet.toImmutableSet());
   }
 
   public synchronized void initialize() {
@@ -73,16 +81,32 @@ public class Project {
     initialized = true;
 
     fileManager.setFileChangeListener(new ProjectFileChangeListener());
-    try {
-      Files.walk(Paths.get(rootUri))
-          .forEach(
-              filePath -> {
-                if (isJavaFile(filePath) && !PathUtils.shouldIgnoreFile(filePath)) {
-                  addOrUpdateFile(filePath);
-                }
-              });
-    } catch (IOException e) {
-      throw new RuntimeException(e);
+
+    walkDirectory(Paths.get(rootUri));
+  }
+
+  private void walkDirectory(Path rootDir) {
+    Deque<Path> queue = new LinkedList<>();
+    queue.add(rootDir);
+    while (!queue.isEmpty()) {
+      Path baseDir = queue.remove();
+      try (Stream<Path> entryStream = Files.list(baseDir)) {
+        entryStream.forEach(
+            entryPath -> {
+              Path relativePath = rootDir.relativize(entryPath);
+              if (ignorePaths.contains(relativePath)) {
+                logger.info("Ignoring path %s", entryPath);
+                return;
+              }
+              if (Files.isDirectory(entryPath)) {
+                queue.add(entryPath);
+              } else if (isJavaFile(entryPath) && !PathUtils.shouldIgnoreFile(entryPath)) {
+                addOrUpdateFile(entryPath);
+              }
+            });
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
     }
   }
 

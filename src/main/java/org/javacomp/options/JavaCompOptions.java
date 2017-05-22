@@ -1,5 +1,6 @@
 package org.javacomp.options;
 
+import java.util.List;
 import java.util.logging.Level;
 import javax.annotation.Nullable;
 
@@ -12,4 +13,6 @@ public interface JavaCompOptions {
   /** The minimum log level. Logs with the level and above will be logged. */
   @Nullable
   public Level getLogLevel();
+
+  public List<String> getIgnorePaths();
 }

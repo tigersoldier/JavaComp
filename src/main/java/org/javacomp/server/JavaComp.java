@@ -102,7 +102,7 @@ public class JavaComp implements Server {
     }
     executor = Executors.newFixedThreadPool(NUM_THREADS);
     fileManager = new FileManagerImpl(projectRootUri, executor);
-    project = new Project(fileManager, projectRootUri);
+    project = new Project(fileManager, projectRootUri, options.getIgnorePaths());
     project.initialize();
 
     //TODO: Someday we should implement monitoring client process for all major platforms.
