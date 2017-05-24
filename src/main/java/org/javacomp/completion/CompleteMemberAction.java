@@ -9,6 +9,7 @@ import com.sun.source.util.TreePath;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import org.javacomp.logging.JLogger;
 import org.javacomp.model.ClassEntity;
 import org.javacomp.model.Entity;
 import org.javacomp.model.SolvedType;
@@ -18,6 +19,7 @@ import org.javacomp.typesolver.TypeSolver;
 
 /** An action to get completion candidates for member selection. */
 class CompleteMemberAction implements CompletionAction {
+  private final JLogger logger = JLogger.createForEnclosingClass();
   private final ExpressionTree memberExpression;
   private final TypeSolver typeSolver;
   private final ExpressionSolver expressionSolver;
@@ -42,6 +44,7 @@ class CompleteMemberAction implements CompletionAction {
             positionContext.getGlobalScope(),
             positionContext.getScopeAtPosition(),
             positionContext.getPosition());
+    logger.fine("Solved member expression: %s", solvedType);
     if (!solvedType.isPresent()) {
       return ImmutableList.of();
     }

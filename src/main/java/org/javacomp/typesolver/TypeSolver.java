@@ -14,6 +14,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import javax.annotation.Nullable;
+import org.javacomp.logging.JLogger;
 import org.javacomp.model.ClassEntity;
 import org.javacomp.model.Entity;
 import org.javacomp.model.EntityScope;
@@ -29,6 +30,8 @@ import org.javacomp.model.VariableEntity;
 
 /** Logic for solving the type of a given entity. */
 public class TypeSolver {
+  private static final JLogger logger = JLogger.createForEnclosingClass();
+
   private static final Optional<SolvedType> UNSOLVED = Optional.empty();
   private static final Set<Entity.Kind> CLASS_KINDS = ClassEntity.ALLOWED_KINDS;
 
@@ -84,11 +87,14 @@ public class TypeSolver {
       if (currentScope instanceof GlobalScope || currentScope instanceof PackageScope) {
         // All members of GlobalScope or PackageScope are either package or class
         Collection<Entity> entities = currentScope.getMemberEntities().get(qualifier);
-        if (entities.size() != 1) {
+        if (entities.isEmpty()) {
           // Either not found, or is ambiguous.
           return null;
+        } else if (entities.size() > 1) {
+          logger.warning("More than one class %s are found in package: %s", qualifier, entities);
         }
-        currentScope = Iterables.getOnlyElement(entities).getChildScope();
+
+        currentScope = Iterables.getFirst(entities, null).getChildScope();
       } else if (currentScope instanceof ClassEntity) {
         Entity classMember =
             findClassMember(qualifier, (ClassEntity) currentScope, globalScope, CLASS_KINDS);

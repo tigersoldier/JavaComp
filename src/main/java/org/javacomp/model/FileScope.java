@@ -168,4 +168,9 @@ public class FileScope implements EntityScope {
     }
     return compilationUnit.getLineMap();
   }
+
+  @Override
+  public String toString() {
+    return "FileScope<" + getFilename() + ", " + this.packageQualifiers + ">";
+  }
 }
