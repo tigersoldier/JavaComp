@@ -237,7 +237,6 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
             typeReferenceScanner.getTypeReference(node.getType()),
             currentScope,
             range);
-    logger.fine("adding variable %s to scope %s", variableEntity, currentScope);
     currentScope.addEntity(variableEntity);
     // TODO: add entity to global scope if it's a non-private static entity.
     return null;
