@@ -15,8 +15,8 @@ import java.util.List;
 import java.util.function.BiConsumer;
 import org.javacomp.file.TextPosition;
 import org.javacomp.model.FileScope;
-import org.javacomp.model.GlobalScope;
 import org.javacomp.model.MethodEntity;
+import org.javacomp.model.ModuleScope;
 import org.javacomp.model.VariableEntity;
 import org.javacomp.options.IndexOptions;
 import org.javacomp.parser.AstScanner;
@@ -38,7 +38,7 @@ public class BaseTest {
   protected static final String OTHER_PACKAGE_CLASS_FULL_NAME =
       "org.javacomp.reference.testdata.other.OtherPackageClass";
 
-  protected GlobalScope globalScope;
+  protected ModuleScope globalScope;
 
   protected VariableEntity innerAParam;
   protected VariableEntity otherClassParam;
@@ -47,7 +47,7 @@ public class BaseTest {
   @Before
   public final void parseJavaFiles() {
     ParserContext parserContext = new ParserContext();
-    globalScope = new GlobalScope();
+    globalScope = new ModuleScope();
     for (String filename : ALL_FILES) {
       String content = getFileContent(filename);
       JCCompilationUnit compilationUnit = parserContext.parse(filename, content);

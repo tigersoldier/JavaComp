@@ -18,8 +18,8 @@ import javax.annotation.Nullable;
 import org.javacomp.logging.JLogger;
 import org.javacomp.model.ClassEntity;
 import org.javacomp.model.Entity;
-import org.javacomp.model.GlobalScope;
 import org.javacomp.model.MethodEntity;
+import org.javacomp.model.ModuleScope;
 import org.javacomp.model.PrimitiveEntity;
 import org.javacomp.model.SolvedType;
 import org.javacomp.model.TypeReference;
@@ -120,7 +120,7 @@ public class OverloadSolver {
    * @return one of the methods in {@code methods}
    */
   public MethodEntity solve(
-      List<Entity> entities, List<Optional<SolvedType>> argumentTypes, GlobalScope globalScope) {
+      List<Entity> entities, List<Optional<SolvedType>> argumentTypes, ModuleScope globalScope) {
     List<MethodEntity> methods =
         entities
             .stream()
@@ -160,7 +160,7 @@ public class OverloadSolver {
   }
 
   private SignatureMatchLevel matchMethodSignature(
-      MethodEntity method, List<Optional<SolvedType>> argumentTypes, GlobalScope globalScope) {
+      MethodEntity method, List<Optional<SolvedType>> argumentTypes, ModuleScope globalScope) {
     List<TypeReference> parameterTypes =
         method
             .getParameters()
@@ -257,7 +257,7 @@ public class OverloadSolver {
       Optional<SolvedType> argumentType,
       Optional<SolvedType> parameterType,
       MethodEntity method,
-      GlobalScope globalScope) {
+      ModuleScope globalScope) {
     if (!argumentType.isPresent()) {
       // Unknown type or untyped lambda, consider as a match since it's the same to all method overloads.
       return TypeMatchLevel.MATCH_WITHOUT_BOXING;
@@ -287,7 +287,7 @@ public class OverloadSolver {
 
   /** @return {@code true} if argumentType can be assigned to parameterTypes without auto-boxing */
   private boolean typeMatchWithoutBoxing(
-      SolvedType argumentType, SolvedType parameterType, GlobalScope globalScope) {
+      SolvedType argumentType, SolvedType parameterType, ModuleScope globalScope) {
     if (argumentType.isArray() != parameterType.isArray()
         || argumentType.isPrimitive() != parameterType.isPrimitive()) {
       return false;
@@ -391,7 +391,7 @@ public class OverloadSolver {
       List<MethodEntity> methods,
       int numArguments,
       SignatureMatchLevel signatureMatchLevel,
-      GlobalScope globalScope) {
+      ModuleScope globalScope) {
     Set<MethodEntity> lessSpecificMethods = new HashSet<>();
     for (int i = 0; i < methods.size(); i++) {
       MethodEntity method1 = methods.get(i);
@@ -445,7 +445,7 @@ public class OverloadSolver {
       MethodEntity rhs,
       int numArguments,
       SignatureMatchLevel signatureMatchLevel,
-      GlobalScope globalScope) {
+      ModuleScope globalScope) {
     List<Optional<SolvedType>> lhsParameterTypes =
         lhs.getParameters()
             .stream()
@@ -487,7 +487,7 @@ public class OverloadSolver {
 
   /** Moves the best matched method to the first element. */
   public List<Entity> prioritizeMatchedMethod(
-      List<Entity> entities, List<Optional<SolvedType>> argumentTypes, GlobalScope globalScope) {
+      List<Entity> entities, List<Optional<SolvedType>> argumentTypes, ModuleScope globalScope) {
     if (entities.isEmpty()) {
       return entities;
     }
@@ -512,7 +512,7 @@ public class OverloadSolver {
       List<Optional<SolvedType>> rhsParameterTypes,
       int numArguments,
       SignatureMatchLevel signatureMatchLevel,
-      GlobalScope globalScope) {
+      ModuleScope globalScope) {
     int maxParameterSize =
         Math.max(Math.max(lhsParameterTypes.size(), rhsParameterTypes.size()), numArguments);
     boolean isVariableArityInvocation =

@@ -18,7 +18,7 @@ import org.javacomp.logging.JLogger;
 import org.javacomp.model.ClassEntity;
 import org.javacomp.model.Entity;
 import org.javacomp.model.EntityScope;
-import org.javacomp.model.GlobalScope;
+import org.javacomp.model.ModuleScope;
 import org.javacomp.model.SolvedType;
 import org.javacomp.model.VariableEntity;
 import org.javacomp.parser.PositionContext;
@@ -61,7 +61,7 @@ public class DefinitionSolver {
    * @param column 0-based character offset from the beginning of the line to the completion point
    */
   public List<? extends Entity> getDefinitionEntities(
-      GlobalScope globalScope, Path filePath, int line, int column) {
+      ModuleScope globalScope, Path filePath, int line, int column) {
     Optional<PositionContext> positionContext =
         PositionContext.createForPosition(globalScope, filePath, line, column);
 
@@ -84,7 +84,7 @@ public class DefinitionSolver {
       }
       return expressionSolver.solveDefinitions(
           (ExpressionTree) leafTree,
-          positionContext.get().getGlobalScope(),
+          positionContext.get().getModuleScope(),
           positionContext.get().getScopeAtPosition(),
           positionContext.get().getPosition(),
           allowedKinds);
@@ -124,7 +124,7 @@ public class DefinitionSolver {
   }
 
   private List<Optional<SolvedType>> solveMethodArgs(
-      List<? extends ExpressionTree> args, EntityScope baseScope, GlobalScope globalScope) {
+      List<? extends ExpressionTree> args, EntityScope baseScope, ModuleScope globalScope) {
     return args.stream()
         .map(
             expression ->

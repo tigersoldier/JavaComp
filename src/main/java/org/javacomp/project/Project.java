@@ -29,7 +29,7 @@ import org.javacomp.logging.JLogger;
 import org.javacomp.model.Entity;
 import org.javacomp.model.EntityScope;
 import org.javacomp.model.FileScope;
-import org.javacomp.model.GlobalScope;
+import org.javacomp.model.ModuleScope;
 import org.javacomp.options.IndexOptions;
 import org.javacomp.parser.AstScanner;
 import org.javacomp.parser.FileContentFixer;
@@ -45,7 +45,7 @@ public class Project {
 
   private static final String JAVA_EXTENSION = ".java";
 
-  private final GlobalScope globalScope;
+  private final ModuleScope globalScope;
   private final AstScanner astScanner;
   private final Completor completor;
   private final DefinitionSolver definitionSolver;
@@ -61,7 +61,7 @@ public class Project {
   private boolean initialized;
 
   public Project(FileManager fileManager, URI rootUri, IndexOptions indexOptions) {
-    globalScope = new GlobalScope();
+    globalScope = new ModuleScope();
     astScanner = new AstScanner(indexOptions);
     completor = new Completor();
     parserContext = new ParserContext();
@@ -198,7 +198,7 @@ public class Project {
     return signatureSolver.getMethodSignatures(globalScope, filePath, line, column);
   }
 
-  public GlobalScope getGlobalScope() {
+  public ModuleScope getModuleScope() {
     return globalScope;
   }
 

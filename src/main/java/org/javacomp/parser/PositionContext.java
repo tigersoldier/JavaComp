@@ -14,7 +14,7 @@ import java.util.Optional;
 import org.javacomp.logging.JLogger;
 import org.javacomp.model.EntityScope;
 import org.javacomp.model.FileScope;
-import org.javacomp.model.GlobalScope;
+import org.javacomp.model.ModuleScope;
 
 /** All information inferred from a given cursor position of a file. */
 @AutoValue
@@ -23,7 +23,7 @@ public abstract class PositionContext {
 
   public abstract EntityScope getScopeAtPosition();
 
-  public abstract GlobalScope getGlobalScope();
+  public abstract ModuleScope getModuleScope();
 
   public abstract TreePath getTreePath();
 
@@ -40,7 +40,7 @@ public abstract class PositionContext {
    * @param column 0-based character offset from the beginning of the line to the completion point
    */
   public static Optional<PositionContext> createForPosition(
-      GlobalScope globalScope, Path filePath, int line, int column) {
+      ModuleScope globalScope, Path filePath, int line, int column) {
     Optional<FileScope> inputFileScope = globalScope.getFileScope(filePath.toString());
     if (!inputFileScope.isPresent()) {
       return Optional.ofNullable(null);

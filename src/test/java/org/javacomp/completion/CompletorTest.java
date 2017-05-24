@@ -16,7 +16,7 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 import org.javacomp.model.FileScope;
-import org.javacomp.model.GlobalScope;
+import org.javacomp.model.ModuleScope;
 import org.javacomp.options.IndexOptions;
 import org.javacomp.parser.AstScanner;
 import org.javacomp.parser.FileContentFixer;
@@ -67,7 +67,7 @@ public class CompletorTest {
         new AstScanner(IndexOptions.FULL_INDEX_BUILDER.build())
             .startScan(compilationUnit, inputFilePath, fixedContent.getContent());
     inputFileScope.setAdjustedLineMap(fixedContent.getAdjustedLineMap());
-    GlobalScope globalScope = new GlobalScope();
+    ModuleScope globalScope = new ModuleScope();
     globalScope.addOrReplaceFileScope(inputFileScope);
 
     for (String otherFile : otherFiles) {

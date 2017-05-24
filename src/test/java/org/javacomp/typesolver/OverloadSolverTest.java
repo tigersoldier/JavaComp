@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Optional;
 import org.javacomp.model.ClassEntity;
 import org.javacomp.model.Entity;
-import org.javacomp.model.GlobalScope;
+import org.javacomp.model.ModuleScope;
 import org.javacomp.model.SolvedType;
 import org.javacomp.model.TypeReference;
 import org.javacomp.testing.TestUtil;
@@ -31,7 +31,7 @@ public class OverloadSolverTest {
   private final TypeSolver typeSolver = new TypeSolver();
   private final OverloadSolver overloadSolver = new OverloadSolver(typeSolver);
 
-  private GlobalScope globalScope;
+  private ModuleScope globalScope;
   private ClassEntity topLevelClass;
 
   @Before

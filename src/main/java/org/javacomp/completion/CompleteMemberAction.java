@@ -41,7 +41,7 @@ class CompleteMemberAction implements CompletionAction {
     Optional<SolvedType> solvedType =
         expressionSolver.solve(
             memberExpression,
-            positionContext.getGlobalScope(),
+            positionContext.getModuleScope(),
             positionContext.getScopeAtPosition(),
             positionContext.getPosition());
     logger.fine("Solved member expression: %s", solvedType);
@@ -53,7 +53,7 @@ class CompleteMemberAction implements CompletionAction {
     if (expressionEntity instanceof ClassEntity) {
       Collection<Entity> classMembers =
           new ClassMemberCompletor(typeSolver, expressionSolver)
-              .getClassMembers((ClassEntity) expressionEntity, positionContext.getGlobalScope())
+              .getClassMembers((ClassEntity) expressionEntity, positionContext.getModuleScope())
               .values();
       return createCompletionCandidates(classMembers);
     }

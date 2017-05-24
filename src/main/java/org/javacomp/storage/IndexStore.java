@@ -24,8 +24,8 @@ import org.javacomp.model.ClassEntity;
 import org.javacomp.model.Entity;
 import org.javacomp.model.EntityScope;
 import org.javacomp.model.FileScope;
-import org.javacomp.model.GlobalScope;
 import org.javacomp.model.MethodEntity;
+import org.javacomp.model.ModuleScope;
 import org.javacomp.model.PrimitiveEntity;
 import org.javacomp.model.SolvedType;
 import org.javacomp.model.TypeReference;
@@ -45,12 +45,12 @@ public class IndexStore {
 
   private final Map<Entity, Entity> visitedEntities = new HashMap<>();
 
-  private GlobalScope globalScope;
+  private ModuleScope globalScope;
 
-  public void writeGlobalScopeToFile(GlobalScope globalScope, Path filePath) {
+  public void writeModuleScopeToFile(ModuleScope globalScope, Path filePath) {
     try (BufferedWriter writer = Files.newBufferedWriter(filePath, UTF_8)) {
       this.globalScope = globalScope;
-      gson.toJson(serializeGlobalScope(globalScope), writer);
+      gson.toJson(serializeModuleScope(globalScope), writer);
     } catch (IOException e) {
       throw new RuntimeException(e);
     } finally {
@@ -58,18 +58,18 @@ public class IndexStore {
     }
   }
 
-  public GlobalScope readGlobalScopeFromFile(Path filePath) {
+  public ModuleScope readModuleScopeFromFile(Path filePath) {
     try {
       String content = new String(Files.readAllBytes(filePath), UTF_8);
-      return deserializeGlobalScope(gson.fromJson(content, SerializedGlobalScope.class));
+      return deserializeModuleScope(gson.fromJson(content, SerializedModuleScope.class));
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
   }
 
   @VisibleForTesting
-  SerializedGlobalScope serializeGlobalScope(GlobalScope globalScope) {
-    SerializedGlobalScope ret = new SerializedGlobalScope();
+  SerializedModuleScope serializeModuleScope(ModuleScope globalScope) {
+    SerializedModuleScope ret = new SerializedModuleScope();
     ret.files =
         globalScope
             .getAllFiles()
@@ -85,10 +85,10 @@ public class IndexStore {
   }
 
   @VisibleForTesting
-  GlobalScope deserializeGlobalScope(SerializedGlobalScope serializedGlobalScope) {
-    checkNotNull(serializedGlobalScope.files, "serializedGlobalScope.files");
-    GlobalScope globalScope = new GlobalScope();
-    for (SerializedFileScope file : serializedGlobalScope.files) {
+  ModuleScope deserializeModuleScope(SerializedModuleScope serializedModuleScope) {
+    checkNotNull(serializedModuleScope.files, "serializedModuleScope.files");
+    ModuleScope globalScope = new ModuleScope();
+    for (SerializedFileScope file : serializedModuleScope.files) {
       globalScope.addOrReplaceFileScope(deserializeFileScope(file));
     }
     return globalScope;
@@ -332,7 +332,7 @@ public class IndexStore {
   }
 
   @VisibleForTesting
-  static class SerializedGlobalScope {
+  static class SerializedModuleScope {
     private List<SerializedFileScope> files;
   }
 

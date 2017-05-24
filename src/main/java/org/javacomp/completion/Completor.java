@@ -6,7 +6,7 @@ import com.sun.source.util.TreePath;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
-import org.javacomp.model.GlobalScope;
+import org.javacomp.model.ModuleScope;
 import org.javacomp.parser.PositionContext;
 import org.javacomp.typesolver.ExpressionSolver;
 import org.javacomp.typesolver.MemberSolver;
@@ -36,7 +36,7 @@ public class Completor {
    * @param column 0-based character offset from the beginning of the line to the completion point
    */
   public List<CompletionCandidate> getCompletionCandidates(
-      GlobalScope globalScope, Path filePath, int line, int column) {
+      ModuleScope globalScope, Path filePath, int line, int column) {
     if (column > 0) {
       // PositionContext gets the tree path whose leaf node includes the position
       // (position < node's endPosition). However, for completions, we want the leaf node either

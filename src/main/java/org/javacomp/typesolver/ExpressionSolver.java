@@ -20,8 +20,8 @@ import org.javacomp.logging.JLogger;
 import org.javacomp.model.ClassEntity;
 import org.javacomp.model.Entity;
 import org.javacomp.model.EntityScope;
-import org.javacomp.model.GlobalScope;
 import org.javacomp.model.MethodEntity;
+import org.javacomp.model.ModuleScope;
 import org.javacomp.model.PackageEntity;
 import org.javacomp.model.PrimitiveEntity;
 import org.javacomp.model.SolvedType;
@@ -60,7 +60,7 @@ public class ExpressionSolver {
    *     filtering out variables defined after the position. It's ignored if set to negative value.
    */
   public Optional<SolvedType> solve(
-      ExpressionTree expression, GlobalScope globalScope, EntityScope baseScope, int position) {
+      ExpressionTree expression, ModuleScope globalScope, EntityScope baseScope, int position) {
     List<Entity> definitions =
         solveDefinitions(expression, globalScope, baseScope, position, ALL_ENTITY_KINDS);
     return Optional.ofNullable(solveEntityType(definitions, globalScope));
@@ -76,7 +76,7 @@ public class ExpressionSolver {
    */
   public List<Entity> solveDefinitions(
       ExpressionTree expression,
-      GlobalScope globalScope,
+      ModuleScope globalScope,
       EntityScope baseScope,
       int position,
       Set<Entity.Kind> allowedKinds) {
@@ -100,7 +100,7 @@ public class ExpressionSolver {
   }
 
   @Nullable
-  private SolvedType solveEntityType(List<Entity> foundEntities, GlobalScope globalScope) {
+  private SolvedType solveEntityType(List<Entity> foundEntities, ModuleScope globalScope) {
     if (foundEntities.isEmpty()) {
       return null;
     }
@@ -130,14 +130,14 @@ public class ExpressionSolver {
 
   private class ExpressionDefinitionScanner extends TreeScanner<List<Entity>, Void> {
     private final EntityScope baseScope;
-    private final GlobalScope globalScope;
+    private final ModuleScope globalScope;
     private final ImmutableSet<Entity.Kind> allowedEntityKinds;
     private final int position;
 
     private List<Optional<SolvedType>> methodArgs;
 
     private ExpressionDefinitionScanner(
-        GlobalScope globalScope,
+        ModuleScope globalScope,
         EntityScope baseScope,
         int position,
         Set<Entity.Kind> allowedEntityKinds) {

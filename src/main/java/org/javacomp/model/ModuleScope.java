@@ -15,10 +15,11 @@ import java.util.Optional;
 import org.javacomp.logging.JLogger;
 
 /**
- * The scope of the whole project. Can reach all scoped entities (e.g. packages, classes) defined in
- * the project.
+ * A scope containing a set of classes and the packages defined under the root (unnamed) package.
+ *
+ * <p>A ModuleScope may be created from a set of Java files, index cache files, or JAR archives.
  */
-public class GlobalScope implements EntityScope {
+public class ModuleScope implements EntityScope {
   private static final JLogger logger = JLogger.createForEnclosingClass();
 
   // Map of simple names -> FileScope that defines the name.
@@ -27,7 +28,7 @@ public class GlobalScope implements EntityScope {
   private final Map<String, FileScope> fileScopeMap;
   private final PackageScope rootPackage;
 
-  public GlobalScope() {
+  public ModuleScope() {
     this.nameToFileMap = HashMultimap.create();
     this.fileScopeMap = new HashMap<>();
     this.rootPackage = new PackageScope();

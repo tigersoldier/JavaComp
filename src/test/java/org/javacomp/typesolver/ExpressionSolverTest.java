@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Optional;
 import org.javacomp.model.ClassEntity;
 import org.javacomp.model.EntityScope;
-import org.javacomp.model.GlobalScope;
+import org.javacomp.model.ModuleScope;
 import org.javacomp.model.PrimitiveEntity;
 import org.javacomp.model.SolvedType;
 import org.javacomp.testing.TestUtil;
@@ -37,7 +37,7 @@ public class ExpressionSolverTest {
   private final ExpressionSolver expressionSolver =
       new ExpressionSolver(typeSolver, overloadSolver, memberSolver);
 
-  private GlobalScope globalScope;
+  private ModuleScope globalScope;
   private ClassEntity topLevelClass;
   private ClassEntity testClassClass;
   private ClassEntity testClassFactoryClass;

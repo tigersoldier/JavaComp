@@ -4,7 +4,7 @@ import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
 import org.javacomp.model.ClassEntity;
 import org.javacomp.model.Entity;
-import org.javacomp.model.GlobalScope;
+import org.javacomp.model.ModuleScope;
 import org.javacomp.typesolver.ExpressionSolver;
 import org.javacomp.typesolver.TypeSolver;
 
@@ -17,7 +17,7 @@ class ClassMemberCompletor {
     this.expressionSolver = expressionSolver;
   }
 
-  Multimap<String, Entity> getClassMembers(ClassEntity actualClassEntity, GlobalScope globalScope) {
+  Multimap<String, Entity> getClassMembers(ClassEntity actualClassEntity, ModuleScope globalScope) {
     ImmutableMultimap.Builder<String, Entity> builder = new ImmutableMultimap.Builder<>();
     for (ClassEntity classEntity : typeSolver.classHierarchy(actualClassEntity, globalScope)) {
       builder.putAll(classEntity.getMemberEntities());

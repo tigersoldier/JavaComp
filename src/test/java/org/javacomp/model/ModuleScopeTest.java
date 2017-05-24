@@ -16,7 +16,7 @@ import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
 @RunWith(JUnit4.class)
-public class GlobalScopeTest {
+public class ModuleScopeTest {
   @Rule public MockitoRule mrule = MockitoJUnit.rule();
 
   @Mock private Entity entity1;
@@ -33,7 +33,7 @@ public class GlobalScopeTest {
     when(entity4.getSimpleName()).thenReturn("entity4");
   }
 
-  private GlobalScope globalScope = new GlobalScope();
+  private ModuleScope globalScope = new ModuleScope();
 
   @Test
   public void addFilesShouldCreatePackages() {

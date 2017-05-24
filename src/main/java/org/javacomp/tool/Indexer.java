@@ -30,7 +30,7 @@ public class Indexer {
 
   public void run(String indexFile) {
     project.initialize();
-    new IndexStore().writeGlobalScopeToFile(project.getGlobalScope(), Paths.get(indexFile));
+    new IndexStore().writeModuleScopeToFile(project.getModuleScope(), Paths.get(indexFile));
   }
 
   public static void main(String[] args) {

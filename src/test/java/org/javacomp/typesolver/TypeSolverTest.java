@@ -6,8 +6,8 @@ import com.google.common.base.Joiner;
 import com.google.common.truth.Truth8;
 import java.util.Optional;
 import org.javacomp.model.ClassEntity;
-import org.javacomp.model.GlobalScope;
 import org.javacomp.model.MethodEntity;
+import org.javacomp.model.ModuleScope;
 import org.javacomp.model.SolvedType;
 import org.javacomp.model.TypeReference;
 import org.javacomp.testing.TestUtil;
@@ -44,7 +44,7 @@ public class TypeSolverTest {
 
   private final TypeSolver typeSolver = new TypeSolver();
 
-  private GlobalScope globalScope;
+  private ModuleScope globalScope;
 
   @Before
   public void setUpTestScope() throws Exception {

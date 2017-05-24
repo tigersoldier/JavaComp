@@ -14,7 +14,7 @@ java_library(
 )
 
 java_test(
-    name = "GlobalScopeTest",
+    name = "ModuleScopeTest",
     size = "small",
     runtime_deps = [
         ":tests",

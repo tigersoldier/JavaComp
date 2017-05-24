@@ -25,7 +25,7 @@ import java.util.List;
 import org.javacomp.model.Entity;
 import org.javacomp.model.EntityScope;
 import org.javacomp.model.FileScope;
-import org.javacomp.model.GlobalScope;
+import org.javacomp.model.ModuleScope;
 import org.javacomp.options.IndexOptions;
 import org.javacomp.parser.AstScanner;
 import org.javacomp.parser.SourceFileObject;
@@ -40,12 +40,12 @@ public class TestUtil {
   private TestUtil() {}
 
   /** Create a global scope containing parsed files. */
-  public static GlobalScope parseFiles(String dirName, String... javaFiles) {
+  public static ModuleScope parseFiles(String dirName, String... javaFiles) {
     return parseFiles(dirName, ImmutableList.copyOf(javaFiles));
   }
 
-  public static GlobalScope parseFiles(String dirName, List<String> javaFiles) {
-    GlobalScope globalScope = new GlobalScope();
+  public static ModuleScope parseFiles(String dirName, List<String> javaFiles) {
+    ModuleScope globalScope = new ModuleScope();
     for (String filename : javaFiles) {
       Path inputFilePath = Paths.get(dirName, filename);
       globalScope.addOrReplaceFileScope(parseFile(inputFilePath));
@@ -81,7 +81,7 @@ public class TestUtil {
   }
 
   /** Lookup an entity from global scope with qualified name. */
-  public static Entity lookupEntity(String qualifiedName, GlobalScope globalScope) {
+  public static Entity lookupEntity(String qualifiedName, ModuleScope globalScope) {
     String[] qualifiers = qualifiedName.split("\\.");
     EntityScope currentScope = globalScope;
     Entity entity = null;

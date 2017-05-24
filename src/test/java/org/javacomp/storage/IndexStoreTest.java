@@ -15,8 +15,8 @@ import java.util.Set;
 import org.javacomp.model.ClassEntity;
 import org.javacomp.model.Entity;
 import org.javacomp.model.EntityScope;
-import org.javacomp.model.GlobalScope;
 import org.javacomp.model.MethodEntity;
+import org.javacomp.model.ModuleScope;
 import org.javacomp.model.PackageEntity;
 import org.javacomp.model.TypeReference;
 import org.javacomp.model.VariableEntity;
@@ -38,19 +38,19 @@ public class IndexStoreTest {
   private static final List<String> ALL_FILES =
       ImmutableList.of(TEST_CLASS_FILE, OTHER_CLASS_FILE, OTHER_PACKAGE_CLASS_FILE);
 
-  private GlobalScope globalScope = TestUtil.parseFiles(TEST_DATA_DIR, ALL_FILES);
+  private ModuleScope globalScope = TestUtil.parseFiles(TEST_DATA_DIR, ALL_FILES);
   private IndexStore indexStore = new IndexStore();
 
   @Test
   public void testSerializeAndDeserialize() {
-    IndexStore.SerializedGlobalScope serializedGlobalScope =
-        indexStore.serializeGlobalScope(globalScope);
-    GlobalScope deserializedGlobalScope = indexStore.deserializeGlobalScope(serializedGlobalScope);
+    IndexStore.SerializedModuleScope serializedModuleScope =
+        indexStore.serializeModuleScope(globalScope);
+    ModuleScope deserializedModuleScope = indexStore.deserializeModuleScope(serializedModuleScope);
 
-    assertGlobalScopesEqual(deserializedGlobalScope, globalScope);
+    assertModuleScopesEqual(deserializedModuleScope, globalScope);
   }
 
-  private void assertGlobalScopesEqual(GlobalScope deserialized, GlobalScope original) {
+  private void assertModuleScopesEqual(ModuleScope deserialized, ModuleScope original) {
     assertSameMemberEntities(
         deserialized.getRootPackage(), original.getRootPackage(), new ArrayDeque<String>());
   }

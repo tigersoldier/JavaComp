@@ -8,8 +8,8 @@ import java.util.Set;
 import org.javacomp.logging.JLogger;
 import org.javacomp.model.ClassEntity;
 import org.javacomp.model.Entity;
-import org.javacomp.model.GlobalScope;
 import org.javacomp.model.MethodEntity;
+import org.javacomp.model.ModuleScope;
 import org.javacomp.model.PrimitiveEntity;
 import org.javacomp.model.SolvedType;
 import org.javacomp.model.VariableEntity;
@@ -36,14 +36,14 @@ public class MemberSolver {
   }
 
   public Optional<Entity> findNonMethodMember(
-      String identifier, SolvedType baseType, GlobalScope globalScope) {
+      String identifier, SolvedType baseType, ModuleScope globalScope) {
     return findNonMethodMember(identifier, baseType, globalScope, ALLOWED_KINDS_NON_METHOD);
   }
 
   public Optional<Entity> findNonMethodMember(
       String identifier,
       SolvedType baseType,
-      GlobalScope globalScope,
+      ModuleScope globalScope,
       Set<Entity.Kind> allowedKinds) {
     ///////
     // OuterClass.this
@@ -72,7 +72,7 @@ public class MemberSolver {
       String identifier,
       List<Optional<SolvedType>> arguments,
       SolvedType baseType,
-      GlobalScope globalScope) {
+      ModuleScope globalScope) {
     // Methods must be defined in classes.
     if (!(baseType.getEntity() instanceof ClassEntity)) {
       logger.warning(
