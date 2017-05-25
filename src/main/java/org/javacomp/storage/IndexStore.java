@@ -45,16 +45,16 @@ public class IndexStore {
 
   private final Map<Entity, Entity> visitedEntities = new HashMap<>();
 
-  private ModuleScope globalScope;
+  private ModuleScope moduleScope;
 
-  public void writeModuleScopeToFile(ModuleScope globalScope, Path filePath) {
+  public void writeModuleScopeToFile(ModuleScope moduleScope, Path filePath) {
     try (BufferedWriter writer = Files.newBufferedWriter(filePath, UTF_8)) {
-      this.globalScope = globalScope;
-      gson.toJson(serializeModuleScope(globalScope), writer);
+      this.moduleScope = moduleScope;
+      gson.toJson(serializeModuleScope(moduleScope), writer);
     } catch (IOException e) {
       throw new RuntimeException(e);
     } finally {
-      this.globalScope = null;
+      this.moduleScope = null;
     }
   }
 
@@ -68,10 +68,10 @@ public class IndexStore {
   }
 
   @VisibleForTesting
-  SerializedModuleScope serializeModuleScope(ModuleScope globalScope) {
+  SerializedModuleScope serializeModuleScope(ModuleScope moduleScope) {
     SerializedModuleScope ret = new SerializedModuleScope();
     ret.files =
-        globalScope
+        moduleScope
             .getAllFiles()
             .stream()
             .collect(
@@ -87,11 +87,11 @@ public class IndexStore {
   @VisibleForTesting
   ModuleScope deserializeModuleScope(SerializedModuleScope serializedModuleScope) {
     checkNotNull(serializedModuleScope.files, "serializedModuleScope.files");
-    ModuleScope globalScope = new ModuleScope();
+    ModuleScope moduleScope = new ModuleScope();
     for (SerializedFileScope file : serializedModuleScope.files) {
-      globalScope.addOrReplaceFileScope(deserializeFileScope(file));
+      moduleScope.addOrReplaceFileScope(deserializeFileScope(file));
     }
-    return globalScope;
+    return moduleScope;
   }
 
   private SerializedFileScope serializeFileScopes(String packageName, List<FileScope> fileScopes) {
@@ -304,7 +304,7 @@ public class IndexStore {
     SerializedType ret = new SerializedType();
     Optional<SolvedType> optionalSolvedType;
     try {
-      optionalSolvedType = typeSolver.solve(type, globalScope, baseScope);
+      optionalSolvedType = typeSolver.solve(type, moduleScope, baseScope);
     } catch (Throwable t) {
       logger.warning(t, "Error on solving type %s in %s", type, baseScope);
       optionalSolvedType = Optional.empty();

@@ -38,7 +38,7 @@ public class BaseTest {
   protected static final String OTHER_PACKAGE_CLASS_FULL_NAME =
       "org.javacomp.reference.testdata.other.OtherPackageClass";
 
-  protected ModuleScope globalScope;
+  protected ModuleScope moduleScope;
 
   protected VariableEntity innerAParam;
   protected VariableEntity otherClassParam;
@@ -47,18 +47,18 @@ public class BaseTest {
   @Before
   public final void parseJavaFiles() {
     ParserContext parserContext = new ParserContext();
-    globalScope = new ModuleScope();
+    moduleScope = new ModuleScope();
     for (String filename : ALL_FILES) {
       String content = getFileContent(filename);
       JCCompilationUnit compilationUnit = parserContext.parse(filename, content);
       FileScope fileScope =
           new AstScanner(IndexOptions.FULL_INDEX_BUILDER.build())
               .startScan(compilationUnit, filename, content);
-      globalScope.addOrReplaceFileScope(fileScope);
+      moduleScope.addOrReplaceFileScope(fileScope);
     }
 
     MethodEntity testMethod =
-        (MethodEntity) TestUtil.lookupEntity(TEST_CLASS_FULL_NAME + ".testMethod", globalScope);
+        (MethodEntity) TestUtil.lookupEntity(TEST_CLASS_FULL_NAME + ".testMethod", moduleScope);
     innerAParam =
         (VariableEntity)
             Iterables.getOnlyElement(testMethod.getMemberEntities().get("innerAParam"));
@@ -123,7 +123,7 @@ public class BaseTest {
       assertThat(start).named("location of " + symbolContext).isGreaterThan(-1);
       int pos = fileContent.indexOf(symbol, start);
       assertThat(pos).named("pos").isGreaterThan(-1);
-      FileScope fileScope = globalScope.getFileScope(filename).get();
+      FileScope fileScope = moduleScope.getFileScope(filename).get();
       LineMap lineMap = fileScope.getLineMap();
       // LineMap line and column are 1-indexed, while our API is 0-indexed.
       return TextPosition.create(

@@ -51,8 +51,8 @@ class CompleteEntityAction implements CompletionAction {
     return ImmutableList.copyOf(candidateMap.values());
   }
 
-  private Multimap<String, Entity> getPackageMembers(FileScope fileScope, ModuleScope globalScope) {
-    PackageScope packageScope = globalScope.getPackageForFile(fileScope);
+  private Multimap<String, Entity> getPackageMembers(FileScope fileScope, ModuleScope moduleScope) {
+    PackageScope packageScope = moduleScope.getPackageForFile(fileScope);
     return packageScope.getMemberEntities();
   }
 

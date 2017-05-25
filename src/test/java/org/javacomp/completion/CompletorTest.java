@@ -67,8 +67,8 @@ public class CompletorTest {
         new AstScanner(IndexOptions.FULL_INDEX_BUILDER.build())
             .startScan(compilationUnit, inputFilePath, fixedContent.getContent());
     inputFileScope.setAdjustedLineMap(fixedContent.getAdjustedLineMap());
-    ModuleScope globalScope = new ModuleScope();
-    globalScope.addOrReplaceFileScope(inputFileScope);
+    ModuleScope moduleScope = new ModuleScope();
+    moduleScope.addOrReplaceFileScope(inputFileScope);
 
     for (String otherFile : otherFiles) {
       String content = getFileContent(otherFile);
@@ -76,11 +76,11 @@ public class CompletorTest {
       FileScope fileScope =
           new AstScanner(IndexOptions.FULL_INDEX_BUILDER.build())
               .startScan(otherCompilationUnit, otherFile, content);
-      globalScope.addOrReplaceFileScope(fileScope);
+      moduleScope.addOrReplaceFileScope(fileScope);
     }
 
     return new Completor()
-        .getCompletionCandidates(globalScope, Paths.get(inputFilePath), line, column);
+        .getCompletionCandidates(moduleScope, Paths.get(inputFilePath), line, column);
   }
 
   private static List<String> getCandidateNames(List<CompletionCandidate> candidates) {

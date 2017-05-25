@@ -44,70 +44,70 @@ public class TypeSolverTest {
 
   private final TypeSolver typeSolver = new TypeSolver();
 
-  private ModuleScope globalScope;
+  private ModuleScope moduleScope;
 
   @Before
   public void setUpTestScope() throws Exception {
-    globalScope = TestUtil.parseFiles(TEST_DATA_DIR, TEST_FILES);
+    moduleScope = TestUtil.parseFiles(TEST_DATA_DIR, TEST_FILES);
   }
 
   @Test
   public void solveBaseInterfaceInTheSamePackage() {
-    ClassEntity testClass = (ClassEntity) TestUtil.lookupEntity(TEST_CLASS_FULL_NAME, globalScope);
+    ClassEntity testClass = (ClassEntity) TestUtil.lookupEntity(TEST_CLASS_FULL_NAME, moduleScope);
     TypeReference baseInterfaceReference = testClass.getInterfaces().get(0);
     Optional<SolvedType> solvedType =
-        typeSolver.solve(baseInterfaceReference, globalScope, testClass);
+        typeSolver.solve(baseInterfaceReference, moduleScope, testClass);
     Truth8.assertThat(solvedType).isPresent();
     assertThat(solvedType.get().getEntity())
-        .isSameAs(TestUtil.lookupEntity(BASE_INTERFACE_FULL_NAME, globalScope));
+        .isSameAs(TestUtil.lookupEntity(BASE_INTERFACE_FULL_NAME, moduleScope));
   }
 
   @Test
   public void solveClassDefinedInSuperInterface() {
     ClassEntity testClass =
-        (ClassEntity) TestUtil.lookupEntity(TEST_CLASS_FACTORY_FULL_NAME, globalScope);
+        (ClassEntity) TestUtil.lookupEntity(TEST_CLASS_FACTORY_FULL_NAME, moduleScope);
     TypeReference baseInterfaceReference = testClass.getInterfaces().get(0);
     Optional<SolvedType> solvedType =
-        typeSolver.solve(baseInterfaceReference, globalScope, testClass);
+        typeSolver.solve(baseInterfaceReference, moduleScope, testClass);
     Truth8.assertThat(solvedType).isPresent();
     assertThat(solvedType.get().getEntity())
-        .isSameAs(TestUtil.lookupEntity(BASE_INTERFACE_FACTORY_FULL_NAME, globalScope));
+        .isSameAs(TestUtil.lookupEntity(BASE_INTERFACE_FACTORY_FULL_NAME, moduleScope));
   }
 
   @Test
   public void solveInnerClass() {
     SolvedType baseInterface = solveMethodReturnType(TEST_CLASS_FULL_NAME + ".newFactory");
     assertThat(baseInterface.getEntity())
-        .isSameAs(TestUtil.lookupEntity(TEST_CLASS_FACTORY_FULL_NAME, globalScope));
+        .isSameAs(TestUtil.lookupEntity(TEST_CLASS_FACTORY_FULL_NAME, moduleScope));
   }
 
   @Test
   public void solveBaseClassInOtherPackage() {
-    ClassEntity testClass = (ClassEntity) TestUtil.lookupEntity(TEST_CLASS_FULL_NAME, globalScope);
+    ClassEntity testClass = (ClassEntity) TestUtil.lookupEntity(TEST_CLASS_FULL_NAME, moduleScope);
     TypeReference baseClassReference = testClass.getSuperClass().get();
-    Optional<SolvedType> solvedType = typeSolver.solve(baseClassReference, globalScope, testClass);
+    Optional<SolvedType> solvedType = typeSolver.solve(baseClassReference, moduleScope, testClass);
     Truth8.assertThat(solvedType).isPresent();
     assertThat(solvedType.get().getEntity())
-        .isSameAs(TestUtil.lookupEntity(BASE_CLASS_FULL_NAME, globalScope));
+        .isSameAs(TestUtil.lookupEntity(BASE_CLASS_FULL_NAME, moduleScope));
   }
 
   @Test
   public void solveInnerClassInBaseClassFromOtherPackage() {
     ClassEntity testClass =
-        (ClassEntity) TestUtil.lookupEntity(TEST_CLASS_FACTORY_FULL_NAME, globalScope);
+        (ClassEntity) TestUtil.lookupEntity(TEST_CLASS_FACTORY_FULL_NAME, moduleScope);
     TypeReference baseInnerClassReference = testClass.getSuperClass().get();
     Optional<SolvedType> solvedType =
-        typeSolver.solve(baseInnerClassReference, globalScope, testClass);
+        typeSolver.solve(baseInnerClassReference, moduleScope, testClass);
     Truth8.assertThat(solvedType).isPresent();
     assertThat(solvedType.get().getEntity())
-        .isSameAs(TestUtil.lookupEntity(BASE_INNER_CLASS_FULL_NAME, globalScope));
+        .isSameAs(TestUtil.lookupEntity(BASE_INNER_CLASS_FULL_NAME, moduleScope));
   }
 
   @Test
   public void solveOnDemandClassImport() {
     SolvedType onDemandClass = solveMethodReturnType(TEST_CLASS_FULL_NAME + ".getOnDemand");
     assertThat(onDemandClass.getEntity())
-        .isSameAs(TestUtil.lookupEntity(ON_DEMAND_CLASS_FULL_NAME, globalScope));
+        .isSameAs(TestUtil.lookupEntity(ON_DEMAND_CLASS_FULL_NAME, moduleScope));
   }
 
   @Test
@@ -116,7 +116,7 @@ public class TypeSolverTest {
     // since it's explicitly imported.
     SolvedType shadowClass = solveMethodReturnType(TEST_CLASS_FULL_NAME + ".getShadow");
     assertThat(shadowClass.getEntity())
-        .isSameAs(TestUtil.lookupEntity(OTHER_SHADOW_CLASS_FULL_NAME, globalScope));
+        .isSameAs(TestUtil.lookupEntity(OTHER_SHADOW_CLASS_FULL_NAME, moduleScope));
   }
 
   @Test
@@ -124,7 +124,7 @@ public class TypeSolverTest {
     SolvedType fullyQualifiedBaseClass =
         solveMethodReturnType(TEST_CLASS_FULL_NAME + ".getFullyQualifiedBaseClass");
     assertThat(fullyQualifiedBaseClass.getEntity())
-        .isSameAs(TestUtil.lookupEntity(BASE_CLASS_FULL_NAME, globalScope));
+        .isSameAs(TestUtil.lookupEntity(BASE_CLASS_FULL_NAME, moduleScope));
   }
 
   @Test
@@ -137,23 +137,23 @@ public class TypeSolverTest {
   }
 
   private SolvedType solveMethodReturnType(String qualifiedMethodName) {
-    MethodEntity method = (MethodEntity) TestUtil.lookupEntity(qualifiedMethodName, globalScope);
+    MethodEntity method = (MethodEntity) TestUtil.lookupEntity(qualifiedMethodName, moduleScope);
     assertThat(method).named(qualifiedMethodName).isNotNull();
     TypeReference methodReturnType = method.getReturnType();
     Optional<SolvedType> solvedType =
         typeSolver.solve(
-            methodReturnType, globalScope, method.getChildScope().getParentScope().get());
+            methodReturnType, moduleScope, method.getChildScope().getParentScope().get());
     Truth8.assertThat(solvedType).named(methodReturnType.toString()).isPresent();
     return solvedType.get();
   }
 
   private void assertNotSolved(String qualifiedMethodName) {
-    MethodEntity method = (MethodEntity) TestUtil.lookupEntity(qualifiedMethodName, globalScope);
+    MethodEntity method = (MethodEntity) TestUtil.lookupEntity(qualifiedMethodName, moduleScope);
     assertThat(method).named(qualifiedMethodName).isNotNull();
     TypeReference methodReturnType = method.getReturnType();
     Optional<SolvedType> solvedType =
         typeSolver.solve(
-            methodReturnType, globalScope, method.getChildScope().getParentScope().get());
+            methodReturnType, moduleScope, method.getChildScope().getParentScope().get());
     Truth8.assertThat(solvedType).named(methodReturnType.toString()).isEmpty();
   }
 }

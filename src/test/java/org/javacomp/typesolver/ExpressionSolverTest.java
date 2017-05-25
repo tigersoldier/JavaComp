@@ -37,7 +37,7 @@ public class ExpressionSolverTest {
   private final ExpressionSolver expressionSolver =
       new ExpressionSolver(typeSolver, overloadSolver, memberSolver);
 
-  private ModuleScope globalScope;
+  private ModuleScope moduleScope;
   private ClassEntity topLevelClass;
   private ClassEntity testClassClass;
   private ClassEntity testClassFactoryClass;
@@ -49,21 +49,21 @@ public class ExpressionSolverTest {
 
   @Before
   public void setUpTestScope() throws Exception {
-    globalScope = TestUtil.parseFiles(TEST_DIR, TEST_FILES);
-    topLevelClass = (ClassEntity) TestUtil.lookupEntity(TOP_LEVEL_CLASS_FULL_NAME, globalScope);
-    testClassClass = (ClassEntity) TestUtil.lookupEntity(TEST_CLASS_CLASS_FULL_NAME, globalScope);
+    moduleScope = TestUtil.parseFiles(TEST_DIR, TEST_FILES);
+    topLevelClass = (ClassEntity) TestUtil.lookupEntity(TOP_LEVEL_CLASS_FULL_NAME, moduleScope);
+    testClassClass = (ClassEntity) TestUtil.lookupEntity(TEST_CLASS_CLASS_FULL_NAME, moduleScope);
     testClassFactoryClass =
         (ClassEntity)
-            TestUtil.lookupEntity(TEST_CLASS_CLASS_FULL_NAME + ".TestClassFactory", globalScope);
-    shadowClass = (ClassEntity) TestUtil.lookupEntity(SHADOW_CLASS_FULL_NAME, globalScope);
+            TestUtil.lookupEntity(TEST_CLASS_CLASS_FULL_NAME + ".TestClassFactory", moduleScope);
+    shadowClass = (ClassEntity) TestUtil.lookupEntity(SHADOW_CLASS_FULL_NAME, moduleScope);
     innerAClass =
-        (ClassEntity) TestUtil.lookupEntity(TOP_LEVEL_CLASS_FULL_NAME + ".InnerA", globalScope);
+        (ClassEntity) TestUtil.lookupEntity(TOP_LEVEL_CLASS_FULL_NAME + ".InnerA", moduleScope);
     innerBClass =
-        (ClassEntity) TestUtil.lookupEntity(TOP_LEVEL_CLASS_FULL_NAME + ".InnerB", globalScope);
+        (ClassEntity) TestUtil.lookupEntity(TOP_LEVEL_CLASS_FULL_NAME + ".InnerB", moduleScope);
     innerCClass =
-        (ClassEntity) TestUtil.lookupEntity(TOP_LEVEL_CLASS_FULL_NAME + ".InnerC", globalScope);
+        (ClassEntity) TestUtil.lookupEntity(TOP_LEVEL_CLASS_FULL_NAME + ".InnerC", moduleScope);
     methodScope =
-        TestUtil.lookupEntity(TOP_LEVEL_CLASS_FULL_NAME + ".method", globalScope).getChildScope();
+        TestUtil.lookupEntity(TOP_LEVEL_CLASS_FULL_NAME + ".method", moduleScope).getChildScope();
   }
 
   @Test
@@ -199,7 +199,7 @@ public class ExpressionSolverTest {
   private SolvedType solveExpression(String expression, EntityScope baseScope, int position) {
     ExpressionTree expressionTree = TestUtil.parseExpression(expression);
     Optional<SolvedType> solvedExpression =
-        expressionSolver.solve(expressionTree, globalScope, baseScope, position);
+        expressionSolver.solve(expressionTree, moduleScope, baseScope, position);
     Truth8.assertThat(solvedExpression).named(expression).isPresent();
     return solvedExpression.get();
   }
@@ -207,7 +207,7 @@ public class ExpressionSolverTest {
   private void assertExpressionNotSolved(String expression, EntityScope baseScope, int position) {
     ExpressionTree expressionTree = TestUtil.parseExpression(expression);
     Optional<SolvedType> solvedExpression =
-        expressionSolver.solve(expressionTree, globalScope, baseScope, position);
+        expressionSolver.solve(expressionTree, moduleScope, baseScope, position);
     Truth8.assertThat(solvedExpression).named(expression).isEmpty();
   }
 }

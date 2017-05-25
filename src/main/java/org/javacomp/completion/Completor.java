@@ -30,13 +30,13 @@ public class Completor {
   }
 
   /**
-   * @param globalScope the global scope of the project
+   * @param moduleScope the global scope of the project
    * @param filePath normalized path of the file to be completed
    * @param line 0-based line number of the completion point
    * @param column 0-based character offset from the beginning of the line to the completion point
    */
   public List<CompletionCandidate> getCompletionCandidates(
-      ModuleScope globalScope, Path filePath, int line, int column) {
+      ModuleScope moduleScope, Path filePath, int line, int column) {
     if (column > 0) {
       // PositionContext gets the tree path whose leaf node includes the position
       // (position < node's endPosition). However, for completions, we want the leaf node either
@@ -46,7 +46,7 @@ public class Completor {
       column--;
     }
     Optional<PositionContext> positionContext =
-        PositionContext.createForPosition(globalScope, filePath, line, column);
+        PositionContext.createForPosition(moduleScope, filePath, line, column);
 
     if (!positionContext.isPresent()) {
       return ImmutableList.of();

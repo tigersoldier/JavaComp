@@ -45,7 +45,7 @@ public class Project {
 
   private static final String JAVA_EXTENSION = ".java";
 
-  private final ModuleScope globalScope;
+  private final ModuleScope moduleScope;
   private final AstScanner astScanner;
   private final Completor completor;
   private final DefinitionSolver definitionSolver;
@@ -61,7 +61,7 @@ public class Project {
   private boolean initialized;
 
   public Project(FileManager fileManager, URI rootUri, IndexOptions indexOptions) {
-    globalScope = new ModuleScope();
+    moduleScope = new ModuleScope();
     astScanner = new AstScanner(indexOptions);
     completor = new Completor();
     parserContext = new ParserContext();
@@ -133,14 +133,14 @@ public class Project {
           astScanner.startScan(
               parserContext.parse(filePath.toString(), content), filePath.toString(), content);
       fileScope.setAdjustedLineMap(adjustedLineMap);
-      globalScope.addOrReplaceFileScope(fileScope);
+      moduleScope.addOrReplaceFileScope(fileScope);
     } catch (Throwable e) {
       logger.warning(e, "Failed to process file %s", filePath);
     }
   }
 
   private void removeFile(Path filePath) {
-    globalScope.removeFile(filePath);
+    moduleScope.removeFile(filePath);
   }
 
   /**
@@ -153,7 +153,7 @@ public class Project {
       lastCompletedFile = filePath;
       addOrUpdateFile(filePath);
     }
-    return completor.getCompletionCandidates(globalScope, filePath, line, column);
+    return completor.getCompletionCandidates(moduleScope, filePath, line, column);
   }
 
   /**
@@ -163,7 +163,7 @@ public class Project {
    */
   public List<FileTextLocation> findDefinitions(Path filePath, int line, int column) {
     List<? extends Entity> entities =
-        definitionSolver.getDefinitionEntities(globalScope, filePath, line, column);
+        definitionSolver.getDefinitionEntities(moduleScope, filePath, line, column);
     return entities
         .stream()
         .map(
@@ -195,11 +195,11 @@ public class Project {
   }
 
   public MethodSignatures findMethodSignatures(Path filePath, int line, int column) {
-    return signatureSolver.getMethodSignatures(globalScope, filePath, line, column);
+    return signatureSolver.getMethodSignatures(moduleScope, filePath, line, column);
   }
 
   public ModuleScope getModuleScope() {
-    return globalScope;
+    return moduleScope;
   }
 
   private static boolean isJavaFile(Path filePath) {

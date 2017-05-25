@@ -34,14 +34,14 @@ public abstract class PositionContext {
   /**
    * Creates a {@link PositionContext} instance based on the given file path and position.
    *
-   * @param globalScope the global scope of the project
+   * @param moduleScope the global scope of the project
    * @param filePath normalized path of the file to be completed
    * @param line 0-based line number of the completion point
    * @param column 0-based character offset from the beginning of the line to the completion point
    */
   public static Optional<PositionContext> createForPosition(
-      ModuleScope globalScope, Path filePath, int line, int column) {
-    Optional<FileScope> inputFileScope = globalScope.getFileScope(filePath.toString());
+      ModuleScope moduleScope, Path filePath, int line, int column) {
+    Optional<FileScope> inputFileScope = moduleScope.getFileScope(filePath.toString());
     if (!inputFileScope.isPresent()) {
       return Optional.ofNullable(null);
     }
@@ -58,7 +58,7 @@ public abstract class PositionContext {
 
     return Optional.of(
         new AutoValue_PositionContext(
-            scopeAtPosition, globalScope, treePath, position, compilationUnit.endPositions));
+            scopeAtPosition, moduleScope, treePath, position, compilationUnit.endPositions));
   }
 
   /** A {@link TreePathScanner} that returns the tree path enclosing the given position. */

@@ -33,7 +33,7 @@ public class ModuleScopeTest {
     when(entity4.getSimpleName()).thenReturn("entity4");
   }
 
-  private ModuleScope globalScope = new ModuleScope();
+  private ModuleScope moduleScope = new ModuleScope();
 
   @Test
   public void addFilesShouldCreatePackages() {
@@ -49,18 +49,18 @@ public class ModuleScopeTest {
     fileScope3.addEntity(entity3);
     fileScope4.addEntity(entity4);
 
-    globalScope.addOrReplaceFileScope(fileScope1);
-    globalScope.addOrReplaceFileScope(fileScope2);
-    globalScope.addOrReplaceFileScope(fileScope3);
-    globalScope.addOrReplaceFileScope(fileScope4);
+    moduleScope.addOrReplaceFileScope(fileScope1);
+    moduleScope.addOrReplaceFileScope(fileScope2);
+    moduleScope.addOrReplaceFileScope(fileScope3);
+    moduleScope.addOrReplaceFileScope(fileScope4);
 
-    assertThat(globalScope.getAllEntities().keys()).containsExactly("foo", "fxx");
+    assertThat(moduleScope.getAllEntities().keys()).containsExactly("foo", "fxx");
 
-    PackageScope foo = getPackage(globalScope, "foo").getChildScope();
+    PackageScope foo = getPackage(moduleScope, "foo").getChildScope();
     PackageScope fooBar = getPackage(foo, "bar").getChildScope();
     PackageScope fooBarBaz = getPackage(fooBar, "baz").getChildScope();
     PackageScope fooBaz = getPackage(foo, "baz").getChildScope();
-    PackageScope fxx = getPackage(globalScope, "fxx").getChildScope();
+    PackageScope fxx = getPackage(moduleScope, "fxx").getChildScope();
 
     assertThat(foo.getAllEntities().keys()).containsExactly("bar", "baz");
     assertThat(fooBar.getAllEntities().keys()).containsExactly("baz", "entity1");
@@ -77,10 +77,10 @@ public class ModuleScopeTest {
     fileScope1.addEntity(entity1);
     fileScope2.addEntity(entity2);
 
-    globalScope.addOrReplaceFileScope(fileScope1);
-    globalScope.addOrReplaceFileScope(fileScope2);
+    moduleScope.addOrReplaceFileScope(fileScope1);
+    moduleScope.addOrReplaceFileScope(fileScope2);
 
-    PackageScope foo = getPackage(globalScope, "foo").getChildScope();
+    PackageScope foo = getPackage(moduleScope, "foo").getChildScope();
     PackageScope fooBar = getPackage(foo, "bar").getChildScope();
     assertThat(fooBar.getAllEntities().keys()).containsExactly("entity2");
   }
@@ -96,21 +96,21 @@ public class ModuleScopeTest {
     fileScope2.addEntity(entity2);
     fileScope3.addEntity(entity3);
 
-    globalScope.addOrReplaceFileScope(fileScope1);
+    moduleScope.addOrReplaceFileScope(fileScope1);
 
-    PackageScope foo = getPackage(globalScope, "foo").getChildScope();
+    PackageScope foo = getPackage(moduleScope, "foo").getChildScope();
     PackageScope fooBar = getPackage(foo, "bar").getChildScope();
     PackageScope fooBarBaz = getPackage(fooBar, "baz").getChildScope();
     assertThat(fooBarBaz.getAllEntities().keys()).containsExactly("entity1");
 
     // Replace with fileScope2. baz is removed from foo.bar. entity2 from fileScope2 is scopeed.
-    globalScope.addOrReplaceFileScope(fileScope2);
+    moduleScope.addOrReplaceFileScope(fileScope2);
     assertThat(fooBar.getAllEntities().keys()).containsExactly("entity2");
 
     // Replace with fileScope3. foo package is removed. fxx is added with entity3 from fileScope3
-    globalScope.addOrReplaceFileScope(fileScope3);
-    assertThat(globalScope.getAllEntities().keys()).containsExactly("fxx");
-    PackageScope fxx = getPackage(globalScope, "fxx").getChildScope();
+    moduleScope.addOrReplaceFileScope(fileScope3);
+    assertThat(moduleScope.getAllEntities().keys()).containsExactly("fxx");
+    PackageScope fxx = getPackage(moduleScope, "fxx").getChildScope();
     assertThat(fxx.getAllEntities().keys()).containsExactly("entity3");
   }
 

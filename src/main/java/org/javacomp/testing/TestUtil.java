@@ -45,12 +45,12 @@ public class TestUtil {
   }
 
   public static ModuleScope parseFiles(String dirName, List<String> javaFiles) {
-    ModuleScope globalScope = new ModuleScope();
+    ModuleScope moduleScope = new ModuleScope();
     for (String filename : javaFiles) {
       Path inputFilePath = Paths.get(dirName, filename);
-      globalScope.addOrReplaceFileScope(parseFile(inputFilePath));
+      moduleScope.addOrReplaceFileScope(parseFile(inputFilePath));
     }
-    return globalScope;
+    return moduleScope;
   }
 
   public static String readFileContent(Path filePath) {
@@ -81,9 +81,9 @@ public class TestUtil {
   }
 
   /** Lookup an entity from global scope with qualified name. */
-  public static Entity lookupEntity(String qualifiedName, ModuleScope globalScope) {
+  public static Entity lookupEntity(String qualifiedName, ModuleScope moduleScope) {
     String[] qualifiers = qualifiedName.split("\\.");
-    EntityScope currentScope = globalScope;
+    EntityScope currentScope = moduleScope;
     Entity entity = null;
     List<String> currentQualifiers = new ArrayList<>();
     for (String qualifier : qualifiers) {

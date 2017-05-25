@@ -38,16 +38,16 @@ public class IndexStoreTest {
   private static final List<String> ALL_FILES =
       ImmutableList.of(TEST_CLASS_FILE, OTHER_CLASS_FILE, OTHER_PACKAGE_CLASS_FILE);
 
-  private ModuleScope globalScope = TestUtil.parseFiles(TEST_DATA_DIR, ALL_FILES);
+  private ModuleScope moduleScope = TestUtil.parseFiles(TEST_DATA_DIR, ALL_FILES);
   private IndexStore indexStore = new IndexStore();
 
   @Test
   public void testSerializeAndDeserialize() {
     IndexStore.SerializedModuleScope serializedModuleScope =
-        indexStore.serializeModuleScope(globalScope);
+        indexStore.serializeModuleScope(moduleScope);
     ModuleScope deserializedModuleScope = indexStore.deserializeModuleScope(serializedModuleScope);
 
-    assertModuleScopesEqual(deserializedModuleScope, globalScope);
+    assertModuleScopesEqual(deserializedModuleScope, moduleScope);
   }
 
   private void assertModuleScopesEqual(ModuleScope deserialized, ModuleScope original) {

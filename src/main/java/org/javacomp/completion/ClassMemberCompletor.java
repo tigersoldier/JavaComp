@@ -17,9 +17,9 @@ class ClassMemberCompletor {
     this.expressionSolver = expressionSolver;
   }
 
-  Multimap<String, Entity> getClassMembers(ClassEntity actualClassEntity, ModuleScope globalScope) {
+  Multimap<String, Entity> getClassMembers(ClassEntity actualClassEntity, ModuleScope moduleScope) {
     ImmutableMultimap.Builder<String, Entity> builder = new ImmutableMultimap.Builder<>();
-    for (ClassEntity classEntity : typeSolver.classHierarchy(actualClassEntity, globalScope)) {
+    for (ClassEntity classEntity : typeSolver.classHierarchy(actualClassEntity, moduleScope)) {
       builder.putAll(classEntity.getMemberEntities());
     }
     return builder.build();

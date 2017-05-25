@@ -36,14 +36,14 @@ public class MemberSolver {
   }
 
   public Optional<Entity> findNonMethodMember(
-      String identifier, SolvedType baseType, ModuleScope globalScope) {
-    return findNonMethodMember(identifier, baseType, globalScope, ALLOWED_KINDS_NON_METHOD);
+      String identifier, SolvedType baseType, ModuleScope moduleScope) {
+    return findNonMethodMember(identifier, baseType, moduleScope, ALLOWED_KINDS_NON_METHOD);
   }
 
   public Optional<Entity> findNonMethodMember(
       String identifier,
       SolvedType baseType,
-      ModuleScope globalScope,
+      ModuleScope moduleScope,
       Set<Entity.Kind> allowedKinds) {
     ///////
     // OuterClass.this
@@ -60,7 +60,7 @@ public class MemberSolver {
     ////////
     //  foo.bar
     Entity memberEntity =
-        typeSolver.findEntityMember(identifier, baseType.getEntity(), globalScope, allowedKinds);
+        typeSolver.findEntityMember(identifier, baseType.getEntity(), moduleScope, allowedKinds);
     return Optional.ofNullable(memberEntity);
   }
 
@@ -72,7 +72,7 @@ public class MemberSolver {
       String identifier,
       List<Optional<SolvedType>> arguments,
       SolvedType baseType,
-      ModuleScope globalScope) {
+      ModuleScope moduleScope) {
     // Methods must be defined in classes.
     if (!(baseType.getEntity() instanceof ClassEntity)) {
       logger.warning(
@@ -81,11 +81,11 @@ public class MemberSolver {
     }
 
     List<Entity> methodEntities =
-        typeSolver.findClassMethods(identifier, (ClassEntity) baseType.getEntity(), globalScope);
+        typeSolver.findClassMethods(identifier, (ClassEntity) baseType.getEntity(), moduleScope);
     if (methodEntities.isEmpty()) {
       return ImmutableList.of();
     }
 
-    return overloadSolver.prioritizeMatchedMethod(methodEntities, arguments, globalScope);
+    return overloadSolver.prioritizeMatchedMethod(methodEntities, arguments, moduleScope);
   }
 }

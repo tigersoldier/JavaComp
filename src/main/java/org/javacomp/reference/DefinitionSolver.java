@@ -55,15 +55,15 @@ public class DefinitionSolver {
   }
 
   /**
-   * @param globalScope the global scope of the project
+   * @param moduleScope the global scope of the project
    * @param filePath normalized path of the file to be completed
    * @param line 0-based line number of the completion point
    * @param column 0-based character offset from the beginning of the line to the completion point
    */
   public List<? extends Entity> getDefinitionEntities(
-      ModuleScope globalScope, Path filePath, int line, int column) {
+      ModuleScope moduleScope, Path filePath, int line, int column) {
     Optional<PositionContext> positionContext =
-        PositionContext.createForPosition(globalScope, filePath, line, column);
+        PositionContext.createForPosition(moduleScope, filePath, line, column);
 
     if (!positionContext.isPresent()) {
       return ImmutableList.of();
@@ -124,12 +124,12 @@ public class DefinitionSolver {
   }
 
   private List<Optional<SolvedType>> solveMethodArgs(
-      List<? extends ExpressionTree> args, EntityScope baseScope, ModuleScope globalScope) {
+      List<? extends ExpressionTree> args, EntityScope baseScope, ModuleScope moduleScope) {
     return args.stream()
         .map(
             expression ->
                 expressionSolver.solve(
-                    expression, globalScope, baseScope, ((JCTree) expression).getStartPosition()))
+                    expression, moduleScope, baseScope, ((JCTree) expression).getStartPosition()))
         .collect(ImmutableList.toImmutableList());
   }
 

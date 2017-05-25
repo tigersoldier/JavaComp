@@ -177,14 +177,14 @@ public class DefinitionSolverTest extends BaseTest {
     TextPosition pos = locateSymbol(symbolLocator);
     assertThat(
             definitionSolver.getDefinitionEntities(
-                globalScope, Paths.get(symbolLocator.filename), pos.getLine(), pos.getCharacter()))
+                moduleScope, Paths.get(symbolLocator.filename), pos.getLine(), pos.getCharacter()))
         .named(symbolLocator.toString())
         .containsExactly(expected);
   }
 
   private void assertDefinition(
       String filename, String symbolContext, String symbol, String expectedQualifiedNamed) {
-    Entity expected = TestUtil.lookupEntity(expectedQualifiedNamed, globalScope);
+    Entity expected = TestUtil.lookupEntity(expectedQualifiedNamed, moduleScope);
     assertDefinition(filename, symbolContext, symbol, expected);
   }
 }
