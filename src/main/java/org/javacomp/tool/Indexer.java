@@ -7,6 +7,8 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import org.javacomp.file.FileChangeListener;
 import org.javacomp.file.FileManager;
@@ -15,17 +17,25 @@ import org.javacomp.options.IndexOptions;
 import org.javacomp.project.Project;
 import org.javacomp.storage.IndexStore;
 
-/** Creates index files for specified source code. */
+/**
+ * Creates index files for specified source code.
+ *
+ * <p>Usage: Indexer <root path> <output file> <ignored paths...>
+ */
 public class Indexer {
 
   private final Path rootPath;
   private final FileManager fileManager;
   private final Project project;
 
-  public Indexer(String rootPath) {
+  public Indexer(String rootPath, List<String> ignoredPaths) {
     this.rootPath = Paths.get(rootPath);
     this.fileManager = new SimpleFileManager();
-    this.project = new Project(fileManager, this.rootPath.toUri(), IndexOptions.PUBLIC_READONLY);
+    this.project =
+        new Project(
+            fileManager,
+            this.rootPath.toUri(),
+            IndexOptions.PUBLIC_READONLY_BUILDER.setIgnorePaths(ignoredPaths).build());
   }
 
   public void run(String indexFile) {
@@ -34,7 +44,16 @@ public class Indexer {
   }
 
   public static void main(String[] args) {
-    new Indexer(args[0]).run(args[1]);
+    if (args.length < 2) {
+      System.out.println("Usage: Indexer <root path> <output file> <ignored paths...>");
+      return;
+    }
+    List<String> ignorePaths = new ArrayList<>();
+    for (int i = 0; i < args.length; i++) {
+      ignorePaths.add(args[i]);
+    }
+
+    new Indexer(args[0], ignorePaths).run(args[1]);
   }
 
   public static class SimpleFileManager implements FileManager {

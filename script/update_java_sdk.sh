@@ -11,16 +11,16 @@ function clone {
 
 function index {
     echo Indexing $JDK_CLASSES_DIR
-    bazel run src/main/java/org/javacomp/tool:Indexer -- $JDK_CLASSES_DIR /tmp/index.json
+    bazel run src/main/java/org/javacomp/tool:Indexer -- $JDK_CLASSES_DIR $ROOT_DIR/resources/jdk/index.json
 }
 
 parse_args() {
-    skip_clone=false
+    clone=false
     for arg in "$@"
     do
         case $arg in
-            -s|--skip-clone)
-                skip_clone=true
+            -c|--clone-source)
+                clone=true
                 ;;
         esac
     done
@@ -29,7 +29,7 @@ parse_args() {
 function main {
     parse_args $@
 
-    if [[ $skip_clone = false ]]; then
+    if [[ ( $clone = true ) || ( ! ( -d openjdk_src ) ) ]]; then
         clone
     fi
     index

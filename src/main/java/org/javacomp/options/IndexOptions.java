@@ -11,11 +11,8 @@ public abstract class IndexOptions {
   public static final IndexOptions.Builder FULL_INDEX_BUILDER =
       IndexOptions.builder().setShouldIndexMethodContent(true).setShouldIndexNonPublic(true);
   /** Indexes only public classes/methods/etc... without indexing the contents. */
-  public static final IndexOptions PUBLIC_READONLY =
-      IndexOptions.builder()
-          .setShouldIndexNonPublic(false)
-          .setShouldIndexMethodContent(false)
-          .build();
+  public static final IndexOptions.Builder PUBLIC_READONLY_BUILDER =
+      IndexOptions.builder().setShouldIndexNonPublic(false).setShouldIndexMethodContent(false);
 
   public abstract boolean shouldIndexNonPublic();
 

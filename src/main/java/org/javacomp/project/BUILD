@@ -1,6 +1,9 @@
 java_library(
     name = "project",
     srcs = glob(["*.java"]),
+    resources = [
+        "//resources/jdk:index.json",
+    ],
     visibility = ["//visibility:public"],
     deps = [
         "//external:guava",
@@ -12,5 +15,6 @@ java_library(
         "//src/main/java/org/javacomp/options",
         "//src/main/java/org/javacomp/parser",
         "//src/main/java/org/javacomp/reference",
+        "//src/main/java/org/javacomp/storage",
     ],
 )

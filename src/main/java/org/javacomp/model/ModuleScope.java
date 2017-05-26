@@ -27,11 +27,13 @@ public class ModuleScope implements EntityScope {
   // Map of filename -> FileScope.
   private final Map<String, FileScope> fileScopeMap;
   private final PackageScope rootPackage;
+  private final List<ModuleScope> dependingModuleScopes;
 
   public ModuleScope() {
     this.nameToFileMap = HashMultimap.create();
     this.fileScopeMap = new HashMap<>();
     this.rootPackage = new PackageScope();
+    this.dependingModuleScopes = new ArrayList<>();
   }
 
   @Override
@@ -156,5 +158,13 @@ public class ModuleScope implements EntityScope {
   @Override
   public Optional<EntityScope> getParentScope() {
     return Optional.empty();
+  }
+
+  public void addDependingModuleScope(ModuleScope dependingModuleScope) {
+    dependingModuleScopes.add(dependingModuleScope);
+  }
+
+  public List<ModuleScope> getDependingModuleScopes() {
+    return ImmutableList.copyOf(dependingModuleScopes);
   }
 }

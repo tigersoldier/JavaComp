@@ -1,10 +1,14 @@
 package org.javacomp.project;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Range;
 import com.sun.source.tree.LineMap;
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -38,14 +42,16 @@ import org.javacomp.parser.ParserContext;
 import org.javacomp.reference.DefinitionSolver;
 import org.javacomp.reference.MethodSignatures;
 import org.javacomp.reference.SignatureSolver;
+import org.javacomp.storage.IndexStore;
 
 /** Handles all files in a project. */
 public class Project {
   private static final JLogger logger = JLogger.createForEnclosingClass();
 
   private static final String JAVA_EXTENSION = ".java";
+  private static final String JDK_RESOURCE_PATH = "/resources/jdk/index.json";
 
-  private final ModuleScope moduleScope;
+  private final ModuleScope projectModuleScope;
   private final AstScanner astScanner;
   private final Completor completor;
   private final DefinitionSolver definitionSolver;
@@ -61,7 +67,7 @@ public class Project {
   private boolean initialized;
 
   public Project(FileManager fileManager, URI rootUri, IndexOptions indexOptions) {
-    moduleScope = new ModuleScope();
+    projectModuleScope = new ModuleScope();
     astScanner = new AstScanner(indexOptions);
     completor = new Completor();
     parserContext = new ParserContext();
@@ -88,6 +94,22 @@ public class Project {
     fileManager.setFileChangeListener(new ProjectFileChangeListener());
 
     walkDirectory(Paths.get(rootUri));
+
+    ModuleScope jdkModuleScope = loadJdkModule();
+    projectModuleScope.addDependingModuleScope(jdkModuleScope);
+  }
+
+  private ModuleScope loadJdkModule() {
+    logger.fine("Loading JDK module");
+    try (BufferedReader reader =
+        new BufferedReader(
+            new InputStreamReader(this.getClass().getResourceAsStream(JDK_RESOURCE_PATH), UTF_8))) {
+      logger.fine("JDK module loaded");
+      return new IndexStore().readModuleScope(reader);
+    } catch (Throwable t) {
+      logger.warning(t, "Unable to load JDK module");
+      return new ModuleScope();
+    }
   }
 
   private void walkDirectory(Path rootDir) {
@@ -133,14 +155,14 @@ public class Project {
           astScanner.startScan(
               parserContext.parse(filePath.toString(), content), filePath.toString(), content);
       fileScope.setAdjustedLineMap(adjustedLineMap);
-      moduleScope.addOrReplaceFileScope(fileScope);
+      projectModuleScope.addOrReplaceFileScope(fileScope);
     } catch (Throwable e) {
       logger.warning(e, "Failed to process file %s", filePath);
     }
   }
 
   private void removeFile(Path filePath) {
-    moduleScope.removeFile(filePath);
+    projectModuleScope.removeFile(filePath);
   }
 
   /**
@@ -153,7 +175,7 @@ public class Project {
       lastCompletedFile = filePath;
       addOrUpdateFile(filePath);
     }
-    return completor.getCompletionCandidates(moduleScope, filePath, line, column);
+    return completor.getCompletionCandidates(projectModuleScope, filePath, line, column);
   }
 
   /**
@@ -163,7 +185,7 @@ public class Project {
    */
   public List<FileTextLocation> findDefinitions(Path filePath, int line, int column) {
     List<? extends Entity> entities =
-        definitionSolver.getDefinitionEntities(moduleScope, filePath, line, column);
+        definitionSolver.getDefinitionEntities(projectModuleScope, filePath, line, column);
     return entities
         .stream()
         .map(
@@ -195,11 +217,11 @@ public class Project {
   }
 
   public MethodSignatures findMethodSignatures(Path filePath, int line, int column) {
-    return signatureSolver.getMethodSignatures(moduleScope, filePath, line, column);
+    return signatureSolver.getMethodSignatures(projectModuleScope, filePath, line, column);
   }
 
   public ModuleScope getModuleScope() {
-    return moduleScope;
+    return projectModuleScope;
   }
 
   private static boolean isJavaFile(Path filePath) {
