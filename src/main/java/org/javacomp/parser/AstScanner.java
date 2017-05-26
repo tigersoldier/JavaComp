@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import javax.lang.model.element.Modifier;
 import org.javacomp.logging.JLogger;
 import org.javacomp.model.BlockScope;
@@ -178,8 +179,7 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
 
   @Override
   public Void visitMethod(MethodTree node, EntityScope currentScope) {
-    if (!indexOptions.shouldIndexNonPublic()
-        && !node.getModifiers().getFlags().contains(Modifier.PUBLIC)) {
+    if (!shouldScanWithModifiers(currentScope, node.getModifiers().getFlags())) {
       return null;
     }
 
@@ -221,8 +221,7 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
 
   @Override
   public Void visitVariable(VariableTree node, EntityScope currentScope) {
-    if (!indexOptions.shouldIndexNonPublic()
-        && !node.getModifiers().getFlags().contains(Modifier.PUBLIC)) {
+    if (!shouldScanWithModifiers(currentScope, node.getModifiers().getFlags())) {
       return null;
     }
 
@@ -275,6 +274,20 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
   private void addScopeRange(JCTree node, EntityScope scope) {
     Range<Integer> range = getNodeRange(node);
     scopeRangeBuilder.put(range, scope);
+  }
+
+  private boolean shouldScanWithModifiers(EntityScope scope, Set<Modifier> modifiers) {
+    if (scope instanceof ClassEntity) {
+      Entity.Kind parentEntityKind = ((ClassEntity) scope).getKind();
+      if (parentEntityKind == Entity.Kind.INTERFACE || parentEntityKind == Entity.Kind.ANNOTATION) {
+        // Interface and annotation members are public by default.
+        return true;
+      }
+    }
+    if (!indexOptions.shouldIndexNonPublic() && !modifiers.contains(Modifier.PUBLIC)) {
+      return false;
+    }
+    return true;
   }
 
   private static class TypeReferenceScanner extends TreeScanner<Void, Void> {
