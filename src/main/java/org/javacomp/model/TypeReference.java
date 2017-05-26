@@ -10,6 +10,18 @@ import java.util.Collection;
 public abstract class TypeReference {
   public static final TypeReference EMPTY_TYPE =
       TypeReference.builder().setFullName().setPrimitive(false).setArray(false).build();
+  public static final TypeReference JAVA_LANG_OBJECT =
+      TypeReference.builder()
+          .setFullName("java", "lang", "Object")
+          .setPrimitive(false)
+          .setArray(false)
+          .build();
+  public static final TypeReference JAVA_LANG_ENUM =
+      TypeReference.builder()
+          .setFullName("java", "lang", "Enum")
+          .setPrimitive(false)
+          .setArray(false)
+          .build();
 
   private static final Joiner JOINER = Joiner.on(".");
 

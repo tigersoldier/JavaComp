@@ -75,7 +75,9 @@ public class CompletorTest {
 
     otherModule.addDependingModule(module);
 
-    for (String otherFile : otherFiles) {
+    List<String> otherFilesWithObject =
+        new ImmutableList.Builder<String>().add(otherFiles).add("Object.java").build();
+    for (String otherFile : otherFilesWithObject) {
       String content = getFileContent(otherFile);
       JCCompilationUnit otherCompilationUnit = parserContext.parse(otherFile, content);
       FileScope fileScope =
@@ -110,7 +112,13 @@ public class CompletorTest {
             "memberMethod",
             "staticMethod",
             "staticMethod", // TODO: Fix duplicate.
-            "org");
+            "org",
+            // From java.lang
+            "java",
+            "Object",
+            // From Object
+            "toString",
+            "toString");
     assertThat(getCandidateNames(completeTestFile("CompleteNewStatement.java")))
         .containsExactlyElementsIn(Iterables.concat(expectedMembers, keywords));
   }
@@ -120,7 +128,7 @@ public class CompletorTest {
     String baseAboveCompletion = "above./** @complete */";
     List<String> aboveCases =
         ImmutableList.of(baseAboveCompletion, baseAboveCompletion + "\nabove.aboveMethod();");
-    assertCompletion("CompleteInMethod.java", aboveCases, "aboveField", "aboveMethod");
+    assertCompletion("CompleteInMethod.java", aboveCases, "aboveField", "aboveMethod", "toString");
 
     String baseBelowCompletion = "below./** @complete */";
     List<String> belowCases =
@@ -129,7 +137,7 @@ public class CompletorTest {
             baseBelowCompletion + "\nbelow.belowMethod();",
             "above.;" + baseBelowCompletion,
             "self.new BelowClass()./** @complete */");
-    assertCompletion("CompleteInMethod.java", belowCases, "belowField", "belowMethod");
+    assertCompletion("CompleteInMethod.java", belowCases, "belowField", "belowMethod", "toString");
   }
 
   @Test
@@ -140,7 +148,7 @@ public class CompletorTest {
             "new OtherClass().innerClass./** @complete */",
             "OtherClass.java");
     assertThat(getCandidateNames(candidates))
-        .containsExactly("innerInnerClass", "getInnerInnerClass", "InnerInnerClass");
+        .containsExactly("innerInnerClass", "getInnerInnerClass", "InnerInnerClass", "toString");
   }
 
   @Test
@@ -161,7 +169,7 @@ public class CompletorTest {
             + "  AboveClass innerAboveClass;\n"
             + "  innerAboveClass./** @complete */\n"
             + "}";
-    assertCompletion("CompleteInMethod.java", content, "aboveField", "aboveMethod");
+    assertCompletion("CompleteInMethod.java", content, "aboveField", "aboveMethod", "toString");
   }
 
   @Test
@@ -175,7 +183,7 @@ public class CompletorTest {
             getCandidateNames(
                 completeWithContent(
                     "CompleteInMethod.java", "fakeString./** @complete */", "FakeString.java")))
-        .containsExactly("fakeField", "fakeMethod");
+        .containsExactly("fakeField", "fakeMethod", "toString");
   }
 
   private void assertCompletion(String filename, String toComplete, String... expectedCandidates) {
@@ -209,7 +217,9 @@ public class CompletorTest {
         List<CompletionCandidate> candidates = completeWithContent(filename, toCompleteWithMember);
         assertThat(getCandidateNames(candidates))
             .named("candidates of '" + toCompleteWithMember + "'")
-            .containsExactlyElementsIn(candidatePrefixMap.get(prefix));
+            .containsExactly((Object[]) expectedCandidates);
+        // TODO: implement query prefix
+        // .containsExactlyElementsIn(candidatePrefixMap.get(prefix));
       }
     }
   }

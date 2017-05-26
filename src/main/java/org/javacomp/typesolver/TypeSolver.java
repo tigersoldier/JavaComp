@@ -36,6 +36,8 @@ public class TypeSolver {
   private static final Optional<SolvedType> UNSOLVED = Optional.empty();
   private static final Set<Entity.Kind> CLASS_KINDS = ClassEntity.ALLOWED_KINDS;
   private static final List<String> JAVA_LANG_QUALIFIERS = ImmutableList.of("java", "lang");
+  private static final List<String> JAVA_LANG_OBJECT_QUALIFIERS =
+      ImmutableList.of("java", "lang", "Object");
 
   public Optional<SolvedType> solve(
       TypeReference typeReference, Module module, EntityScope parentScope) {
@@ -488,15 +490,18 @@ public class TypeSolver {
     }
 
     private final Deque<ClassReference> classQueue;
+    private final Set<Entity> visitedClassEntity;
     private final ClassEntity classEntity;
     private final Module module;
 
     private boolean firstItem;
+    private boolean javaLangObjectAdded;
 
     public ClassHierarchyIterator(ClassEntity classEntity, Module module) {
       this.classEntity = classEntity;
       this.module = module;
       this.classQueue = new ArrayDeque<>();
+      this.visitedClassEntity = new HashSet<>();
       this.firstItem = true;
     }
 
@@ -511,12 +516,30 @@ public class TypeSolver {
         ClassReference classReference = classQueue.removeFirst();
         Optional<SolvedType> solvedType =
             solve(classReference.classType, module, classReference.baseScope);
-        if (solvedType.isPresent()) {
-          if (solvedType.get().isPrimitive()) {
-            throw new RuntimeException(classReference.classType + " " + solvedType);
-          }
-          enqueueSuperClassAndInterfaces((ClassEntity) solvedType.get().getEntity());
-          return (ClassEntity) solvedType.get().getEntity();
+        if (!solvedType.isPresent()) {
+          continue;
+        }
+        if (solvedType.get().isPrimitive()) {
+          throw new RuntimeException(classReference.classType + " " + solvedType);
+        }
+
+        Entity solvedEntity = solvedType.get().getEntity();
+        if (visitedClassEntity.contains(solvedEntity)) {
+          continue;
+        }
+        visitedClassEntity.add(solvedEntity);
+        if ("java.lang.Object".equals(solvedEntity.getQualifiedName())) {
+          javaLangObjectAdded = true;
+        }
+        enqueueSuperClassAndInterfaces((ClassEntity) solvedType.get().getEntity());
+        return (ClassEntity) solvedType.get().getEntity();
+      }
+
+      if (!javaLangObjectAdded) {
+        javaLangObjectAdded = true;
+        Optional<Entity> javaLangObject = findClassInModule(module, JAVA_LANG_OBJECT_QUALIFIERS);
+        if (javaLangObject.isPresent()) {
+          return (ClassEntity) javaLangObject.get();
         }
       }
       return endOfData();
@@ -527,6 +550,9 @@ public class TypeSolver {
         classQueue.addLast(
             new ClassReference(
                 classEntity.getSuperClass().get(), classEntity.getParentScope().get()));
+      } else if (classEntity.getKind() == Entity.Kind.ENUM) {
+        classQueue.addLast(
+            new ClassReference(TypeReference.JAVA_LANG_ENUM, classEntity.getParentScope().get()));
       }
       for (TypeReference iface : classEntity.getInterfaces()) {
         classQueue.addLast(new ClassReference(iface, classEntity.getParentScope().get()));
