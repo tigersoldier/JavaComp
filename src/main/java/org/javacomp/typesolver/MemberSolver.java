@@ -56,9 +56,7 @@ public class MemberSolver {
 
     ////////
     //  foo.bar
-    Entity memberEntity =
-        typeSolver.findEntityMember(identifier, baseType.getEntity(), module, allowedKinds);
-    return Optional.ofNullable(memberEntity);
+    return typeSolver.findEntityMember(identifier, baseType.getEntity(), module, allowedKinds);
   }
 
   /**

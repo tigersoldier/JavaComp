@@ -14,7 +14,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import javax.annotation.Nullable;
 import org.javacomp.logging.JLogger;
 import org.javacomp.model.AggregatePackageScope;
 import org.javacomp.model.ClassEntity;
@@ -45,26 +44,24 @@ public class TypeSolver {
     }
 
     List<String> fullName = typeReference.getFullName();
-    ClassEntity currentClass =
-        (ClassEntity)
-            findEntityInScope(
-                    fullName.get(0),
-                    module,
-                    parentScope,
-                    -1 /* position not useful for solving types */,
-                    CLASS_KINDS)
-                .orElse(null);
+    Optional<Entity> currentClass =
+        findEntityInScope(
+            fullName.get(0),
+            module,
+            parentScope,
+            -1 /* position not useful for solving types */,
+            CLASS_KINDS);
     // Find the rest of the name parts, if exist.
-    for (int i = 1; currentClass != null && i < fullName.size(); i++) {
+    for (int i = 1; currentClass.isPresent() && i < fullName.size(); i++) {
       String innerClassName = fullName.get(i);
       currentClass =
-          (ClassEntity) findClassMember(innerClassName, currentClass, module, CLASS_KINDS);
-      if (currentClass == null) {
+          findClassMember(innerClassName, (ClassEntity) currentClass.get(), module, CLASS_KINDS);
+      if (!currentClass.isPresent()) {
         return Optional.empty();
       }
     }
-    if (currentClass != null) {
-      return Optional.of(createSolvedType(currentClass, typeReference));
+    if (currentClass.isPresent()) {
+      return Optional.of(createSolvedType(currentClass.get(), typeReference));
     }
 
     // The first part of the type full name is not known class inside the package. Try to find in
@@ -93,7 +90,9 @@ public class TypeSolver {
 
         currentEntity = Iterables.getFirst(entities, null);
       } else if (currentScope instanceof ClassEntity) {
-        currentEntity = findClassMember(qualifier, (ClassEntity) currentScope, module, CLASS_KINDS);
+        currentEntity =
+            findClassMember(qualifier, (ClassEntity) currentScope, module, CLASS_KINDS)
+                .orElse(null);
         if (currentEntity == null) {
           break;
         }
@@ -203,19 +202,18 @@ public class TypeSolver {
     // Not found in current file. Try to find in the same package.
     if (fileScope != null) {
       List<String> packageQualifiers = fileScope.getPackageQualifiers();
-      PackageScope packageScope = findPackage(module, packageQualifiers);
-      if (packageScope != null) {
-        Entity foundEntity = findClassInPackage(name, packageScope);
-        if (foundEntity != null) {
-          return ImmutableList.of(foundEntity);
+      Optional<PackageScope> packageScope = findPackage(module, packageQualifiers);
+      if (packageScope.isPresent()) {
+        Optional<Entity> foundEntity = findClassInPackage(name, packageScope.get());
+        if (foundEntity.isPresent()) {
+          return ImmutableList.of(foundEntity.get());
         }
       }
     }
     return foundEntities;
   }
 
-  @Nullable
-  Entity findEntityMember(
+  Optional<Entity> findEntityMember(
       String name, Entity entity, Module module, Set<Entity.Kind> allowedKinds) {
     if (entity instanceof ClassEntity) {
       return findClassMember(name, (ClassEntity) entity, module, allowedKinds);
@@ -224,25 +222,24 @@ public class TypeSolver {
     }
   }
 
-  @Nullable
-  Entity findClassMember(
+  Optional<Entity> findClassMember(
       String name, ClassEntity classEntity, Module module, Set<Entity.Kind> allowedKinds) {
     for (ClassEntity classInHierarchy : classHierarchy(classEntity, module)) {
-      Entity memberEntity = findDirectMember(name, classInHierarchy, allowedKinds);
-      if (memberEntity != null) {
+      Optional<Entity> memberEntity = findDirectMember(name, classInHierarchy, allowedKinds);
+      if (memberEntity.isPresent()) {
         return memberEntity;
       }
     }
-    return null;
+    return Optional.empty();
   }
 
   List<Entity> findClassMembers(
       String name, ClassEntity classEntity, Module module, Set<Entity.Kind> allowedKinds) {
     // Non-method members can have only one entity.
     if (!allowedKinds.contains(Entity.Kind.METHOD)) {
-      Entity classMember = findClassMember(name, classEntity, module, allowedKinds);
-      if (classMember != null) {
-        return ImmutableList.of(classMember);
+      Optional<Entity> classMember = findClassMember(name, classEntity, module, allowedKinds);
+      if (classMember.isPresent()) {
+        return ImmutableList.of(classMember.get());
       } else {
         return ImmutableList.of();
       }
@@ -253,9 +250,9 @@ public class TypeSolver {
       // Contains non-method members, don't look for all of them, just get the applicable one.
       Set<Entity.Kind> nonMethodKinds =
           Sets.filter(allowedKinds, kind -> kind != Entity.Kind.METHOD);
-      Entity nonMemberEntity = findClassMember(name, classEntity, module, nonMethodKinds);
-      if (nonMemberEntity != null) {
-        builder.add(nonMemberEntity);
+      Optional<Entity> nonMemberEntity = findClassMember(name, classEntity, module, nonMethodKinds);
+      if (nonMemberEntity.isPresent()) {
+        builder.add(nonMemberEntity.get());
       }
     }
 
@@ -270,14 +267,14 @@ public class TypeSolver {
     return findClassMembers(name, classEntity, module, Sets.immutableEnumSet(Entity.Kind.METHOD));
   }
 
-  @Nullable
-  Entity findDirectMember(String name, EntityScope entityScope, Set<Entity.Kind> allowedKinds) {
+  Optional<Entity> findDirectMember(
+      String name, EntityScope entityScope, Set<Entity.Kind> allowedKinds) {
     for (Entity member : entityScope.getMemberEntities().get(name)) {
       if (allowedKinds.contains(member.getKind())) {
-        return member;
+        return Optional.of(member);
       }
     }
-    return null;
+    return Optional.empty();
   }
 
   private List<Entity> findEntitiesInFile(
@@ -295,9 +292,9 @@ public class TypeSolver {
     }
 
     if (allowedKinds.contains(Entity.Kind.FIELD)) {
-      Entity foundField = findImportedFieldInFile(name, fileScope, module);
-      if (foundField != null) {
-        builder.add(foundField);
+      Optional<VariableEntity> foundField = findImportedFieldInFile(name, fileScope, module);
+      if (foundField.isPresent()) {
+        builder.add(foundField.get());
       }
     }
     return builder.build();
@@ -364,9 +361,10 @@ public class TypeSolver {
     for (List<String> onDemandClassQualifiers : fileScope.getOnDemandClassImportQualifiers()) {
       Optional<Entity> classOrPackage = findClassOrPackage(onDemandClassQualifiers, module);
       if (classOrPackage.isPresent()) {
-        ClassEntity classEntity = findClass(name, classOrPackage.get().getChildScope(), module);
-        if (classEntity != null) {
-          return Optional.of(classEntity);
+        Optional<Entity> classEntity =
+            findClass(name, classOrPackage.get().getChildScope(), module);
+        if (classEntity.isPresent()) {
+          return classEntity;
         }
       }
     }
@@ -380,10 +378,10 @@ public class TypeSolver {
     return ImmutableList.of();
   }
 
-  @Nullable
-  private VariableEntity findImportedFieldInFile(String name, FileScope fileScope, Module module) {
+  private Optional<VariableEntity> findImportedFieldInFile(
+      String name, FileScope fileScope, Module module) {
     // TODO: handle static import.
-    return null;
+    return Optional.empty();
   }
 
   /**
@@ -392,28 +390,25 @@ public class TypeSolver {
    * @param baseScope where to find the class. Must be either a {@link PackageScope} or a {@link
    *     ClassEntity}
    */
-  @Nullable
-  private ClassEntity findClass(String name, EntityScope baseScope, Module module) {
+  private Optional<Entity> findClass(String name, EntityScope baseScope, Module module) {
     if (baseScope instanceof PackageScope) {
       return findClassInPackage(name, (PackageScope) baseScope);
     } else if (baseScope instanceof ClassEntity) {
-      return (ClassEntity) findClassMember(name, (ClassEntity) baseScope, module, CLASS_KINDS);
+      return findClassMember(name, (ClassEntity) baseScope, module, CLASS_KINDS);
     }
-    return null;
+    return Optional.empty();
   }
 
-  @Nullable
-  private ClassEntity findClassInPackage(String name, PackageScope packageScope) {
+  private Optional<Entity> findClassInPackage(String name, PackageScope packageScope) {
     for (Entity entity : packageScope.getMemberEntities().get(name)) {
       if (entity instanceof ClassEntity) {
-        return (ClassEntity) entity;
+        return Optional.of(entity);
       }
     }
-    return null;
+    return Optional.empty();
   }
 
-  @Nullable
-  private PackageScope findPackage(Module module, List<String> packageQualifiers) {
+  private Optional<PackageScope> findPackage(Module module, List<String> packageQualifiers) {
     PackageScope currentScope = getAggregateRootPackageScope(module);
     for (String qualifier : packageQualifiers) {
       PackageScope nextScope = null;
@@ -424,11 +419,11 @@ public class TypeSolver {
         }
       }
       if (nextScope == null) {
-        return null;
+        return Optional.empty();
       }
       currentScope = nextScope;
     }
-    return currentScope;
+    return Optional.of(currentScope);
   }
 
   private SolvedType createSolvedType(Entity solvedEntity, TypeReference typeReference) {
