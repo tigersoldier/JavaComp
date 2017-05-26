@@ -2,6 +2,7 @@ package org.javacomp.model;
 
 import com.google.common.collect.Range;
 import java.util.List;
+import org.javacomp.model.util.QualifiedNames;
 
 /** Represents a package. */
 public class PackageEntity extends Entity {
@@ -15,5 +16,12 @@ public class PackageEntity extends Entity {
   @Override
   public PackageScope getChildScope() {
     return packageScope;
+  }
+
+  @Override
+  public String toString() {
+    return "PackageEntity<"
+        + QualifiedNames.formatQualifiedName(getQualifiers(), getSimpleName())
+        + ">";
   }
 }

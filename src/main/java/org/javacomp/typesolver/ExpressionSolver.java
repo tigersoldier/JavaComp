@@ -184,7 +184,8 @@ public class ExpressionSolver {
     public List<Entity> visitMemberSelect(MemberSelectTree node, Void unused) {
       List<Optional<SolvedType>> savedMethodArgs = methodArgs;
       methodArgs = null;
-      SolvedType expressionType = solveEntityType(scan(node.getExpression(), null), moduleScope);
+      List<Entity> expressionEntities = scan(node.getExpression(), null);
+      SolvedType expressionType = solveEntityType(expressionEntities, moduleScope);
       methodArgs = savedMethodArgs;
       if (expressionType == null) {
         return ImmutableList.of();
@@ -248,8 +249,7 @@ public class ExpressionSolver {
       }
 
       return toList(
-          typeSolver.findDirectMember(
-              node.getName().toString(), moduleScope, ALLOWED_KINDS_NON_METHOD));
+          typeSolver.findClassOrPackage(ImmutableList.of(node.getName().toString()), moduleScope));
     }
 
     private Set<Entity.Kind> getAllowedEntityKinds() {

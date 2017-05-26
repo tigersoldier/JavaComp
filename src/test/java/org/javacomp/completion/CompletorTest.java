@@ -70,13 +70,18 @@ public class CompletorTest {
     ModuleScope moduleScope = new ModuleScope();
     moduleScope.addOrReplaceFileScope(inputFileScope);
 
+    ModuleScope otherModuleScope = new ModuleScope();
+    moduleScope.addDependingModuleScope(otherModuleScope);
+
+    otherModuleScope.addDependingModuleScope(moduleScope);
+
     for (String otherFile : otherFiles) {
       String content = getFileContent(otherFile);
       JCCompilationUnit otherCompilationUnit = parserContext.parse(otherFile, content);
       FileScope fileScope =
           new AstScanner(IndexOptions.FULL_INDEX_BUILDER.build())
               .startScan(otherCompilationUnit, otherFile, content);
-      moduleScope.addOrReplaceFileScope(fileScope);
+      otherModuleScope.addOrReplaceFileScope(fileScope);
     }
 
     return new Completor()

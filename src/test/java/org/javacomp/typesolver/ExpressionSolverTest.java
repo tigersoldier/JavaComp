@@ -23,13 +23,17 @@ import org.junit.runners.JUnit4;
 public class ExpressionSolverTest {
   private static final String TEST_DIR = "src/test/java/org/javacomp/typesolver/testdata";
   private static final List<String> TEST_FILES =
-      ImmutableList.of("TestExpression.java", "TestClass.java", "other/Shadow.java");
+      ImmutableList.of("TestExpression.java", "TestClass.java");
+  private static final List<String> OTHER_FILES =
+      ImmutableList.of("other/BaseClass.java", "other/Shadow.java");
   private static final String TOP_LEVEL_CLASS_FULL_NAME =
       "org.javacomp.typesolver.testdata.TestExpression";
   private static final String TEST_CLASS_CLASS_FULL_NAME =
       "org.javacomp.typesolver.testdata.TestClass";
   private static final String SHADOW_CLASS_FULL_NAME =
       "org.javacomp.typesolver.testdata.other.Shadow";
+  private static final String BASE_CLASS_FULL_NAME =
+      "org.javacomp.typesolver.testdata.other.BaseClass";
 
   private final TypeSolver typeSolver = new TypeSolver();
   private final OverloadSolver overloadSolver = new OverloadSolver(typeSolver);
@@ -38,6 +42,7 @@ public class ExpressionSolverTest {
       new ExpressionSolver(typeSolver, overloadSolver, memberSolver);
 
   private ModuleScope moduleScope;
+  private ModuleScope otherModuleScope;
   private ClassEntity topLevelClass;
   private ClassEntity testClassClass;
   private ClassEntity testClassFactoryClass;
@@ -45,17 +50,24 @@ public class ExpressionSolverTest {
   private ClassEntity innerAClass;
   private ClassEntity innerBClass;
   private ClassEntity innerCClass;
+  private ClassEntity baseInnerClass;
   private EntityScope methodScope;
 
   @Before
   public void setUpTestScope() throws Exception {
     moduleScope = TestUtil.parseFiles(TEST_DIR, TEST_FILES);
+    otherModuleScope = TestUtil.parseFiles(TEST_DIR, OTHER_FILES);
+    moduleScope.addDependingModuleScope(otherModuleScope);
+
     topLevelClass = (ClassEntity) TestUtil.lookupEntity(TOP_LEVEL_CLASS_FULL_NAME, moduleScope);
     testClassClass = (ClassEntity) TestUtil.lookupEntity(TEST_CLASS_CLASS_FULL_NAME, moduleScope);
     testClassFactoryClass =
         (ClassEntity)
             TestUtil.lookupEntity(TEST_CLASS_CLASS_FULL_NAME + ".TestClassFactory", moduleScope);
-    shadowClass = (ClassEntity) TestUtil.lookupEntity(SHADOW_CLASS_FULL_NAME, moduleScope);
+    shadowClass = (ClassEntity) TestUtil.lookupEntity(SHADOW_CLASS_FULL_NAME, otherModuleScope);
+    baseInnerClass =
+        (ClassEntity)
+            TestUtil.lookupEntity(BASE_CLASS_FULL_NAME + ".BaseInnerClass", otherModuleScope);
     innerAClass =
         (ClassEntity) TestUtil.lookupEntity(TOP_LEVEL_CLASS_FULL_NAME + ".InnerA", moduleScope);
     innerBClass =
@@ -87,6 +99,24 @@ public class ExpressionSolverTest {
     assertThat(solveExpression("baseInnerB", innerAClass).getEntity()).isEqualTo(innerBClass);
     assertThat(solveExpression("innerA.baseInnerB", topLevelClass).getEntity())
         .isEqualTo(innerBClass);
+  }
+
+  @Test
+  public void solveQualifiedClass() {
+    assertThat(
+            solveExpression("org.javacomp.typesolver.testdata.TestExpression", topLevelClass)
+                .getEntity())
+        .isEqualTo(topLevelClass);
+    assertThat(
+            solveExpression("org.javacomp.typesolver.testdata.other.Shadow", topLevelClass)
+                .getEntity())
+        .isEqualTo(shadowClass);
+    assertThat(
+            solveExpression(
+                    "org.javacomp.typesolver.testdata.other.BaseClass.BaseInnerClass",
+                    topLevelClass)
+                .getEntity())
+        .isEqualTo(baseInnerClass);
   }
 
   @Test

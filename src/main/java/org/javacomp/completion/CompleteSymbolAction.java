@@ -20,9 +20,11 @@ import org.javacomp.typesolver.TypeSolver;
 class CompleteEntityAction implements CompletionAction {
   private final JLogger logger = JLogger.createForEnclosingClass();
 
+  private final TypeSolver typeSolver;
   private final ClassMemberCompletor classMemberCompletor;
 
   CompleteEntityAction(TypeSolver typeSolver, ExpressionSolver expressionSolver) {
+    this.typeSolver = typeSolver;
     this.classMemberCompletor = new ClassMemberCompletor(typeSolver, expressionSolver);
   }
 
@@ -47,7 +49,11 @@ class CompleteEntityAction implements CompletionAction {
         addEntries(candidateMap, currentScope.getMemberEntities());
       }
     }
-    addEntries(candidateMap, positionContext.getModuleScope().getMemberEntities());
+    addEntries(
+        candidateMap,
+        typeSolver
+            .getAggregateRootPackageScope(positionContext.getModuleScope())
+            .getMemberEntities());
     return ImmutableList.copyOf(candidateMap.values());
   }
 

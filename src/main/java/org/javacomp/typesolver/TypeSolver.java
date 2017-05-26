@@ -16,6 +16,7 @@ import java.util.Optional;
 import java.util.Set;
 import javax.annotation.Nullable;
 import org.javacomp.logging.JLogger;
+import org.javacomp.model.AggregatePackageScope;
 import org.javacomp.model.ClassEntity;
 import org.javacomp.model.Entity;
 import org.javacomp.model.EntityScope;
@@ -76,18 +77,8 @@ public class TypeSolver {
     return Optional.empty();
   }
 
-  private Optional<Entity> findClassOrPackage(List<String> qualifiers, ModuleScope moduleScope) {
-    return findClassOrPackage(qualifiers, moduleScope, new HashSet<ModuleScope>());
-  }
-
-  private Optional<Entity> findClassOrPackage(
-      List<String> qualifiers, ModuleScope moduleScope, Set<ModuleScope> visitedModuleScopes) {
-    if (visitedModuleScopes.contains(moduleScope)) {
-      return Optional.empty();
-    }
-    visitedModuleScopes.add(moduleScope);
-
-    EntityScope currentScope = moduleScope.getRootPackage();
+  public Optional<Entity> findClassOrPackage(List<String> qualifiers, ModuleScope moduleScope) {
+    EntityScope currentScope = getAggregateRootPackageScope(moduleScope);
     Entity currentEntity = null;
     for (String qualifier : qualifiers) {
       if (currentScope instanceof PackageScope) {
@@ -120,15 +111,29 @@ public class TypeSolver {
       return Optional.of(currentEntity);
     }
 
-    for (ModuleScope dependingModuleScope : moduleScope.getDependingModuleScopes()) {
-      Optional<Entity> entityInDependingModule =
-          findClassOrPackage(qualifiers, dependingModuleScope, visitedModuleScopes);
-      if (entityInDependingModule.isPresent()) {
-        return entityInDependingModule;
-      }
-    }
-
     return Optional.empty();
+  }
+
+  public AggregatePackageScope getAggregateRootPackageScope(ModuleScope moduleScope) {
+    AggregatePackageScope aggregatedPackageScope = new AggregatePackageScope();
+    fillAggregateRootPackageScope(aggregatedPackageScope, moduleScope, new HashSet<ModuleScope>());
+    return aggregatedPackageScope;
+  }
+
+  private void fillAggregateRootPackageScope(
+      AggregatePackageScope aggregatePackageScope,
+      ModuleScope moduleScope,
+      Set<ModuleScope> visitedModuleScopes) {
+    if (visitedModuleScopes.contains(moduleScope)) {
+      return;
+    }
+    visitedModuleScopes.add(moduleScope);
+    aggregatePackageScope.addPackageScope(moduleScope.getRootPackage());
+
+    for (ModuleScope dependingModuleScope : moduleScope.getDependingModuleScopes()) {
+      fillAggregateRootPackageScope(
+          aggregatePackageScope, dependingModuleScope, visitedModuleScopes);
+    }
   }
 
   private Optional<Entity> findClassInModuleScope(
@@ -427,7 +432,7 @@ public class TypeSolver {
 
   @Nullable
   private PackageScope findPackage(ModuleScope moduleScope, List<String> packageQualifiers) {
-    PackageScope currentScope = moduleScope.getRootPackage();
+    PackageScope currentScope = getAggregateRootPackageScope(moduleScope);
     for (String qualifier : packageQualifiers) {
       PackageScope nextScope = null;
       for (Entity entity : currentScope.getMemberEntities().get(qualifier)) {
