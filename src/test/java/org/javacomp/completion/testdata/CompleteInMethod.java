@@ -2,6 +2,7 @@ package org.javacomp.completion.testdata;
 
 public class CompleteInMethod {
   public CompleteInMethod self = new CompleteInMethod();
+  public FakeString fakeString;
 
   public class AboveClass {
     public final int aboveField;

@@ -30,6 +30,8 @@ public class TypeSolverTest {
     "ondemand/OnDemand.java", "ondemand/Shadow.java",
   };
 
+  private static final String[] FAKE_JDK_FILES = {"fakejdk/FakeString.java"};
+
   private static final String TEST_DATA_PACKAGE = "org.javacomp.typesolver.testdata";
   private static final String TEST_DATA_OTHER_PACKAGE = TEST_DATA_PACKAGE + ".other";
   private static final String TEST_DATA_ONDEMAND_PACKAGE = TEST_DATA_PACKAGE + ".ondemand";
@@ -50,14 +52,17 @@ public class TypeSolverTest {
   private Module testModule;
   private Module otherModule;
   private Module onDemandModule;
+  private Module fakeJdkModule;
 
   @Before
   public void setUpTestScope() throws Exception {
     testModule = TestUtil.parseFiles(TEST_DATA_DIR, TEST_FILES);
     otherModule = TestUtil.parseFiles(TEST_DATA_DIR, OTHER_FILES);
     onDemandModule = TestUtil.parseFiles(TEST_DATA_DIR, ON_DEMAND_FILES);
+    fakeJdkModule = TestUtil.parseFiles(TEST_DATA_DIR, FAKE_JDK_FILES);
     testModule.addDependingModule(otherModule);
     testModule.addDependingModule(onDemandModule);
+    testModule.addDependingModule(fakeJdkModule);
   }
 
   @Test
@@ -143,6 +148,14 @@ public class TypeSolverTest {
     assertNotSolved(TEST_CLASS_FULL_NAME + ".returnInnerTypeNotExistMethod");
     assertNotSolved(TEST_CLASS_FULL_NAME + ".returnTypePackageNotExistMethod");
     assertNotSolved(TEST_CLASS_FULL_NAME + ".returnTypeRootPackageNotExistMethod");
+  }
+
+  @Test
+  public void solveJavaLangType() {
+    SolvedType fakeStringClass =
+        solveMethodReturnType(TEST_CLASS_FULL_NAME + ".returnFakeStringMethod");
+    assertThat(fakeStringClass.getEntity())
+        .isSameAs(TestUtil.lookupEntity("java.lang.FakeString", fakeJdkModule));
   }
 
   private SolvedType solveMethodReturnType(String qualifiedMethodName) {

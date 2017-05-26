@@ -164,6 +164,20 @@ public class CompletorTest {
     assertCompletion("CompleteInMethod.java", content, "aboveField", "aboveMethod");
   }
 
+  @Test
+  public void completeJavaLangClasses() throws Exception {
+    assertThat(
+            getCandidateNames(
+                completeWithContent(
+                    "CompleteInMethod.java", "/** @complete */", "FakeString.java")))
+        .contains("FakeString");
+    assertThat(
+            getCandidateNames(
+                completeWithContent(
+                    "CompleteInMethod.java", "fakeString./** @complete */", "FakeString.java")))
+        .containsExactly("fakeField", "fakeMethod");
+  }
+
   private void assertCompletion(String filename, String toComplete, String... expectedCandidates) {
     assertCompletion(filename, ImmutableList.of(toComplete), expectedCandidates);
   }

@@ -29,12 +29,13 @@ import org.javacomp.model.SolvedType;
 import org.javacomp.model.TypeReference;
 import org.javacomp.model.VariableEntity;
 
-/** Logic for solving the type of a given entity. */
+/** Logic for solvfing the type of a given entity. */
 public class TypeSolver {
   private static final JLogger logger = JLogger.createForEnclosingClass();
 
   private static final Optional<SolvedType> UNSOLVED = Optional.empty();
   private static final Set<Entity.Kind> CLASS_KINDS = ClassEntity.ALLOWED_KINDS;
+  private static final List<String> JAVA_LANG_QUALIFIERS = ImmutableList.of("java", "lang");
 
   public Optional<SolvedType> solve(
       TypeReference typeReference, Module module, EntityScope parentScope) {
@@ -69,6 +70,12 @@ public class TypeSolver {
     Optional<Entity> classInModule = findClassInModule(module, typeReference.getFullName());
     if (classInModule.isPresent()) {
       return Optional.of(createSolvedType(classInModule.get(), typeReference));
+    }
+
+    Optional<Entity> classInJavaLang =
+        findEntityInPackage(typeReference.getFullName(), JAVA_LANG_QUALIFIERS, module, CLASS_KINDS);
+    if (classInJavaLang.isPresent()) {
+      return Optional.of(createSolvedType(classInJavaLang.get(), typeReference));
     }
     return Optional.empty();
   }
@@ -128,6 +135,30 @@ public class TypeSolver {
     for (Module dependingModule : module.getDependingModules()) {
       fillAggregateRootPackageScope(aggregatePackageScope, dependingModule, visitedModules);
     }
+  }
+
+  private Optional<Entity> findEntityInPackage(
+      List<String> entityQualifiers,
+      List<String> packageQualifiers,
+      Module module,
+      Set<Entity.Kind> allowedKinds) {
+    if (entityQualifiers.isEmpty()) {
+      return Optional.empty();
+    }
+
+    Optional<PackageScope> packageScope = findPackage(packageQualifiers, module);
+    if (!packageScope.isPresent()) {
+      return Optional.empty();
+    }
+
+    Optional<Entity> currentEntity =
+        findClassInPackage(entityQualifiers.get(0), packageScope.get());
+    for (int i = 1; i < entityQualifiers.size() && currentEntity.isPresent(); i++) {
+      currentEntity =
+          findEntityMember(entityQualifiers.get(i), currentEntity.get(), module, allowedKinds);
+    }
+
+    return currentEntity;
   }
 
   private Optional<Entity> findClassInModule(Module module, List<String> qualifiers) {
@@ -202,7 +233,7 @@ public class TypeSolver {
     // Not found in current file. Try to find in the same package.
     if (fileScope != null) {
       List<String> packageQualifiers = fileScope.getPackageQualifiers();
-      Optional<PackageScope> packageScope = findPackage(module, packageQualifiers);
+      Optional<PackageScope> packageScope = findPackage(packageQualifiers, module);
       if (packageScope.isPresent()) {
         Optional<Entity> foundEntity = findClassInPackage(name, packageScope.get());
         if (foundEntity.isPresent()) {
@@ -408,7 +439,7 @@ public class TypeSolver {
     return Optional.empty();
   }
 
-  private Optional<PackageScope> findPackage(Module module, List<String> packageQualifiers) {
+  public Optional<PackageScope> findPackage(List<String> packageQualifiers, Module module) {
     PackageScope currentScope = getAggregateRootPackageScope(module);
     for (String qualifier : packageQualifiers) {
       PackageScope nextScope = null;

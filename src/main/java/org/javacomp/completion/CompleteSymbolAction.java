@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multimap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.javacomp.logging.JLogger;
 import org.javacomp.model.ClassEntity;
 import org.javacomp.model.Entity;
@@ -18,7 +19,9 @@ import org.javacomp.typesolver.TypeSolver;
 
 /** An action that returns any visible entities as completion candidates. */
 class CompleteEntityAction implements CompletionAction {
-  private final JLogger logger = JLogger.createForEnclosingClass();
+  private static final JLogger logger = JLogger.createForEnclosingClass();
+
+  private static final List<String> JAVA_LANG_QUALIFIERS = ImmutableList.of("java", "lang");
 
   private final TypeSolver typeSolver;
   private final ClassMemberCompletor classMemberCompletor;
@@ -52,6 +55,13 @@ class CompleteEntityAction implements CompletionAction {
     addEntries(
         candidateMap,
         typeSolver.getAggregateRootPackageScope(positionContext.getModule()).getMemberEntities());
+
+    Optional<PackageScope> javaLangPackage =
+        typeSolver.findPackage(JAVA_LANG_QUALIFIERS, positionContext.getModule());
+    if (javaLangPackage.isPresent()) {
+      addEntries(candidateMap, javaLangPackage.get().getMemberEntities());
+    }
+
     return ImmutableList.copyOf(candidateMap.values());
   }
 
