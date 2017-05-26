@@ -16,7 +16,7 @@ import java.util.Set;
 import org.javacomp.logging.JLogger;
 import org.javacomp.model.Entity;
 import org.javacomp.model.MethodEntity;
-import org.javacomp.model.ModuleScope;
+import org.javacomp.model.Module;
 import org.javacomp.parser.PositionContext;
 import org.javacomp.typesolver.ExpressionSolver;
 import org.javacomp.typesolver.MemberSolver;
@@ -42,15 +42,14 @@ public class SignatureSolver {
   }
 
   /**
-   * @param moduleScope the global scope of the project
+   * @param module the module of the project
    * @param filePath normalized path of the file to be completed
    * @param line 0-based line number of the completion point
    * @param column 0-based character offset from the beginning of the line to the completion point
    */
-  public MethodSignatures getMethodSignatures(
-      ModuleScope moduleScope, Path filePath, int line, int column) {
+  public MethodSignatures getMethodSignatures(Module module, Path filePath, int line, int column) {
     Optional<PositionContext> positionContext =
-        PositionContext.createForPosition(moduleScope, filePath, line, column);
+        PositionContext.createForPosition(module, filePath, line, column);
 
     if (!positionContext.isPresent()) {
       return emptySignature();
@@ -91,7 +90,7 @@ public class SignatureSolver {
         expressionSolver
             .solveDefinitions(
                 method,
-                positionContext.getModuleScope(),
+                positionContext.getModule(),
                 positionContext.getScopeAtPosition(),
                 -1 /* position doesn't matter for solving methods. */,
                 METHOD_KIND_SET)

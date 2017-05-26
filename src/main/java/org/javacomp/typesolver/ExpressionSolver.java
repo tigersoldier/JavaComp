@@ -21,7 +21,7 @@ import org.javacomp.model.ClassEntity;
 import org.javacomp.model.Entity;
 import org.javacomp.model.EntityScope;
 import org.javacomp.model.MethodEntity;
-import org.javacomp.model.ModuleScope;
+import org.javacomp.model.Module;
 import org.javacomp.model.PackageEntity;
 import org.javacomp.model.PrimitiveEntity;
 import org.javacomp.model.SolvedType;
@@ -60,10 +60,10 @@ public class ExpressionSolver {
    *     filtering out variables defined after the position. It's ignored if set to negative value.
    */
   public Optional<SolvedType> solve(
-      ExpressionTree expression, ModuleScope moduleScope, EntityScope baseScope, int position) {
+      ExpressionTree expression, Module module, EntityScope baseScope, int position) {
     List<Entity> definitions =
-        solveDefinitions(expression, moduleScope, baseScope, position, ALL_ENTITY_KINDS);
-    return Optional.ofNullable(solveEntityType(definitions, moduleScope));
+        solveDefinitions(expression, module, baseScope, position, ALL_ENTITY_KINDS);
+    return Optional.ofNullable(solveEntityType(definitions, module));
   }
 
   /**
@@ -76,12 +76,12 @@ public class ExpressionSolver {
    */
   public List<Entity> solveDefinitions(
       ExpressionTree expression,
-      ModuleScope moduleScope,
+      Module module,
       EntityScope baseScope,
       int position,
       Set<Entity.Kind> allowedKinds) {
     List<Entity> entities =
-        new ExpressionDefinitionScanner(moduleScope, baseScope, position, allowedKinds)
+        new ExpressionDefinitionScanner(module, baseScope, position, allowedKinds)
             .scan(expression, null /* unused */);
     if (entities == null) {
       logger.warning(
@@ -100,7 +100,7 @@ public class ExpressionSolver {
   }
 
   @Nullable
-  private SolvedType solveEntityType(List<Entity> foundEntities, ModuleScope moduleScope) {
+  private SolvedType solveEntityType(List<Entity> foundEntities, Module module) {
     if (foundEntities.isEmpty()) {
       return null;
     }
@@ -108,12 +108,12 @@ public class ExpressionSolver {
     Entity entity = foundEntities.get(0);
     if (entity instanceof MethodEntity) {
       MethodEntity methodEntity = (MethodEntity) entity;
-      return typeSolver.solve(methodEntity.getReturnType(), moduleScope, methodEntity).orElse(null);
+      return typeSolver.solve(methodEntity.getReturnType(), module, methodEntity).orElse(null);
     }
     if (entity instanceof VariableEntity) {
       VariableEntity variableEntity = (VariableEntity) entity;
       return typeSolver
-          .solve(variableEntity.getType(), moduleScope, variableEntity.getParentScope())
+          .solve(variableEntity.getType(), module, variableEntity.getParentScope())
           .orElse(null);
     }
     if (entity instanceof ClassEntity) {
@@ -130,18 +130,15 @@ public class ExpressionSolver {
 
   private class ExpressionDefinitionScanner extends TreeScanner<List<Entity>, Void> {
     private final EntityScope baseScope;
-    private final ModuleScope moduleScope;
+    private final Module module;
     private final ImmutableSet<Entity.Kind> allowedEntityKinds;
     private final int position;
 
     private List<Optional<SolvedType>> methodArgs;
 
     private ExpressionDefinitionScanner(
-        ModuleScope moduleScope,
-        EntityScope baseScope,
-        int position,
-        Set<Entity.Kind> allowedEntityKinds) {
-      this.moduleScope = moduleScope;
+        Module module, EntityScope baseScope, int position, Set<Entity.Kind> allowedEntityKinds) {
+      this.module = module;
       this.baseScope = baseScope;
       this.allowedEntityKinds = ImmutableSet.copyOf(allowedEntityKinds);
       this.methodArgs = null;
@@ -152,7 +149,7 @@ public class ExpressionSolver {
     public List<Entity> visitMethodInvocation(MethodInvocationTree node, Void unused) {
       methodArgs = new ArrayList<>(node.getArguments().size());
       for (ExpressionTree arg : node.getArguments()) {
-        methodArgs.add(solve(arg, moduleScope, baseScope, ((JCTree) arg).getStartPosition()));
+        methodArgs.add(solve(arg, module, baseScope, ((JCTree) arg).getStartPosition()));
       }
       List<Entity> methods = scan(node.getMethodSelect(), null);
       methodArgs = null;
@@ -164,13 +161,13 @@ public class ExpressionSolver {
       if (node.getEnclosingExpression() != null) {
         // <EnclosingExpression>.new <identifier>(...).
         SolvedType enclosingClassType =
-            solveEntityType(scan(node.getEnclosingExpression(), null), moduleScope);
+            solveEntityType(scan(node.getEnclosingExpression(), null), module);
         if (enclosingClassType == null
             || !(enclosingClassType.getEntity() instanceof ClassEntity)) {
           return ImmutableList.of();
         }
         return new ExpressionDefinitionScanner(
-                moduleScope,
+                module,
                 enclosingClassType.getEntity().getChildScope(),
                 -1 /* position is useless for solving classes. */,
                 allowedEntityKinds)
@@ -185,7 +182,7 @@ public class ExpressionSolver {
       List<Optional<SolvedType>> savedMethodArgs = methodArgs;
       methodArgs = null;
       List<Entity> expressionEntities = scan(node.getExpression(), null);
-      SolvedType expressionType = solveEntityType(expressionEntities, moduleScope);
+      SolvedType expressionType = solveEntityType(expressionEntities, module);
       methodArgs = savedMethodArgs;
       if (expressionType == null) {
         return ImmutableList.of();
@@ -195,15 +192,15 @@ public class ExpressionSolver {
 
       if (isMethodInvocation()) {
         return ImmutableList.copyOf(
-            memberSolver.findMethodMembers(identifier, methodArgs, expressionType, moduleScope));
+            memberSolver.findMethodMembers(identifier, methodArgs, expressionType, module));
       } else {
-        return toList(memberSolver.findNonMethodMember(identifier, expressionType, moduleScope));
+        return toList(memberSolver.findNonMethodMember(identifier, expressionType, module));
       }
     }
 
     @Override
     public List<Entity> visitArrayAccess(ArrayAccessTree node, Void unused) {
-      SolvedType expType = solveEntityType(scan(node.getExpression(), null), moduleScope);
+      SolvedType expType = solveEntityType(scan(node.getExpression(), null), module);
       if (expType == null || !expType.isArray()) {
         return ImmutableList.of();
       }
@@ -226,7 +223,7 @@ public class ExpressionSolver {
               typeSolver
                   .solve(
                       enclosingClass.getSuperClass().get(),
-                      moduleScope,
+                      module,
                       enclosingClass.getParentScope().get())
                   .map(solvedType -> solvedType.getEntity()));
         }
@@ -234,11 +231,11 @@ public class ExpressionSolver {
 
       List<Entity> entities =
           typeSolver.findEntitiesInScope(
-              node.getName().toString(), moduleScope, baseScope, position, getAllowedEntityKinds());
+              node.getName().toString(), module, baseScope, position, getAllowedEntityKinds());
 
       if (!entities.isEmpty()) {
         if (isMethodInvocation()) {
-          return overloadSolver.prioritizeMatchedMethod(entities, methodArgs, moduleScope);
+          return overloadSolver.prioritizeMatchedMethod(entities, methodArgs, module);
         }
         return entities;
       }
@@ -249,7 +246,7 @@ public class ExpressionSolver {
       }
 
       return toList(
-          typeSolver.findClassOrPackage(ImmutableList.of(node.getName().toString()), moduleScope));
+          typeSolver.findClassOrPackage(ImmutableList.of(node.getName().toString()), module));
     }
 
     private Set<Entity.Kind> getAllowedEntityKinds() {

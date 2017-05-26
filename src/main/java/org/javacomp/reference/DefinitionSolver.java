@@ -18,7 +18,7 @@ import org.javacomp.logging.JLogger;
 import org.javacomp.model.ClassEntity;
 import org.javacomp.model.Entity;
 import org.javacomp.model.EntityScope;
-import org.javacomp.model.ModuleScope;
+import org.javacomp.model.Module;
 import org.javacomp.model.SolvedType;
 import org.javacomp.model.VariableEntity;
 import org.javacomp.parser.PositionContext;
@@ -55,15 +55,15 @@ public class DefinitionSolver {
   }
 
   /**
-   * @param moduleScope the global scope of the project
+   * @param module the module of the project
    * @param filePath normalized path of the file to be completed
    * @param line 0-based line number of the completion point
    * @param column 0-based character offset from the beginning of the line to the completion point
    */
   public List<? extends Entity> getDefinitionEntities(
-      ModuleScope moduleScope, Path filePath, int line, int column) {
+      Module module, Path filePath, int line, int column) {
     Optional<PositionContext> positionContext =
-        PositionContext.createForPosition(moduleScope, filePath, line, column);
+        PositionContext.createForPosition(module, filePath, line, column);
 
     if (!positionContext.isPresent()) {
       return ImmutableList.of();
@@ -84,7 +84,7 @@ public class DefinitionSolver {
       }
       return expressionSolver.solveDefinitions(
           (ExpressionTree) leafTree,
-          positionContext.get().getModuleScope(),
+          positionContext.get().getModule(),
           positionContext.get().getScopeAtPosition(),
           positionContext.get().getPosition(),
           allowedKinds);
@@ -124,12 +124,12 @@ public class DefinitionSolver {
   }
 
   private List<Optional<SolvedType>> solveMethodArgs(
-      List<? extends ExpressionTree> args, EntityScope baseScope, ModuleScope moduleScope) {
+      List<? extends ExpressionTree> args, EntityScope baseScope, Module module) {
     return args.stream()
         .map(
             expression ->
                 expressionSolver.solve(
-                    expression, moduleScope, baseScope, ((JCTree) expression).getStartPosition()))
+                    expression, module, baseScope, ((JCTree) expression).getStartPosition()))
         .collect(ImmutableList.toImmutableList());
   }
 

@@ -16,7 +16,7 @@ import java.util.function.BiConsumer;
 import org.javacomp.file.TextPosition;
 import org.javacomp.model.FileScope;
 import org.javacomp.model.MethodEntity;
-import org.javacomp.model.ModuleScope;
+import org.javacomp.model.Module;
 import org.javacomp.model.VariableEntity;
 import org.javacomp.options.IndexOptions;
 import org.javacomp.parser.AstScanner;
@@ -38,7 +38,7 @@ public class BaseTest {
   protected static final String OTHER_PACKAGE_CLASS_FULL_NAME =
       "org.javacomp.reference.testdata.other.OtherPackageClass";
 
-  protected ModuleScope moduleScope;
+  protected Module module;
 
   protected VariableEntity innerAParam;
   protected VariableEntity otherClassParam;
@@ -47,18 +47,18 @@ public class BaseTest {
   @Before
   public final void parseJavaFiles() {
     ParserContext parserContext = new ParserContext();
-    moduleScope = new ModuleScope();
+    module = new Module();
     for (String filename : ALL_FILES) {
       String content = getFileContent(filename);
       JCCompilationUnit compilationUnit = parserContext.parse(filename, content);
       FileScope fileScope =
           new AstScanner(IndexOptions.FULL_INDEX_BUILDER.build())
               .startScan(compilationUnit, filename, content);
-      moduleScope.addOrReplaceFileScope(fileScope);
+      module.addOrReplaceFileScope(fileScope);
     }
 
     MethodEntity testMethod =
-        (MethodEntity) TestUtil.lookupEntity(TEST_CLASS_FULL_NAME + ".testMethod", moduleScope);
+        (MethodEntity) TestUtil.lookupEntity(TEST_CLASS_FULL_NAME + ".testMethod", module);
     innerAParam =
         (VariableEntity)
             Iterables.getOnlyElement(testMethod.getMemberEntities().get("innerAParam"));
@@ -123,7 +123,7 @@ public class BaseTest {
       assertThat(start).named("location of " + symbolContext).isGreaterThan(-1);
       int pos = fileContent.indexOf(symbol, start);
       assertThat(pos).named("pos").isGreaterThan(-1);
-      FileScope fileScope = moduleScope.getFileScope(filename).get();
+      FileScope fileScope = module.getFileScope(filename).get();
       LineMap lineMap = fileScope.getLineMap();
       // LineMap line and column are 1-indexed, while our API is 0-indexed.
       return TextPosition.create(

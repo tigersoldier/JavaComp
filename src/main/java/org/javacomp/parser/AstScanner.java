@@ -238,7 +238,7 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
             currentScope,
             range);
     currentScope.addEntity(variableEntity);
-    // TODO: add entity to global scope if it's a non-private static entity.
+    // TODO: add entity to module if it's a non-private static entity.
     return null;
   }
 

@@ -14,7 +14,7 @@ import java.util.Optional;
 import org.javacomp.logging.JLogger;
 import org.javacomp.model.EntityScope;
 import org.javacomp.model.FileScope;
-import org.javacomp.model.ModuleScope;
+import org.javacomp.model.Module;
 
 /** All information inferred from a given cursor position of a file. */
 @AutoValue
@@ -23,7 +23,7 @@ public abstract class PositionContext {
 
   public abstract EntityScope getScopeAtPosition();
 
-  public abstract ModuleScope getModuleScope();
+  public abstract Module getModule();
 
   public abstract TreePath getTreePath();
 
@@ -34,14 +34,14 @@ public abstract class PositionContext {
   /**
    * Creates a {@link PositionContext} instance based on the given file path and position.
    *
-   * @param moduleScope the global scope of the project
+   * @param module the module of the project
    * @param filePath normalized path of the file to be completed
    * @param line 0-based line number of the completion point
    * @param column 0-based character offset from the beginning of the line to the completion point
    */
   public static Optional<PositionContext> createForPosition(
-      ModuleScope moduleScope, Path filePath, int line, int column) {
-    Optional<FileScope> inputFileScope = moduleScope.getFileScope(filePath.toString());
+      Module module, Path filePath, int line, int column) {
+    Optional<FileScope> inputFileScope = module.getFileScope(filePath.toString());
     if (!inputFileScope.isPresent()) {
       return Optional.ofNullable(null);
     }
@@ -58,7 +58,7 @@ public abstract class PositionContext {
 
     return Optional.of(
         new AutoValue_PositionContext(
-            scopeAtPosition, moduleScope, treePath, position, compilationUnit.endPositions));
+            scopeAtPosition, module, treePath, position, compilationUnit.endPositions));
   }
 
   /** A {@link TreePathScanner} that returns the tree path enclosing the given position. */

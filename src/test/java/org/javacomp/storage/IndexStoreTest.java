@@ -16,7 +16,7 @@ import org.javacomp.model.ClassEntity;
 import org.javacomp.model.Entity;
 import org.javacomp.model.EntityScope;
 import org.javacomp.model.MethodEntity;
-import org.javacomp.model.ModuleScope;
+import org.javacomp.model.Module;
 import org.javacomp.model.PackageEntity;
 import org.javacomp.model.TypeReference;
 import org.javacomp.model.VariableEntity;
@@ -38,19 +38,18 @@ public class IndexStoreTest {
   private static final List<String> ALL_FILES =
       ImmutableList.of(TEST_CLASS_FILE, OTHER_CLASS_FILE, OTHER_PACKAGE_CLASS_FILE);
 
-  private ModuleScope moduleScope = TestUtil.parseFiles(TEST_DATA_DIR, ALL_FILES);
+  private Module module = TestUtil.parseFiles(TEST_DATA_DIR, ALL_FILES);
   private IndexStore indexStore = new IndexStore();
 
   @Test
   public void testSerializeAndDeserialize() {
-    IndexStore.SerializedModuleScope serializedModuleScope =
-        indexStore.serializeModuleScope(moduleScope);
-    ModuleScope deserializedModuleScope = indexStore.deserializeModuleScope(serializedModuleScope);
+    IndexStore.SerializedModule serializedModule = indexStore.serializeModule(module);
+    Module deserializedModule = indexStore.deserializeModule(serializedModule);
 
-    assertModuleScopesEqual(deserializedModuleScope, moduleScope);
+    assertModulesEqual(deserializedModule, module);
   }
 
-  private void assertModuleScopesEqual(ModuleScope deserialized, ModuleScope original) {
+  private void assertModulesEqual(Module deserialized, Module original) {
     assertSameMemberEntities(
         deserialized.getRootPackage(), original.getRootPackage(), new ArrayDeque<String>());
   }

@@ -26,7 +26,7 @@ import org.javacomp.model.Entity;
 import org.javacomp.model.EntityScope;
 import org.javacomp.model.FileScope;
 import org.javacomp.model.MethodEntity;
-import org.javacomp.model.ModuleScope;
+import org.javacomp.model.Module;
 import org.javacomp.model.PrimitiveEntity;
 import org.javacomp.model.SolvedType;
 import org.javacomp.model.TypeReference;
@@ -46,37 +46,37 @@ public class IndexStore {
 
   private final Map<Entity, Entity> visitedEntities = new HashMap<>();
 
-  private ModuleScope moduleScope;
+  private Module module;
 
-  public void writeModuleScopeToFile(ModuleScope moduleScope, Path filePath) {
+  public void writeModuleToFile(Module module, Path filePath) {
     try (BufferedWriter writer = Files.newBufferedWriter(filePath, UTF_8)) {
-      this.moduleScope = moduleScope;
-      gson.toJson(serializeModuleScope(moduleScope), writer);
+      this.module = module;
+      gson.toJson(serializeModule(module), writer);
     } catch (IOException e) {
       throw new RuntimeException(e);
     } finally {
-      this.moduleScope = null;
+      this.module = null;
     }
   }
 
-  public ModuleScope readModuleScopeFromFile(Path filePath) {
+  public Module readModuleFromFile(Path filePath) {
     try {
       String content = new String(Files.readAllBytes(filePath), UTF_8);
-      return deserializeModuleScope(gson.fromJson(content, SerializedModuleScope.class));
+      return deserializeModule(gson.fromJson(content, SerializedModule.class));
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
   }
 
-  public ModuleScope readModuleScope(Reader reader) {
-    return deserializeModuleScope(gson.fromJson(reader, SerializedModuleScope.class));
+  public Module readModule(Reader reader) {
+    return deserializeModule(gson.fromJson(reader, SerializedModule.class));
   }
 
   @VisibleForTesting
-  SerializedModuleScope serializeModuleScope(ModuleScope moduleScope) {
-    SerializedModuleScope ret = new SerializedModuleScope();
+  SerializedModule serializeModule(Module module) {
+    SerializedModule ret = new SerializedModule();
     ret.files =
-        moduleScope
+        module
             .getAllFiles()
             .stream()
             .collect(
@@ -90,13 +90,13 @@ public class IndexStore {
   }
 
   @VisibleForTesting
-  ModuleScope deserializeModuleScope(SerializedModuleScope serializedModuleScope) {
-    checkNotNull(serializedModuleScope.files, "serializedModuleScope.files");
-    ModuleScope moduleScope = new ModuleScope();
-    for (SerializedFileScope file : serializedModuleScope.files) {
-      moduleScope.addOrReplaceFileScope(deserializeFileScope(file));
+  Module deserializeModule(SerializedModule serializedModule) {
+    checkNotNull(serializedModule.files, "serializedModule.files");
+    Module module = new Module();
+    for (SerializedFileScope file : serializedModule.files) {
+      module.addOrReplaceFileScope(deserializeFileScope(file));
     }
-    return moduleScope;
+    return module;
   }
 
   private SerializedFileScope serializeFileScopes(String packageName, List<FileScope> fileScopes) {
@@ -309,7 +309,7 @@ public class IndexStore {
     SerializedType ret = new SerializedType();
     Optional<SolvedType> optionalSolvedType;
     try {
-      optionalSolvedType = typeSolver.solve(type, moduleScope, baseScope);
+      optionalSolvedType = typeSolver.solve(type, module, baseScope);
     } catch (Throwable t) {
       logger.warning(t, "Error on solving type %s in %s", type, baseScope);
       optionalSolvedType = Optional.empty();
@@ -337,7 +337,7 @@ public class IndexStore {
   }
 
   @VisibleForTesting
-  static class SerializedModuleScope {
+  static class SerializedModule {
     private List<SerializedFileScope> files;
   }
 

@@ -40,7 +40,7 @@ public class Indexer {
 
   public void run(String indexFile) {
     project.initialize();
-    new IndexStore().writeModuleScopeToFile(project.getModuleScope(), Paths.get(indexFile));
+    new IndexStore().writeModuleToFile(project.getModule(), Paths.get(indexFile));
   }
 
   public static void main(String[] args) {

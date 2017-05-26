@@ -33,7 +33,7 @@ import org.javacomp.logging.JLogger;
 import org.javacomp.model.Entity;
 import org.javacomp.model.EntityScope;
 import org.javacomp.model.FileScope;
-import org.javacomp.model.ModuleScope;
+import org.javacomp.model.Module;
 import org.javacomp.options.IndexOptions;
 import org.javacomp.parser.AstScanner;
 import org.javacomp.parser.FileContentFixer;
@@ -51,7 +51,7 @@ public class Project {
   private static final String JAVA_EXTENSION = ".java";
   private static final String JDK_RESOURCE_PATH = "/resources/jdk/index.json";
 
-  private final ModuleScope projectModuleScope;
+  private final Module projectModule;
   private final AstScanner astScanner;
   private final Completor completor;
   private final DefinitionSolver definitionSolver;
@@ -67,7 +67,7 @@ public class Project {
   private boolean initialized;
 
   public Project(FileManager fileManager, URI rootUri, IndexOptions indexOptions) {
-    projectModuleScope = new ModuleScope();
+    projectModule = new Module();
     astScanner = new AstScanner(indexOptions);
     completor = new Completor();
     parserContext = new ParserContext();
@@ -95,20 +95,20 @@ public class Project {
 
     walkDirectory(Paths.get(rootUri));
 
-    ModuleScope jdkModuleScope = loadJdkModule();
-    projectModuleScope.addDependingModuleScope(jdkModuleScope);
+    Module jdkModule = loadJdkModule();
+    projectModule.addDependingModule(jdkModule);
   }
 
-  private ModuleScope loadJdkModule() {
+  private Module loadJdkModule() {
     logger.fine("Loading JDK module");
     try (BufferedReader reader =
         new BufferedReader(
             new InputStreamReader(this.getClass().getResourceAsStream(JDK_RESOURCE_PATH), UTF_8))) {
       logger.fine("JDK module loaded");
-      return new IndexStore().readModuleScope(reader);
+      return new IndexStore().readModule(reader);
     } catch (Throwable t) {
       logger.warning(t, "Unable to load JDK module");
-      return new ModuleScope();
+      return new Module();
     }
   }
 
@@ -155,14 +155,14 @@ public class Project {
           astScanner.startScan(
               parserContext.parse(filePath.toString(), content), filePath.toString(), content);
       fileScope.setAdjustedLineMap(adjustedLineMap);
-      projectModuleScope.addOrReplaceFileScope(fileScope);
+      projectModule.addOrReplaceFileScope(fileScope);
     } catch (Throwable e) {
       logger.warning(e, "Failed to process file %s", filePath);
     }
   }
 
   private void removeFile(Path filePath) {
-    projectModuleScope.removeFile(filePath);
+    projectModule.removeFile(filePath);
   }
 
   /**
@@ -175,7 +175,7 @@ public class Project {
       lastCompletedFile = filePath;
       addOrUpdateFile(filePath);
     }
-    return completor.getCompletionCandidates(projectModuleScope, filePath, line, column);
+    return completor.getCompletionCandidates(projectModule, filePath, line, column);
   }
 
   /**
@@ -185,7 +185,7 @@ public class Project {
    */
   public List<FileTextLocation> findDefinitions(Path filePath, int line, int column) {
     List<? extends Entity> entities =
-        definitionSolver.getDefinitionEntities(projectModuleScope, filePath, line, column);
+        definitionSolver.getDefinitionEntities(projectModule, filePath, line, column);
     return entities
         .stream()
         .map(
@@ -217,11 +217,11 @@ public class Project {
   }
 
   public MethodSignatures findMethodSignatures(Path filePath, int line, int column) {
-    return signatureSolver.getMethodSignatures(projectModuleScope, filePath, line, column);
+    return signatureSolver.getMethodSignatures(projectModule, filePath, line, column);
   }
 
-  public ModuleScope getModuleScope() {
-    return projectModuleScope;
+  public Module getModule() {
+    return projectModule;
   }
 
   private static boolean isJavaFile(Path filePath) {
@@ -239,7 +239,7 @@ public class Project {
         }
       } else if (changeKind == StandardWatchEventKinds.ENTRY_DELETE) {
         // Do not check if the file is a java source file here. Deleted file is not a regular file.
-        // The global scope handles nonexistence file correctly.
+        // The module handles nonexistence file correctly.
         removeFile(filePath);
       }
     }

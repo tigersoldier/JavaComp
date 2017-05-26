@@ -6,7 +6,7 @@ import com.sun.source.util.TreePath;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
-import org.javacomp.model.ModuleScope;
+import org.javacomp.model.Module;
 import org.javacomp.parser.PositionContext;
 import org.javacomp.typesolver.ExpressionSolver;
 import org.javacomp.typesolver.MemberSolver;
@@ -30,13 +30,13 @@ public class Completor {
   }
 
   /**
-   * @param moduleScope the global scope of the project
+   * @param module the module of the project
    * @param filePath normalized path of the file to be completed
    * @param line 0-based line number of the completion point
    * @param column 0-based character offset from the beginning of the line to the completion point
    */
   public List<CompletionCandidate> getCompletionCandidates(
-      ModuleScope moduleScope, Path filePath, int line, int column) {
+      Module module, Path filePath, int line, int column) {
     if (column > 0) {
       // PositionContext gets the tree path whose leaf node includes the position
       // (position < node's endPosition). However, for completions, we want the leaf node either
@@ -46,7 +46,7 @@ public class Completor {
       column--;
     }
     Optional<PositionContext> positionContext =
-        PositionContext.createForPosition(moduleScope, filePath, line, column);
+        PositionContext.createForPosition(module, filePath, line, column);
 
     if (!positionContext.isPresent()) {
       return ImmutableList.of();

@@ -19,7 +19,7 @@ import org.javacomp.logging.JLogger;
 import org.javacomp.model.ClassEntity;
 import org.javacomp.model.Entity;
 import org.javacomp.model.MethodEntity;
-import org.javacomp.model.ModuleScope;
+import org.javacomp.model.Module;
 import org.javacomp.model.PrimitiveEntity;
 import org.javacomp.model.SolvedType;
 import org.javacomp.model.TypeReference;
@@ -116,11 +116,11 @@ public class OverloadSolver {
    *
    * @param methods a list of method overloads to be picked from. Must not be empty
    * @param argumentTypes types of arguments passed to invoke the method
-   * @param moduleScope the moduleScope to solve the argument and parameter types within
+   * @param module the module to solve the argument and parameter types within
    * @return one of the methods in {@code methods}
    */
   public MethodEntity solve(
-      List<Entity> entities, List<Optional<SolvedType>> argumentTypes, ModuleScope moduleScope) {
+      List<Entity> entities, List<Optional<SolvedType>> argumentTypes, Module module) {
     List<MethodEntity> methods =
         entities
             .stream()
@@ -137,7 +137,7 @@ public class OverloadSolver {
     List<MethodEntity> matchedMethods = new ArrayList<>();
     // Find the best match methods.
     for (MethodEntity method : methods) {
-      SignatureMatchLevel matchLevel = matchMethodSignature(method, argumentTypes, moduleScope);
+      SignatureMatchLevel matchLevel = matchMethodSignature(method, argumentTypes, module);
       switch (compareMatchLevel(matchLevel, previousMatchLevel)) {
         case -1:
           // The previous matched methods are better match than this method, skip it.
@@ -155,12 +155,11 @@ public class OverloadSolver {
       }
     }
 
-    return getMostSpecificMethod(
-        matchedMethods, argumentTypes.size(), previousMatchLevel, moduleScope);
+    return getMostSpecificMethod(matchedMethods, argumentTypes.size(), previousMatchLevel, module);
   }
 
   private SignatureMatchLevel matchMethodSignature(
-      MethodEntity method, List<Optional<SolvedType>> argumentTypes, ModuleScope moduleScope) {
+      MethodEntity method, List<Optional<SolvedType>> argumentTypes, Module module) {
     List<TypeReference> parameterTypes =
         method
             .getParameters()
@@ -190,8 +189,8 @@ public class OverloadSolver {
     for (int i = 0; i < parameterTypes.size() - 1; i++) {
       Optional<SolvedType> solvedParameterType =
           typeSolver.solve(
-              parameterTypes.get(i), moduleScope, method.getChildScope().getParentScope().get());
-      switch (matchArgumentType(argumentTypes.get(i), solvedParameterType, method, moduleScope)) {
+              parameterTypes.get(i), module, method.getChildScope().getParentScope().get());
+      switch (matchArgumentType(argumentTypes.get(i), solvedParameterType, method, module)) {
         case NOT_MATCH:
           return SignatureMatchLevel.TYPE_NOT_MATCH;
         case MATCH_WITH_BOXING:
@@ -212,14 +211,14 @@ public class OverloadSolver {
     Optional<SolvedType> lastParameterType =
         typeSolver.solve(
             parameterTypes.get(parameterTypes.size() - 1),
-            moduleScope,
+            module,
             method.getChildScope().getParentScope().get());
     if (!lastParameterType.isPresent()) {
       return SignatureMatchLevel.TYPE_NOT_MATCH;
     }
     TypeMatchLevel lastParameterMatchLevel =
         matchArgumentType(
-            argumentTypes.get(parameterTypes.size() - 1), lastParameterType, method, moduleScope);
+            argumentTypes.get(parameterTypes.size() - 1), lastParameterType, method, module);
     if (lastParameterMatchLevel == TypeMatchLevel.MATCH_WITH_BOXING) {
       matchLevel = SignatureMatchLevel.LOOSE_INVOCATION;
     }
@@ -240,7 +239,7 @@ public class OverloadSolver {
         lastParameterType.map((t) -> t.toBuilder().setArray(false).build());
     // Variable arity, check if any type mismatch with the last parameter.
     for (int i = parameterTypes.size(); i < argumentTypes.size(); i++) {
-      if (matchArgumentType(argumentTypes.get(i), variableVarityParameter, method, moduleScope)
+      if (matchArgumentType(argumentTypes.get(i), variableVarityParameter, method, module)
           == TypeMatchLevel.NOT_MATCH) {
         return SignatureMatchLevel.TYPE_NOT_MATCH;
       }
@@ -257,7 +256,7 @@ public class OverloadSolver {
       Optional<SolvedType> argumentType,
       Optional<SolvedType> parameterType,
       MethodEntity method,
-      ModuleScope moduleScope) {
+      Module module) {
     if (!argumentType.isPresent()) {
       // Unknown type or untyped lambda, consider as a match since it's the same to all method overloads.
       return TypeMatchLevel.MATCH_WITHOUT_BOXING;
@@ -276,7 +275,7 @@ public class OverloadSolver {
       }
     }
 
-    if (typeMatchWithoutBoxing(argumentType.get(), parameterType.get(), moduleScope)) {
+    if (typeMatchWithoutBoxing(argumentType.get(), parameterType.get(), module)) {
       return TypeMatchLevel.MATCH_WITHOUT_BOXING;
     } else if (typeMatchWithAutoBoxing(argumentType.get(), parameterType.get())) {
       return TypeMatchLevel.MATCH_WITH_BOXING;
@@ -287,7 +286,7 @@ public class OverloadSolver {
 
   /** @return {@code true} if argumentType can be assigned to parameterTypes without auto-boxing */
   private boolean typeMatchWithoutBoxing(
-      SolvedType argumentType, SolvedType parameterType, ModuleScope moduleScope) {
+      SolvedType argumentType, SolvedType parameterType, Module module) {
     if (argumentType.isArray() != parameterType.isArray()
         || argumentType.isPrimitive() != parameterType.isPrimitive()) {
       return false;
@@ -309,7 +308,7 @@ public class OverloadSolver {
     }
 
     for (ClassEntity argumentBaseClass :
-        typeSolver.classHierarchy((ClassEntity) argumentType.getEntity(), moduleScope)) {
+        typeSolver.classHierarchy((ClassEntity) argumentType.getEntity(), module)) {
       if (argumentBaseClass
           .getQualifiedName()
           .equals(parameterType.getEntity().getQualifiedName())) {
@@ -391,7 +390,7 @@ public class OverloadSolver {
       List<MethodEntity> methods,
       int numArguments,
       SignatureMatchLevel signatureMatchLevel,
-      ModuleScope moduleScope) {
+      Module module) {
     Set<MethodEntity> lessSpecificMethods = new HashSet<>();
     for (int i = 0; i < methods.size(); i++) {
       MethodEntity method1 = methods.get(i);
@@ -405,8 +404,7 @@ public class OverloadSolver {
           continue;
         }
         int compareResult =
-            compareMethodSpecificity(
-                method1, method2, numArguments, signatureMatchLevel, moduleScope);
+            compareMethodSpecificity(method1, method2, numArguments, signatureMatchLevel, module);
         switch (compareResult) {
           case -1:
             // method 1 is less specific than method 2.
@@ -445,14 +443,14 @@ public class OverloadSolver {
       MethodEntity rhs,
       int numArguments,
       SignatureMatchLevel signatureMatchLevel,
-      ModuleScope moduleScope) {
+      Module module) {
     List<Optional<SolvedType>> lhsParameterTypes =
         lhs.getParameters()
             .stream()
             .map(
                 p ->
                     typeSolver.solve(
-                        p.getType(), moduleScope, lhs.getChildScope().getParentScope().get()))
+                        p.getType(), module, lhs.getChildScope().getParentScope().get()))
             .collect(Collectors.toList());
     List<Optional<SolvedType>> rhsParameterTypes =
         rhs.getParameters()
@@ -460,7 +458,7 @@ public class OverloadSolver {
             .map(
                 p ->
                     typeSolver.solve(
-                        p.getType(), moduleScope, rhs.getChildScope().getParentScope().get()))
+                        p.getType(), module, rhs.getChildScope().getParentScope().get()))
             .collect(Collectors.toList());
     if (methodMoreSpecific(
         lhs,
@@ -469,7 +467,7 @@ public class OverloadSolver {
         rhsParameterTypes,
         numArguments,
         signatureMatchLevel,
-        moduleScope)) {
+        module)) {
       return 1;
     }
     if (methodMoreSpecific(
@@ -479,7 +477,7 @@ public class OverloadSolver {
         lhsParameterTypes,
         numArguments,
         signatureMatchLevel,
-        moduleScope)) {
+        module)) {
       return -1;
     }
     return 0;
@@ -487,11 +485,11 @@ public class OverloadSolver {
 
   /** Moves the best matched method to the first element. */
   public List<Entity> prioritizeMatchedMethod(
-      List<Entity> entities, List<Optional<SolvedType>> argumentTypes, ModuleScope moduleScope) {
+      List<Entity> entities, List<Optional<SolvedType>> argumentTypes, Module module) {
     if (entities.isEmpty()) {
       return entities;
     }
-    MethodEntity matchedMethod = solve(entities, argumentTypes, moduleScope);
+    MethodEntity matchedMethod = solve(entities, argumentTypes, module);
 
     ImmutableList.Builder<Entity> builder = new ImmutableList.Builder<>();
     builder.add(matchedMethod);
@@ -512,7 +510,7 @@ public class OverloadSolver {
       List<Optional<SolvedType>> rhsParameterTypes,
       int numArguments,
       SignatureMatchLevel signatureMatchLevel,
-      ModuleScope moduleScope) {
+      Module module) {
     int maxParameterSize =
         Math.max(Math.max(lhsParameterTypes.size(), rhsParameterTypes.size()), numArguments);
     boolean isVariableArityInvocation =
@@ -522,7 +520,7 @@ public class OverloadSolver {
           getParameterTypesAtIndex(lhsParameterTypes, i, isVariableArityInvocation)) {
         for (Optional<SolvedType> rhsParameterType :
             getParameterTypesAtIndex(rhsParameterTypes, i, isVariableArityInvocation)) {
-          if (matchArgumentType(lhsParameterType, rhsParameterType, lhs, moduleScope)
+          if (matchArgumentType(lhsParameterType, rhsParameterType, lhs, module)
               == TypeMatchLevel.NOT_MATCH) {
             return false;
           }

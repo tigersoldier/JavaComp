@@ -10,7 +10,7 @@ import org.javacomp.model.ClassEntity;
 import org.javacomp.model.Entity;
 import org.javacomp.model.EntityScope;
 import org.javacomp.model.FileScope;
-import org.javacomp.model.ModuleScope;
+import org.javacomp.model.Module;
 import org.javacomp.model.PackageScope;
 import org.javacomp.parser.PositionContext;
 import org.javacomp.typesolver.ExpressionSolver;
@@ -40,10 +40,10 @@ class CompleteEntityAction implements CompletionAction {
         addEntries(
             candidateMap,
             classMemberCompletor.getClassMembers(
-                (ClassEntity) currentScope, positionContext.getModuleScope()));
+                (ClassEntity) currentScope, positionContext.getModule()));
       } else if (currentScope instanceof FileScope) {
         FileScope fileScope = (FileScope) currentScope;
-        addEntries(candidateMap, getPackageMembers(fileScope, positionContext.getModuleScope()));
+        addEntries(candidateMap, getPackageMembers(fileScope, positionContext.getModule()));
         addImportedEntities(candidateMap, fileScope);
       } else {
         addEntries(candidateMap, currentScope.getMemberEntities());
@@ -51,14 +51,12 @@ class CompleteEntityAction implements CompletionAction {
     }
     addEntries(
         candidateMap,
-        typeSolver
-            .getAggregateRootPackageScope(positionContext.getModuleScope())
-            .getMemberEntities());
+        typeSolver.getAggregateRootPackageScope(positionContext.getModule()).getMemberEntities());
     return ImmutableList.copyOf(candidateMap.values());
   }
 
-  private Multimap<String, Entity> getPackageMembers(FileScope fileScope, ModuleScope moduleScope) {
-    PackageScope packageScope = moduleScope.getPackageForFile(fileScope);
+  private Multimap<String, Entity> getPackageMembers(FileScope fileScope, Module module) {
+    PackageScope packageScope = module.getPackageForFile(fileScope);
     return packageScope.getMemberEntities();
   }
 

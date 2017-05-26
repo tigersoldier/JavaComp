@@ -1,6 +1,5 @@
 package org.javacomp.model;
 
-import com.google.common.collect.FluentIterable;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multimap;
@@ -17,9 +16,9 @@ import org.javacomp.logging.JLogger;
 /**
  * A scope containing a set of classes and the packages defined under the root (unnamed) package.
  *
- * <p>A ModuleScope may be created from a set of Java files, index cache files, or JAR archives.
+ * <p>A Module may be created from a set of Java files, index cache files, or JAR archives.
  */
-public class ModuleScope implements EntityScope {
+public class Module {
   private static final JLogger logger = JLogger.createForEnclosingClass();
 
   // Map of simple names -> FileScope that defines the name.
@@ -27,50 +26,13 @@ public class ModuleScope implements EntityScope {
   // Map of filename -> FileScope.
   private final Map<String, FileScope> fileScopeMap;
   private final PackageScope rootPackage;
-  private final List<ModuleScope> dependingModuleScopes;
+  private final List<Module> dependingModules;
 
-  public ModuleScope() {
+  public Module() {
     this.nameToFileMap = HashMultimap.create();
     this.fileScopeMap = new HashMap<>();
     this.rootPackage = new PackageScope();
-    this.dependingModuleScopes = new ArrayList<>();
-  }
-
-  @Override
-  public synchronized List<Entity> getEntitiesWithName(final String simpleName) {
-    return FluentIterable.from(nameToFileMap.get(simpleName))
-        .transformAndConcat(fileScope -> fileScope.getGlobalEntitiesWithName(simpleName))
-        .append(rootPackage.getEntitiesWithName(simpleName))
-        .toList();
-  }
-
-  @Override
-  public synchronized Optional<Entity> getEntityWithNameAndKind(
-      String simpleName, Entity.Kind entityKind) {
-    for (Entity entity : getEntitiesWithName(simpleName)) {
-      if (entity.getKind() == entityKind) {
-        return Optional.of(entity);
-      }
-    }
-    return Optional.empty();
-  }
-
-  @Override
-  public synchronized Multimap<String, Entity> getAllEntities() {
-    return FluentIterable.from(fileScopeMap.values())
-        .transformAndConcat(fileScope -> fileScope.getGlobalEntities().values())
-        .append(rootPackage.getAllEntities().values())
-        .index(entity -> entity.getSimpleName());
-  }
-
-  @Override
-  public synchronized Multimap<String, Entity> getMemberEntities() {
-    return rootPackage.getMemberEntities();
-  }
-
-  @Override
-  public void addEntity(Entity entity) {
-    throw new UnsupportedOperationException();
+    this.dependingModules = new ArrayList<>();
   }
 
   public synchronized void addOrReplaceFileScope(FileScope fileScope) {
@@ -155,16 +117,11 @@ public class ModuleScope implements EntityScope {
     }
   }
 
-  @Override
-  public Optional<EntityScope> getParentScope() {
-    return Optional.empty();
+  public void addDependingModule(Module dependingModule) {
+    dependingModules.add(dependingModule);
   }
 
-  public void addDependingModuleScope(ModuleScope dependingModuleScope) {
-    dependingModuleScopes.add(dependingModuleScope);
-  }
-
-  public List<ModuleScope> getDependingModuleScopes() {
-    return ImmutableList.copyOf(dependingModuleScopes);
+  public List<Module> getDependingModules() {
+    return ImmutableList.copyOf(dependingModules);
   }
 }

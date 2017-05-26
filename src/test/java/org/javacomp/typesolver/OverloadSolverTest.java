@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Optional;
 import org.javacomp.model.ClassEntity;
 import org.javacomp.model.Entity;
-import org.javacomp.model.ModuleScope;
+import org.javacomp.model.Module;
 import org.javacomp.model.SolvedType;
 import org.javacomp.model.TypeReference;
 import org.javacomp.testing.TestUtil;
@@ -31,13 +31,13 @@ public class OverloadSolverTest {
   private final TypeSolver typeSolver = new TypeSolver();
   private final OverloadSolver overloadSolver = new OverloadSolver(typeSolver);
 
-  private ModuleScope moduleScope;
+  private Module module;
   private ClassEntity topLevelClass;
 
   @Before
   public void setUpTestScope() throws Exception {
-    moduleScope = TestUtil.parseFiles(TEST_DIR, TEST_FILE);
-    topLevelClass = (ClassEntity) TestUtil.lookupEntity(TOP_LEVEL_CLASS_FULL_NAME, moduleScope);
+    module = TestUtil.parseFiles(TEST_DIR, TEST_FILE);
+    topLevelClass = (ClassEntity) TestUtil.lookupEntity(TOP_LEVEL_CLASS_FULL_NAME, module);
   }
 
   @Test
@@ -120,14 +120,13 @@ public class OverloadSolverTest {
    */
   private String solveOverload(TypeReference... argumentTypes) {
     @SuppressWarnings("unchecked")
-    List<Entity> methods =
-        typeSolver.findClassMethods(OVERLOAD_METHOD_NAME, topLevelClass, moduleScope);
+    List<Entity> methods = typeSolver.findClassMethods(OVERLOAD_METHOD_NAME, topLevelClass, module);
     List<Optional<SolvedType>> solvedArgumentTypes = new ArrayList<>();
     for (TypeReference argumentType : argumentTypes) {
-      solvedArgumentTypes.add(typeSolver.solve(argumentType, moduleScope, topLevelClass));
+      solvedArgumentTypes.add(typeSolver.solve(argumentType, module, topLevelClass));
     }
     return overloadSolver
-        .solve(methods, solvedArgumentTypes, moduleScope)
+        .solve(methods, solvedArgumentTypes, module)
         .getReturnType()
         .getSimpleName();
   }

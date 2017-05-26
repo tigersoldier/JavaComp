@@ -25,7 +25,7 @@ import java.util.List;
 import org.javacomp.model.Entity;
 import org.javacomp.model.EntityScope;
 import org.javacomp.model.FileScope;
-import org.javacomp.model.ModuleScope;
+import org.javacomp.model.Module;
 import org.javacomp.options.IndexOptions;
 import org.javacomp.parser.AstScanner;
 import org.javacomp.parser.SourceFileObject;
@@ -39,18 +39,18 @@ public class TestUtil {
 
   private TestUtil() {}
 
-  /** Create a global scope containing parsed files. */
-  public static ModuleScope parseFiles(String dirName, String... javaFiles) {
+  /** Create a module containing parsed files. */
+  public static Module parseFiles(String dirName, String... javaFiles) {
     return parseFiles(dirName, ImmutableList.copyOf(javaFiles));
   }
 
-  public static ModuleScope parseFiles(String dirName, List<String> javaFiles) {
-    ModuleScope moduleScope = new ModuleScope();
+  public static Module parseFiles(String dirName, List<String> javaFiles) {
+    Module module = new Module();
     for (String filename : javaFiles) {
       Path inputFilePath = Paths.get(dirName, filename);
-      moduleScope.addOrReplaceFileScope(parseFile(inputFilePath));
+      module.addOrReplaceFileScope(parseFile(inputFilePath));
     }
-    return moduleScope;
+    return module;
   }
 
   public static String readFileContent(Path filePath) {
@@ -80,10 +80,10 @@ public class TestUtil {
         .startScan(compilationUnit, filePath.toString(), fileContent);
   }
 
-  /** Lookup an entity from global scope with qualified name. */
-  public static Entity lookupEntity(String qualifiedName, ModuleScope moduleScope) {
+  /** Lookup an entity from module with qualified name. */
+  public static Entity lookupEntity(String qualifiedName, Module module) {
     String[] qualifiers = qualifiedName.split("\\.");
-    EntityScope currentScope = moduleScope;
+    EntityScope currentScope = module.getRootPackage();
     Entity entity = null;
     List<String> currentQualifiers = new ArrayList<>();
     for (String qualifier : qualifiers) {

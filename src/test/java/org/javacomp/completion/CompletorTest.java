@@ -16,7 +16,7 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 import org.javacomp.model.FileScope;
-import org.javacomp.model.ModuleScope;
+import org.javacomp.model.Module;
 import org.javacomp.options.IndexOptions;
 import org.javacomp.parser.AstScanner;
 import org.javacomp.parser.FileContentFixer;
@@ -67,13 +67,13 @@ public class CompletorTest {
         new AstScanner(IndexOptions.FULL_INDEX_BUILDER.build())
             .startScan(compilationUnit, inputFilePath, fixedContent.getContent());
     inputFileScope.setAdjustedLineMap(fixedContent.getAdjustedLineMap());
-    ModuleScope moduleScope = new ModuleScope();
-    moduleScope.addOrReplaceFileScope(inputFileScope);
+    Module module = new Module();
+    module.addOrReplaceFileScope(inputFileScope);
 
-    ModuleScope otherModuleScope = new ModuleScope();
-    moduleScope.addDependingModuleScope(otherModuleScope);
+    Module otherModule = new Module();
+    module.addDependingModule(otherModule);
 
-    otherModuleScope.addDependingModuleScope(moduleScope);
+    otherModule.addDependingModule(module);
 
     for (String otherFile : otherFiles) {
       String content = getFileContent(otherFile);
@@ -81,11 +81,10 @@ public class CompletorTest {
       FileScope fileScope =
           new AstScanner(IndexOptions.FULL_INDEX_BUILDER.build())
               .startScan(otherCompilationUnit, otherFile, content);
-      otherModuleScope.addOrReplaceFileScope(fileScope);
+      otherModule.addOrReplaceFileScope(fileScope);
     }
 
-    return new Completor()
-        .getCompletionCandidates(moduleScope, Paths.get(inputFilePath), line, column);
+    return new Completor().getCompletionCandidates(module, Paths.get(inputFilePath), line, column);
   }
 
   private static List<String> getCandidateNames(List<CompletionCandidate> candidates) {

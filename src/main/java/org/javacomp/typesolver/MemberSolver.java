@@ -9,7 +9,7 @@ import org.javacomp.logging.JLogger;
 import org.javacomp.model.ClassEntity;
 import org.javacomp.model.Entity;
 import org.javacomp.model.MethodEntity;
-import org.javacomp.model.ModuleScope;
+import org.javacomp.model.Module;
 import org.javacomp.model.PrimitiveEntity;
 import org.javacomp.model.SolvedType;
 import org.javacomp.model.VariableEntity;
@@ -36,15 +36,12 @@ public class MemberSolver {
   }
 
   public Optional<Entity> findNonMethodMember(
-      String identifier, SolvedType baseType, ModuleScope moduleScope) {
-    return findNonMethodMember(identifier, baseType, moduleScope, ALLOWED_KINDS_NON_METHOD);
+      String identifier, SolvedType baseType, Module module) {
+    return findNonMethodMember(identifier, baseType, module, ALLOWED_KINDS_NON_METHOD);
   }
 
   public Optional<Entity> findNonMethodMember(
-      String identifier,
-      SolvedType baseType,
-      ModuleScope moduleScope,
-      Set<Entity.Kind> allowedKinds) {
+      String identifier, SolvedType baseType, Module module, Set<Entity.Kind> allowedKinds) {
     ///////
     // OuterClass.this
     if (IDENT_THIS.equals(identifier)) {
@@ -60,7 +57,7 @@ public class MemberSolver {
     ////////
     //  foo.bar
     Entity memberEntity =
-        typeSolver.findEntityMember(identifier, baseType.getEntity(), moduleScope, allowedKinds);
+        typeSolver.findEntityMember(identifier, baseType.getEntity(), module, allowedKinds);
     return Optional.ofNullable(memberEntity);
   }
 
@@ -69,10 +66,7 @@ public class MemberSolver {
    *     empty.
    */
   public List<Entity> findMethodMembers(
-      String identifier,
-      List<Optional<SolvedType>> arguments,
-      SolvedType baseType,
-      ModuleScope moduleScope) {
+      String identifier, List<Optional<SolvedType>> arguments, SolvedType baseType, Module module) {
     // Methods must be defined in classes.
     if (!(baseType.getEntity() instanceof ClassEntity)) {
       logger.warning(
@@ -81,11 +75,11 @@ public class MemberSolver {
     }
 
     List<Entity> methodEntities =
-        typeSolver.findClassMethods(identifier, (ClassEntity) baseType.getEntity(), moduleScope);
+        typeSolver.findClassMethods(identifier, (ClassEntity) baseType.getEntity(), module);
     if (methodEntities.isEmpty()) {
       return ImmutableList.of();
     }
 
-    return overloadSolver.prioritizeMatchedMethod(methodEntities, arguments, moduleScope);
+    return overloadSolver.prioritizeMatchedMethod(methodEntities, arguments, module);
   }
 }

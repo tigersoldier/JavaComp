@@ -115,7 +115,7 @@ public class SignatureSolverTest extends BaseTest {
           (textPosition, debugString) -> {
             MethodSignatures signatures =
                 signatureSolver.getMethodSignatures(
-                    moduleScope,
+                    module,
                     Paths.get(symbolLocator.filename),
                     textPosition.getLine(),
                     textPosition.getCharacter());

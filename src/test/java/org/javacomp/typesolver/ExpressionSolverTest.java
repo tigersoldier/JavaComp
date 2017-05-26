@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Optional;
 import org.javacomp.model.ClassEntity;
 import org.javacomp.model.EntityScope;
-import org.javacomp.model.ModuleScope;
+import org.javacomp.model.Module;
 import org.javacomp.model.PrimitiveEntity;
 import org.javacomp.model.SolvedType;
 import org.javacomp.testing.TestUtil;
@@ -41,8 +41,8 @@ public class ExpressionSolverTest {
   private final ExpressionSolver expressionSolver =
       new ExpressionSolver(typeSolver, overloadSolver, memberSolver);
 
-  private ModuleScope moduleScope;
-  private ModuleScope otherModuleScope;
+  private Module module;
+  private Module otherModule;
   private ClassEntity topLevelClass;
   private ClassEntity testClassClass;
   private ClassEntity testClassFactoryClass;
@@ -55,27 +55,26 @@ public class ExpressionSolverTest {
 
   @Before
   public void setUpTestScope() throws Exception {
-    moduleScope = TestUtil.parseFiles(TEST_DIR, TEST_FILES);
-    otherModuleScope = TestUtil.parseFiles(TEST_DIR, OTHER_FILES);
-    moduleScope.addDependingModuleScope(otherModuleScope);
+    module = TestUtil.parseFiles(TEST_DIR, TEST_FILES);
+    otherModule = TestUtil.parseFiles(TEST_DIR, OTHER_FILES);
+    module.addDependingModule(otherModule);
 
-    topLevelClass = (ClassEntity) TestUtil.lookupEntity(TOP_LEVEL_CLASS_FULL_NAME, moduleScope);
-    testClassClass = (ClassEntity) TestUtil.lookupEntity(TEST_CLASS_CLASS_FULL_NAME, moduleScope);
+    topLevelClass = (ClassEntity) TestUtil.lookupEntity(TOP_LEVEL_CLASS_FULL_NAME, module);
+    testClassClass = (ClassEntity) TestUtil.lookupEntity(TEST_CLASS_CLASS_FULL_NAME, module);
     testClassFactoryClass =
         (ClassEntity)
-            TestUtil.lookupEntity(TEST_CLASS_CLASS_FULL_NAME + ".TestClassFactory", moduleScope);
-    shadowClass = (ClassEntity) TestUtil.lookupEntity(SHADOW_CLASS_FULL_NAME, otherModuleScope);
+            TestUtil.lookupEntity(TEST_CLASS_CLASS_FULL_NAME + ".TestClassFactory", module);
+    shadowClass = (ClassEntity) TestUtil.lookupEntity(SHADOW_CLASS_FULL_NAME, otherModule);
     baseInnerClass =
-        (ClassEntity)
-            TestUtil.lookupEntity(BASE_CLASS_FULL_NAME + ".BaseInnerClass", otherModuleScope);
+        (ClassEntity) TestUtil.lookupEntity(BASE_CLASS_FULL_NAME + ".BaseInnerClass", otherModule);
     innerAClass =
-        (ClassEntity) TestUtil.lookupEntity(TOP_LEVEL_CLASS_FULL_NAME + ".InnerA", moduleScope);
+        (ClassEntity) TestUtil.lookupEntity(TOP_LEVEL_CLASS_FULL_NAME + ".InnerA", module);
     innerBClass =
-        (ClassEntity) TestUtil.lookupEntity(TOP_LEVEL_CLASS_FULL_NAME + ".InnerB", moduleScope);
+        (ClassEntity) TestUtil.lookupEntity(TOP_LEVEL_CLASS_FULL_NAME + ".InnerB", module);
     innerCClass =
-        (ClassEntity) TestUtil.lookupEntity(TOP_LEVEL_CLASS_FULL_NAME + ".InnerC", moduleScope);
+        (ClassEntity) TestUtil.lookupEntity(TOP_LEVEL_CLASS_FULL_NAME + ".InnerC", module);
     methodScope =
-        TestUtil.lookupEntity(TOP_LEVEL_CLASS_FULL_NAME + ".method", moduleScope).getChildScope();
+        TestUtil.lookupEntity(TOP_LEVEL_CLASS_FULL_NAME + ".method", module).getChildScope();
   }
 
   @Test
@@ -229,7 +228,7 @@ public class ExpressionSolverTest {
   private SolvedType solveExpression(String expression, EntityScope baseScope, int position) {
     ExpressionTree expressionTree = TestUtil.parseExpression(expression);
     Optional<SolvedType> solvedExpression =
-        expressionSolver.solve(expressionTree, moduleScope, baseScope, position);
+        expressionSolver.solve(expressionTree, module, baseScope, position);
     Truth8.assertThat(solvedExpression).named(expression).isPresent();
     return solvedExpression.get();
   }
@@ -237,7 +236,7 @@ public class ExpressionSolverTest {
   private void assertExpressionNotSolved(String expression, EntityScope baseScope, int position) {
     ExpressionTree expressionTree = TestUtil.parseExpression(expression);
     Optional<SolvedType> solvedExpression =
-        expressionSolver.solve(expressionTree, moduleScope, baseScope, position);
+        expressionSolver.solve(expressionTree, module, baseScope, position);
     Truth8.assertThat(solvedExpression).named(expression).isEmpty();
   }
 }
