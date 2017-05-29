@@ -38,19 +38,19 @@ class EntityCompletionCandidate implements CompletionCandidate {
             } else {
               sb.append(", ");
             }
-            sb.append(param.getType().toSimpleString());
+            sb.append(param.getType().toDisplayString());
             sb.append(" ");
             sb.append(param.getSimpleName());
           }
           sb.append("): ");
-          sb.append(method.getReturnType().toSimpleString());
+          sb.append(method.getReturnType().toDisplayString());
           return Optional.of(sb.toString());
         }
       case VARIABLE:
       case FIELD:
         {
           VariableEntity variable = (VariableEntity) entity;
-          return Optional.of(variable.getType().toSimpleString());
+          return Optional.of(variable.getType().toDisplayString());
         }
     }
     return Optional.ofNullable(null);

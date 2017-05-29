@@ -56,7 +56,7 @@ public class SignatureHelpTextDocumentHandler extends RequestHandler<TextDocumen
             .collect(ImmutableList.toImmutableList());
 
     StringBuilder sb = new StringBuilder();
-    sb.append(method.getReturnType().toSimpleString());
+    sb.append(method.getReturnType().toDisplayString());
     sb.append(" ");
     sb.append(method.getSimpleName());
     sb.append("(");
@@ -75,7 +75,7 @@ public class SignatureHelpTextDocumentHandler extends RequestHandler<TextDocumen
 
   private SignatureHelp.ParameterInformation convertParameter(VariableEntity parameter) {
     SignatureHelp.ParameterInformation paramInfo = new SignatureHelp.ParameterInformation();
-    paramInfo.label = parameter.getType().toSimpleString() + " " + parameter.getSimpleName();
+    paramInfo.label = parameter.getType().toDisplayString() + " " + parameter.getSimpleName();
     return paramInfo;
   }
 }

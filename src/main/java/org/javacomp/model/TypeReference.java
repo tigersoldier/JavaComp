@@ -48,8 +48,13 @@ public abstract class TypeReference {
     return "TypeReference<" + JOINER.join(getFullName()) + (isArray() ? "[]>" : ">");
   }
 
-  public String toSimpleString() {
-    return getSimpleName();
+  public String toDisplayString() {
+    String simpleName = getSimpleName();
+    if (isArray()) {
+      return simpleName + "[]";
+    } else {
+      return simpleName;
+    }
   }
 
   @AutoValue.Builder
