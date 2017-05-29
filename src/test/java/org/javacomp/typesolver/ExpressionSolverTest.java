@@ -6,10 +6,13 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.truth.Truth8;
 import com.sun.source.tree.ExpressionTree;
 import java.nio.file.Paths;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
 import org.javacomp.model.ClassEntity;
+import org.javacomp.model.Entity;
 import org.javacomp.model.EntityScope;
+import org.javacomp.model.MethodEntity;
 import org.javacomp.model.Module;
 import org.javacomp.model.PrimitiveEntity;
 import org.javacomp.model.SolvedType;
@@ -51,6 +54,7 @@ public class ExpressionSolverTest {
   private ClassEntity innerBClass;
   private ClassEntity innerCClass;
   private ClassEntity baseInnerClass;
+  private MethodEntity lambdaCallMethod;
   private EntityScope methodScope;
 
   @Before
@@ -73,6 +77,8 @@ public class ExpressionSolverTest {
         (ClassEntity) TestUtil.lookupEntity(TOP_LEVEL_CLASS_FULL_NAME + ".InnerB", module);
     innerCClass =
         (ClassEntity) TestUtil.lookupEntity(TOP_LEVEL_CLASS_FULL_NAME + ".InnerC", module);
+    lambdaCallMethod =
+        (MethodEntity) TestUtil.lookupEntity(TOP_LEVEL_CLASS_FULL_NAME + ".lambdaCall", module);
     methodScope =
         TestUtil.lookupEntity(TOP_LEVEL_CLASS_FULL_NAME + ".method", module).getChildScope();
   }
@@ -219,6 +225,21 @@ public class ExpressionSolverTest {
         .isSameAs(testClassClass);
     assertThat(solveExpression("testClass.new TestClassFactory()", methodScope).getEntity())
         .isSameAs(testClassFactoryClass);
+  }
+
+  @Test
+  public void solveMethodWithLambdaAsParameter() {
+    assertThat(solveDefinition("lambdaCall((arg) -> {return;})", methodScope))
+        .isSameAs(lambdaCallMethod);
+  }
+
+  private Entity solveDefinition(String expression, EntityScope baseScope) {
+    ExpressionTree expressionTree = TestUtil.parseExpression(expression);
+    List<Entity> solvedExpression =
+        expressionSolver.solveDefinitions(
+            expressionTree, module, baseScope, -1 /* position */, EnumSet.allOf(Entity.Kind.class));
+    assertThat(solvedExpression).named(expression).isNotEmpty();
+    return solvedExpression.get(0);
   }
 
   private SolvedType solveExpression(String expression, EntityScope baseScope) {

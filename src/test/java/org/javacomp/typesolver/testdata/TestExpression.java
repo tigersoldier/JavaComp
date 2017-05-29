@@ -12,6 +12,9 @@ public class TestExpression {
 
   public TestClass getTestClass();
 
+  public LambdaStub lambdaCall(LambdaStub in);
+
+
   public void method() {
     InnerA varA = new InnerA();
     InnerB varB = new InnerB();
@@ -29,4 +32,8 @@ public class TestExpression {
   }
 
   public class InnerC {}
+
+  public static interface LambdaStub {
+    void lambdaMethod(String arg);
+  }
 }

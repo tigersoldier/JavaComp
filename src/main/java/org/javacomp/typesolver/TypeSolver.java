@@ -47,6 +47,19 @@ public class TypeSolver {
     }
 
     List<String> fullName = typeReference.getFullName();
+
+    if (fullName.isEmpty()) {
+      // There can be two casese where the type reference can be empty:
+      //   1) The return type of class constructors.
+      //   2) The type of implicit lambda function.
+      //
+      // Returning empty solved type for now.
+      //
+      // TODO: solve() should never be called for case 1. For case 2 we should infer the type
+      // from the context.
+      return Optional.empty();
+    }
+
     Optional<Entity> currentClass =
         findEntityInScope(
             fullName.get(0),
