@@ -29,6 +29,7 @@ public class ExpressionSolverTest {
       ImmutableList.of("TestExpression.java", "TestClass.java");
   private static final List<String> OTHER_FILES =
       ImmutableList.of("other/BaseClass.java", "other/Shadow.java");
+  private static final List<String> FAKE_JDK_FILES = ImmutableList.of("fakejdk/FakeString.java");
   private static final String TOP_LEVEL_CLASS_FULL_NAME =
       "org.javacomp.typesolver.testdata.TestExpression";
   private static final String TEST_CLASS_CLASS_FULL_NAME =
@@ -46,6 +47,7 @@ public class ExpressionSolverTest {
 
   private Module module;
   private Module otherModule;
+  private Module fakeJdkModule;
   private ClassEntity topLevelClass;
   private ClassEntity testClassClass;
   private ClassEntity testClassFactoryClass;
@@ -54,6 +56,7 @@ public class ExpressionSolverTest {
   private ClassEntity innerBClass;
   private ClassEntity innerCClass;
   private ClassEntity baseInnerClass;
+  private ClassEntity fakeStringClass;
   private MethodEntity lambdaCallMethod;
   private EntityScope methodScope;
 
@@ -61,7 +64,9 @@ public class ExpressionSolverTest {
   public void setUpTestScope() throws Exception {
     module = TestUtil.parseFiles(TEST_DIR, TEST_FILES);
     otherModule = TestUtil.parseFiles(TEST_DIR, OTHER_FILES);
+    fakeJdkModule = TestUtil.parseFiles(TEST_DIR, FAKE_JDK_FILES);
     module.addDependingModule(otherModule);
+    module.addDependingModule(fakeJdkModule);
 
     topLevelClass = (ClassEntity) TestUtil.lookupEntity(TOP_LEVEL_CLASS_FULL_NAME, module);
     testClassClass = (ClassEntity) TestUtil.lookupEntity(TEST_CLASS_CLASS_FULL_NAME, module);
@@ -77,6 +82,7 @@ public class ExpressionSolverTest {
         (ClassEntity) TestUtil.lookupEntity(TOP_LEVEL_CLASS_FULL_NAME + ".InnerB", module);
     innerCClass =
         (ClassEntity) TestUtil.lookupEntity(TOP_LEVEL_CLASS_FULL_NAME + ".InnerC", module);
+    fakeStringClass = (ClassEntity) TestUtil.lookupEntity("java.lang.FakeString", fakeJdkModule);
     lambdaCallMethod =
         (MethodEntity) TestUtil.lookupEntity(TOP_LEVEL_CLASS_FULL_NAME + ".lambdaCall", module);
     methodScope =
@@ -231,6 +237,11 @@ public class ExpressionSolverTest {
   public void solveMethodWithLambdaAsParameter() {
     assertThat(solveDefinition("lambdaCall((arg) -> {return;})", methodScope))
         .isSameAs(lambdaCallMethod);
+  }
+
+  @Test
+  public void solveJavaLangClass() {
+    assertThat(solveDefinition("FakeString", methodScope)).isSameAs(fakeStringClass);
   }
 
   private Entity solveDefinition(String expression, EntityScope baseScope) {

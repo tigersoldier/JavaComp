@@ -87,16 +87,15 @@ public class TypeSolver {
       return Optional.of(createSolvedType(classInModule.get(), typeReference));
     }
 
-    Optional<Entity> classInJavaLang =
-        findEntityInPackage(typeReference.getFullName(), JAVA_LANG_QUALIFIERS, module, CLASS_KINDS);
-    if (classInJavaLang.isPresent()) {
-      return Optional.of(createSolvedType(classInJavaLang.get(), typeReference));
-    }
     return Optional.empty();
   }
 
   public Optional<Entity> findClassOrPackage(List<String> qualifiers, Module module) {
     EntityScope currentScope = getAggregateRootPackageScope(module);
+    if (qualifiers.isEmpty()) {
+      return Optional.empty();
+    }
+
     Entity currentEntity = null;
     for (String qualifier : qualifiers) {
       if (currentScope instanceof PackageScope) {
@@ -128,6 +127,13 @@ public class TypeSolver {
     }
     if (currentEntity != null) {
       return Optional.of(currentEntity);
+    }
+
+    // Try finding in java.lang
+    Optional<Entity> classInJavaLang =
+        findEntityInPackage(qualifiers, JAVA_LANG_QUALIFIERS, module, CLASS_KINDS);
+    if (classInJavaLang.isPresent()) {
+      return Optional.of(classInJavaLang.get());
     }
 
     return Optional.empty();
