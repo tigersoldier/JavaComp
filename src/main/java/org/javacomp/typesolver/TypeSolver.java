@@ -521,10 +521,11 @@ public class TypeSolver {
     @Override
     protected ClassEntity computeNext() {
       if (firstItem) {
-        enqueueSuperClassAndInterfaces(classEntity);
         firstItem = false;
+        visitClass(classEntity);
         return classEntity;
       }
+
       while (!classQueue.isEmpty()) {
         ClassReference classReference = classQueue.removeFirst();
         Optional<SolvedType> solvedType =
@@ -540,12 +541,9 @@ public class TypeSolver {
         if (visitedClassEntity.contains(solvedEntity)) {
           continue;
         }
-        visitedClassEntity.add(solvedEntity);
-        if ("java.lang.Object".equals(solvedEntity.getQualifiedName())) {
-          javaLangObjectAdded = true;
-        }
-        enqueueSuperClassAndInterfaces((ClassEntity) solvedType.get().getEntity());
-        return (ClassEntity) solvedType.get().getEntity();
+
+        visitClass((ClassEntity) solvedEntity);
+        return (ClassEntity) solvedEntity;
       }
 
       if (!javaLangObjectAdded) {
@@ -556,6 +554,14 @@ public class TypeSolver {
         }
       }
       return endOfData();
+    }
+
+    private void visitClass(ClassEntity classEntity) {
+      visitedClassEntity.add(classEntity);
+      if ("java.lang.Object".equals(classEntity.getQualifiedName())) {
+        javaLangObjectAdded = true;
+      }
+      enqueueSuperClassAndInterfaces(classEntity);
     }
 
     private void enqueueSuperClassAndInterfaces(ClassEntity classEntity) {
