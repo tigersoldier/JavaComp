@@ -11,6 +11,7 @@ java_library(
     deps = [
         ":requestparams",
         "//external:guava",
+        "//external:javac",
         "//external:jsr305",
         "//src/main/java/org/javacomp/completion",
         "//src/main/java/org/javacomp/file",

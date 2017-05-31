@@ -1,14 +1,15 @@
 package org.javacomp.server.protocol;
 
+import com.google.common.collect.ImmutableList;
+import com.sun.source.tree.LineMap;
 import java.nio.file.Paths;
 import java.util.List;
-import java.util.stream.Collectors;
-import org.javacomp.completion.CompletionCandidate;
-import org.javacomp.file.FileTextLocation;
+import org.javacomp.model.Entity;
+import org.javacomp.model.EntityScope;
+import org.javacomp.model.FileScope;
 import org.javacomp.project.Project;
 import org.javacomp.server.Request;
 import org.javacomp.server.Server;
-import org.javacomp.server.protocol.CompletionList.CompletionItemKind;
 
 /**
  * Handles "textDocument/definition" notification.
@@ -29,7 +30,7 @@ public class DefinitionTextDocumentHandler extends RequestHandler<TextDocumentPo
       throws Exception {
     TextDocumentPositionParams params = request.getParams();
     Project project = server.getProject();
-    List<FileTextLocation> definitions =
+    List<? extends Entity> definitions =
         project.findDefinitions(
             Paths.get(params.textDocument.uri),
             params.position.getLine(),
@@ -38,35 +39,34 @@ public class DefinitionTextDocumentHandler extends RequestHandler<TextDocumentPo
     return definitions
         .stream()
         .map(
-            loc -> {
+            entity -> {
+              com.google.common.collect.Range<Integer> range = entity.getSymbolRange();
+              EntityScope scope = entity.getChildScope();
+              while (!(scope instanceof FileScope) && scope.getParentScope().isPresent()) {
+                scope = scope.getParentScope().get();
+              }
+
+              if (!(scope instanceof FileScope)) {
+                throw new RuntimeException("Cannot reach file scope for " + entity);
+              }
+
+              FileScope fileScope = (FileScope) scope;
+              LineMap lineMap = fileScope.getLineMap();
+
               Location location = new Location();
-              location.uri = loc.getFilePath().toUri();
-              location.range = Range.createFromTextRange(loc.getRange());
+              location.range =
+                  new Range(
+                      // Start
+                      new Position(
+                          (int) lineMap.getLineNumber(range.lowerEndpoint()) - 1,
+                          (int) lineMap.getColumnNumber(range.lowerEndpoint()) - 1),
+                      new Position(
+                          (int) lineMap.getLineNumber(range.upperEndpoint()) - 1,
+                          (int) lineMap.getColumnNumber(range.upperEndpoint()) - 1));
+              location.uri = Paths.get(fileScope.getFilename()).toUri();
+
               return location;
             })
-        .collect(Collectors.toList());
-  }
-
-  private static CompletionItemKind getCompletionItemKind(CompletionCandidate.Kind candidateKind) {
-    switch (candidateKind) {
-      case CLASS:
-        return CompletionItemKind.CLASS;
-      case INTERFACE:
-        return CompletionItemKind.INTERFACE;
-      case ENUM:
-        return CompletionItemKind.ENUM;
-      case METHOD:
-        return CompletionItemKind.METHOD;
-      case VARIABLE:
-        return CompletionItemKind.VARIABLE;
-      case FIELD:
-        return CompletionItemKind.FIELD;
-      case PACKAGE:
-        return CompletionItemKind.MODULE;
-      case KEYWORD:
-        return CompletionItemKind.KEYWORD;
-      default:
-        return CompletionItemKind.UNKNOWN;
-    }
+        .collect(ImmutableList.toImmutableList());
   }
 }

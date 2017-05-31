@@ -2,8 +2,6 @@ package org.javacomp.project;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Range;
 import com.sun.source.tree.LineMap;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -23,12 +21,8 @@ import org.javacomp.completion.CompletionCandidate;
 import org.javacomp.completion.Completor;
 import org.javacomp.file.FileChangeListener;
 import org.javacomp.file.FileManager;
-import org.javacomp.file.FileTextLocation;
-import org.javacomp.file.TextPosition;
-import org.javacomp.file.TextRange;
 import org.javacomp.logging.JLogger;
 import org.javacomp.model.Entity;
-import org.javacomp.model.EntityScope;
 import org.javacomp.model.FileScope;
 import org.javacomp.model.Module;
 import org.javacomp.options.IndexOptions;
@@ -171,37 +165,8 @@ public class Project {
    * @param line 0-based line number
    * @param column 0-based character offset of the line
    */
-  public List<FileTextLocation> findDefinitions(Path filePath, int line, int column) {
-    List<? extends Entity> entities =
-        definitionSolver.getDefinitionEntities(projectModule, filePath, line, column);
-    return entities
-        .stream()
-        .map(
-            entity -> {
-              Range<Integer> range = entity.getSymbolRange();
-              EntityScope scope = entity.getChildScope();
-              while (!(scope instanceof FileScope) && scope.getParentScope().isPresent()) {
-                scope = scope.getParentScope().get();
-              }
-
-              if (!(scope instanceof FileScope)) {
-                throw new RuntimeException("Cannot reach file scope for " + entity);
-              }
-
-              FileScope fileScope = (FileScope) scope;
-              LineMap lineMap = fileScope.getLineMap();
-              TextPosition start =
-                  TextPosition.create(
-                      (int) lineMap.getLineNumber(range.lowerEndpoint()) - 1,
-                      (int) lineMap.getColumnNumber(range.lowerEndpoint()) - 1);
-              TextPosition end =
-                  TextPosition.create(
-                      (int) lineMap.getLineNumber(range.upperEndpoint()) - 1,
-                      (int) lineMap.getColumnNumber(range.upperEndpoint()) - 1);
-              TextRange textRange = TextRange.create(start, end);
-              return FileTextLocation.create(Paths.get(fileScope.getFilename()), textRange);
-            })
-        .collect(ImmutableList.toImmutableList());
+  public List<? extends Entity> findDefinitions(Path filePath, int line, int column) {
+    return definitionSolver.getDefinitionEntities(projectModule, filePath, line, column);
   }
 
   public MethodSignatures findMethodSignatures(Path filePath, int line, int column) {

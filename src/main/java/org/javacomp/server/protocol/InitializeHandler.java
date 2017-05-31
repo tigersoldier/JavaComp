@@ -32,6 +32,7 @@ public class InitializeHandler extends RequestHandler<InitializeParams> {
     result.capabilities.definitionProvider = true;
     result.capabilities.signatureHelpProvider = new InitializeResult.SignatureHelpOptions();
     result.capabilities.signatureHelpProvider.triggerCharacters = ImmutableList.of("(", ",");
+    result.capabilities.hoverProvider = true;
     return result;
   }
 }
