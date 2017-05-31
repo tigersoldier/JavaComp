@@ -52,8 +52,9 @@ class EntityCompletionCandidate implements CompletionCandidate {
           VariableEntity variable = (VariableEntity) entity;
           return Optional.of(variable.getType().toDisplayString());
         }
+      default:
+        return Optional.empty();
     }
-    return Optional.ofNullable(null);
   }
 
   public static Kind toCandidateKind(Entity.Kind entityKind) {
