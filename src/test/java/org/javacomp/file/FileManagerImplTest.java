@@ -10,6 +10,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
+import com.google.common.collect.ImmutableList;
 import java.io.OutputStream;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
@@ -54,7 +55,7 @@ public class FileManagerImplTest {
 
     executor = Executors.newFixedThreadPool(1);
 
-    fileManager = new FileManagerImpl(testDir.toUri(), executor);
+    fileManager = new FileManagerImpl(testDir.toUri(), ImmutableList.of(), executor);
     fileManager.setFileChangeListener(listener);
     // Sleep to make sure the WatchService background thread starts.
     Thread.sleep(100);

@@ -32,6 +32,21 @@ public class InitializeParams implements RequestParams {
     /** The minimum log level. Logs with the level and above will be logged. */
     @Nullable public LogLevel logLevel;
 
+    /**
+     * Pattern of paths that JavaComp should ignore.
+     *
+     * <p>The patterns are valid Java path glob patterns defined by the documentation of {@link
+     * java.nio.file.FileSystem#getPathMatcher} without {@code "glob:"} prefix.
+     *
+     * <p>When determing whether a path of a file or directory should be ignored, the path is
+     * converted into 2 froms: the filename and pseudo absolute path. A pseudo absolute path is the
+     * path without the prefix of project root path. For example, if a path is /root/path/foo/bar
+     * and the project root path is /root/path, its pseudo absolute path is /foo/bar. If a path is
+     * not under project root, its pseudo absolute path is itself.
+     *
+     * <p>Both filename of the path and its pseudo absolute path are checked by all ignore path
+     * patterns. If either form matches any of the patterns, the path is ignored.
+     */
     @Nullable public List<String> ignorePaths;
 
     @Override

@@ -2,16 +2,21 @@ package org.javacomp.tool;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.google.common.collect.ImmutableList;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.PathMatcher;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.javacomp.file.FileChangeListener;
 import org.javacomp.file.FileManager;
+import org.javacomp.file.PathUtils;
 import org.javacomp.file.TextRange;
 import org.javacomp.options.IndexOptions;
 import org.javacomp.project.Project;
@@ -30,12 +35,10 @@ public class Indexer {
 
   public Indexer(String rootPath, List<String> ignoredPaths) {
     this.rootPath = Paths.get(rootPath);
-    this.fileManager = new SimpleFileManager();
+    this.fileManager = new SimpleFileManager(this.rootPath, ignoredPaths);
     this.project =
         new Project(
-            fileManager,
-            this.rootPath.toUri(),
-            IndexOptions.PUBLIC_READONLY_BUILDER.setIgnorePaths(ignoredPaths).build());
+            fileManager, this.rootPath.toUri(), IndexOptions.PUBLIC_READONLY_BUILDER.build());
   }
 
   public void run(String indexFile) {
@@ -57,6 +60,19 @@ public class Indexer {
   }
 
   public static class SimpleFileManager implements FileManager {
+
+    private final Path rootPath;
+    private final List<PathMatcher> ignorePathMatchers;
+
+    public SimpleFileManager(Path rootPath, List<String> ignorePaths) {
+      this.rootPath = rootPath;
+      FileSystem fs = FileSystems.getDefault();
+      this.ignorePathMatchers =
+          ignorePaths
+              .stream()
+              .map(p -> fs.getPathMatcher(p))
+              .collect(ImmutableList.toImmutableList());
+    }
 
     @Override
     public void openFileForSnapshot(URI fileUri, String content) throws IOException {
@@ -102,6 +118,11 @@ public class Indexer {
     @Override
     public void shutdown() {
       // No-op
+    }
+
+    @Override
+    public boolean shouldIgnorePath(Path path) {
+      return PathUtils.shouldIgnorePath(path, rootPath, ignorePathMatchers);
     }
   }
 }

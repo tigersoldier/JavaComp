@@ -15,6 +15,7 @@ java_library(
     name = "file",
     srcs = PUBLIC_INTERFACES,
     deps = [
+        "//external:guava",
         "//third_party:auto_value",
     ],
 )

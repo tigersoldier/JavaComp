@@ -3,7 +3,6 @@ package org.javacomp.project;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Range;
 import com.sun.source.tree.LineMap;
 import java.io.BufferedReader;
@@ -19,14 +18,12 @@ import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Stream;
 import org.javacomp.completion.CompletionCandidate;
 import org.javacomp.completion.Completor;
 import org.javacomp.file.FileChangeListener;
 import org.javacomp.file.FileManager;
 import org.javacomp.file.FileTextLocation;
-import org.javacomp.file.PathUtils;
 import org.javacomp.file.TextPosition;
 import org.javacomp.file.TextRange;
 import org.javacomp.logging.JLogger;
@@ -60,8 +57,6 @@ public class Project {
   private final URI rootUri;
   private final ParserContext parserContext;
   private final FileContentFixer fileContentFixer;
-  private final Set<Path> ignorePaths;
-
   private Path lastCompletedFile = null;
 
   private boolean initialized;
@@ -76,12 +71,6 @@ public class Project {
     this.rootUri = rootUri;
     this.definitionSolver = new DefinitionSolver();
     this.signatureSolver = new SignatureSolver();
-    this.ignorePaths =
-        indexOptions
-            .ignorePaths()
-            .stream()
-            .map(p -> Paths.get(p))
-            .collect(ImmutableSet.toImmutableSet());
   }
 
   public synchronized void initialize() {
@@ -120,14 +109,13 @@ public class Project {
       try (Stream<Path> entryStream = Files.list(baseDir)) {
         entryStream.forEach(
             entryPath -> {
-              Path relativePath = rootDir.relativize(entryPath);
-              if (ignorePaths.contains(relativePath)) {
+              if (fileManager.shouldIgnorePath(entryPath)) {
                 logger.info("Ignoring path %s", entryPath);
                 return;
               }
               if (Files.isDirectory(entryPath)) {
                 queue.add(entryPath);
-              } else if (isJavaFile(entryPath) && !PathUtils.shouldIgnoreFile(entryPath)) {
+              } else if (isJavaFile(entryPath) && !fileManager.shouldIgnorePath(entryPath)) {
                 addOrUpdateFile(entryPath);
               }
             });

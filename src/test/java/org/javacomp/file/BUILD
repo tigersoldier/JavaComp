@@ -2,6 +2,7 @@ java_library(
     name = "tests",
     srcs = glob(["*.java"]),
     deps = [
+        "//external:guava",
         "//src/main/java/org/javacomp/file",
         "//src/main/java/org/javacomp/file:impl",
         "//third_party:junit4",

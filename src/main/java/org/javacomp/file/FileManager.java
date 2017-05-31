@@ -64,4 +64,7 @@ public interface FileManager {
    * <p>All snapshotted files opened by {@link #openForSnapshot} will be closed.
    */
   void shutdown();
+
+  /** Whether a given path should be ignored. */
+  boolean shouldIgnorePath(Path path);
 }

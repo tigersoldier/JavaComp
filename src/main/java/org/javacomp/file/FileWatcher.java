@@ -2,12 +2,14 @@ package org.javacomp.file;
 
 import static com.google.common.base.Preconditions.checkState;
 
+import com.google.common.collect.ImmutableList;
 import java.io.IOException;
 import java.nio.file.ClosedWatchServiceException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.PathMatcher;
 import java.nio.file.StandardWatchEventKinds;
 import java.nio.file.WatchEvent;
 import java.nio.file.WatchKey;
@@ -33,11 +35,14 @@ class FileWatcher {
   private final Map<Path, WatchKey> watchKeyMap;
   private final Set<Path> fileSnapshotPaths;
   private final ExecutorService executor;
+  private final Path projectRoot;
+  private final ImmutableList<PathMatcher> ignorePathMatchers;
 
   private Future<?> watchFuture = null;
   private FileChangeListener listener = null;
 
-  FileWatcher(ExecutorService executor) {
+  FileWatcher(
+      Path projectRoot, ImmutableList<PathMatcher> ignorePathMatchers, ExecutorService executor) {
     try {
       this.watchService = FileSystems.getDefault().newWatchService();
     } catch (IOException e) {
@@ -46,6 +51,8 @@ class FileWatcher {
     this.watchKeyMap = new HashMap<>();
     this.fileSnapshotPaths = new HashSet<>();
     this.executor = executor;
+    this.projectRoot = projectRoot;
+    this.ignorePathMatchers = ignorePathMatchers;
   }
 
   synchronized void setListener(FileChangeListener listener) {
@@ -118,7 +125,7 @@ class FileWatcher {
   }
 
   synchronized void notifyFileChange(Path path, WatchEvent.Kind<?> eventKind) {
-    if (PathUtils.shouldIgnoreFile(path)) {
+    if (PathUtils.shouldIgnorePath(path, projectRoot, ignorePathMatchers)) {
       return;
     }
 
@@ -165,7 +172,7 @@ class FileWatcher {
 
       Path fullPath = dir.resolve(event.context());
 
-      if (PathUtils.shouldIgnoreFile(fullPath)) {
+      if (PathUtils.shouldIgnorePath(fullPath, projectRoot, ignorePathMatchers)) {
         return;
       }
 

@@ -2,15 +2,20 @@ package org.javacomp.file;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.google.common.collect.ImmutableList;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.DirectoryStream;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.PathMatcher;
 import java.nio.file.Paths;
 import java.nio.file.StandardWatchEventKinds;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
@@ -31,11 +36,31 @@ public class FileManagerImpl implements FileManager {
 
   private final Path projectRoot;
   private final FileWatcher fileWatcher;
+  private final ImmutableList<PathMatcher> ignorePathMatchers;
 
-  public FileManagerImpl(URI projectRootUri, ExecutorService executor) {
+  public FileManagerImpl(
+      URI projectRootUri, List<String> ignorePathPatterns, ExecutorService executor) {
     projectRoot = Paths.get(projectRootUri);
+
+    if (ignorePathPatterns.isEmpty()) {
+      ignorePathMatchers = PathUtils.DEFAULT_IGNORE_MATCHERS;
+    } else {
+      FileSystem fs = FileSystems.getDefault();
+      ImmutableList.Builder<PathMatcher> ignorePathMatchersBuilder = new ImmutableList.Builder<>();
+      for (String pattern : ignorePathPatterns) {
+        PathMatcher matcher;
+        try {
+          matcher = fs.getPathMatcher("glob:" + pattern);
+          ignorePathMatchersBuilder.add(matcher);
+        } catch (Throwable t) {
+          logger.warning(t, "Invalid ignore path pattern %s", pattern);
+        }
+      }
+      ignorePathMatchers = ignorePathMatchersBuilder.build();
+    }
+
     fileSnapshots = new HashMap<>();
-    fileWatcher = new FileWatcher(executor);
+    fileWatcher = new FileWatcher(projectRoot, ignorePathMatchers, executor);
     watchSubDirectories(uriToNormalizedPath(projectRootUri));
   }
 
@@ -145,6 +170,11 @@ public class FileManagerImpl implements FileManager {
   @Override
   public void shutdown() {
     fileSnapshots.clear();
+  }
+
+  @Override
+  public boolean shouldIgnorePath(Path path) {
+    return PathUtils.shouldIgnorePath(path, projectRoot, ignorePathMatchers);
   }
 
   /**
