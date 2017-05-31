@@ -78,8 +78,11 @@ public abstract class PositionContext {
       }
 
       JCTree jcTree = (JCTree) tree;
+      int startPosition = jcTree.getStartPosition();
+      int endPosition = jcTree.getEndPosition(endPosTable);
       boolean positionInNodeRange =
-          jcTree.getStartPosition() <= position && position < jcTree.getEndPosition(endPosTable);
+          (startPosition < 0 || startPosition <= position)
+              && (position < endPosition || endPosition < 0);
       logger.fine(
           "PositionAstScanner: visiting node: %s, start: %s, end: %s.%s",
           tree.accept(new TreePathFormatter.TreeFormattingVisitor(), null),

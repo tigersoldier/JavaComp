@@ -186,6 +186,15 @@ public class CompletorTest {
         .containsExactly("fakeField", "fakeMethod", "toString");
   }
 
+  @Test
+  public void completeIncompleteIfBlock() throws Exception {
+    assertThat(
+            getCandidateNames(
+                completeWithContent(
+                    "CompleteInMethod.java", "{if (above.a/** @complete */)}", "FakeString.java")))
+        .contains("aboveField");
+  }
+
   private void assertCompletion(String filename, String toComplete, String... expectedCandidates) {
     assertCompletion(filename, ImmutableList.of(toComplete), expectedCandidates);
   }
