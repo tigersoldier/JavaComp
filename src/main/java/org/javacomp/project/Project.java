@@ -213,7 +213,9 @@ public class Project {
   }
 
   private static boolean isJavaFile(Path filePath) {
-    return filePath.toString().endsWith(JAVA_EXTENSION) && Files.isRegularFile(filePath);
+    // We don't check if file is regular file here because the file may be new in editor and not
+    // saved to the file system.
+    return filePath.toString().endsWith(JAVA_EXTENSION) && !Files.isDirectory(filePath);
   }
 
   private class ProjectFileChangeListener implements FileChangeListener {
