@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableSet;
 import com.sun.source.tree.ArrayAccessTree;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.IdentifierTree;
+import com.sun.source.tree.LambdaExpressionTree;
 import com.sun.source.tree.LiteralTree;
 import com.sun.source.tree.MemberSelectTree;
 import com.sun.source.tree.MethodInvocationTree;
@@ -272,6 +273,12 @@ public class ExpressionSolver {
       }
 
       logger.warning("Unknown literal type: %s", value);
+      return ImmutableList.of();
+    }
+
+    @Override
+    public List<Entity> visitLambdaExpression(LambdaExpressionTree node, Void unused) {
+      // TODO: implement this.
       return ImmutableList.of();
     }
 
