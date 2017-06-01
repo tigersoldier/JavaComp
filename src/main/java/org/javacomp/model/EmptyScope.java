@@ -1,9 +1,7 @@
 package org.javacomp.model;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
-import java.util.List;
 import java.util.Optional;
 
 /** An scope containing no entity. */
@@ -11,21 +9,6 @@ public class EmptyScope implements EntityScope {
   public static final EmptyScope INSTANCE = new EmptyScope();
 
   private EmptyScope() {}
-
-  @Override
-  public List<Entity> getEntitiesWithName(String simpleName) {
-    return ImmutableList.of();
-  }
-
-  @Override
-  public Optional<Entity> getEntityWithNameAndKind(String simpleName, Entity.Kind entityKind) {
-    return Optional.empty();
-  }
-
-  @Override
-  public Multimap<String, Entity> getAllEntities() {
-    return ImmutableMultimap.of();
-  }
 
   @Override
   public Multimap<String, Entity> getMemberEntities() {

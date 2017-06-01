@@ -16,6 +16,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import org.javacomp.model.Entity;
 import org.javacomp.model.EntityScope;
 import org.javacomp.model.FileScope;
@@ -165,9 +166,8 @@ public class AstScannerTest {
     EntityScope scopeAtEnd = getEntityScopeBefore("} else { // end of if");
     EntityScope scopeAtField = getEntityScopeAfter("ifScopeVar");
     for (EntityScope scope : ImmutableList.of(scopeAtStart, scopeAtEnd, scopeAtField)) {
-      Truth8.assertThat(scope.getEntityWithNameAndKind("ifScopeVar", Entity.Kind.VARIABLE))
-          .isPresent();
-      assertThat(scope.getEntitiesWithName("elseScopeVar")).isEmpty();
+      Truth8.assertThat(getEntity(scope, "ifScopeVar", Entity.Kind.VARIABLE)).isPresent();
+      assertThat(scope.getMemberEntities().get("elseScopeVar")).isEmpty();
     }
   }
 
@@ -177,9 +177,8 @@ public class AstScannerTest {
     EntityScope scopeAtEnd = getEntityScopeBefore("} // else");
     EntityScope scopeAtField = getEntityScopeAfter("elseScopeVar");
     for (EntityScope scope : ImmutableList.of(scopeAtStart, scopeAtEnd, scopeAtField)) {
-      Truth8.assertThat(scope.getEntityWithNameAndKind("elseScopeVar", Entity.Kind.VARIABLE))
-          .isPresent();
-      assertThat(scope.getEntitiesWithName("ifScopeVar")).isEmpty();
+      Truth8.assertThat(getEntity(scope, "elseScopeVar", Entity.Kind.VARIABLE)).isPresent();
+      assertThat(scope.getMemberEntities().get("ifScopeVar")).isEmpty();
     }
   }
 
@@ -189,8 +188,7 @@ public class AstScannerTest {
     EntityScope scopeAtEnd = getEntityScopeBefore("} // while loop");
     EntityScope scopeAtField = getEntityScopeAfter("whileScopeVar");
     for (EntityScope scope : ImmutableList.of(scopeAtStart, scopeAtEnd, scopeAtField)) {
-      Truth8.assertThat(scope.getEntityWithNameAndKind("whileScopeVar", Entity.Kind.VARIABLE))
-          .isPresent();
+      Truth8.assertThat(getEntity(scope, "whileScopeVar", Entity.Kind.VARIABLE)).isPresent();
     }
   }
 
@@ -200,8 +198,7 @@ public class AstScannerTest {
     EntityScope scopeAtEnd = getEntityScopeBefore("} // for loop");
     EntityScope scopeAtField = getEntityScopeAfter("forScopeVar");
     for (EntityScope scope : ImmutableList.of(scopeAtStart, scopeAtEnd, scopeAtField)) {
-      Truth8.assertThat(scope.getEntityWithNameAndKind("forScopeVar", Entity.Kind.VARIABLE))
-          .isPresent();
+      Truth8.assertThat(getEntity(scope, "forScopeVar", Entity.Kind.VARIABLE)).isPresent();
     }
   }
 
@@ -211,9 +208,8 @@ public class AstScannerTest {
     EntityScope scopeAtEnd = getEntityScopeBefore("} // switch");
     EntityScope scopeAtField = getEntityScopeAfter("switchScopeVar");
     for (EntityScope scope : ImmutableList.of(scopeAtStart, scopeAtEnd, scopeAtField)) {
-      Truth8.assertThat(scope.getEntityWithNameAndKind("switchScopeVar", Entity.Kind.VARIABLE))
-          .isPresent();
-      assertThat(scope.getEntitiesWithName("caseScopeVar")).isEmpty();
+      Truth8.assertThat(getEntity(scope, "switchScopeVar", Entity.Kind.VARIABLE)).isPresent();
+      assertThat(scope.getMemberEntities().get("caseScopeVar")).isEmpty();
     }
   }
 
@@ -223,24 +219,21 @@ public class AstScannerTest {
     EntityScope scopeAtEnd = getEntityScopeBefore("} // end of case block");
     EntityScope scopeAtField = getEntityScopeAfter("caseScopeVar");
     for (EntityScope scope : ImmutableList.of(scopeAtStart, scopeAtEnd, scopeAtField)) {
-      Truth8.assertThat(scope.getEntityWithNameAndKind("switchScopeVar", Entity.Kind.VARIABLE))
-          .isPresent();
-      Truth8.assertThat(scope.getEntityWithNameAndKind("caseScopeVar", Entity.Kind.VARIABLE))
-          .isPresent();
+      Truth8.assertThat(getEntity(scope, "caseScopeVar", Entity.Kind.VARIABLE)).isPresent();
     }
+    EntityScope switchScope = getEntityScopeAfter("switch (a) {");
+    Truth8.assertThat(getEntity(switchScope, "switchScopeVar", Entity.Kind.VARIABLE)).isPresent();
   }
 
   @Test
   public void annonymousClassScopeRange() {
     EntityScope scopeAtStart = getEntityScopeAfter("new PublicInnerInterface() {");
     EntityScope scopeAtEnd = getEntityScopeBefore("} /* end of new PublicInnerInterface *");
-    EntityScope scopeAtField = getEntityScopeAfter("privateAnnonymousClassMethod");
+    EntityScope scopeAtField = getEntityScopeBefore(" private void privateAnnonymousClassMethod");
     for (EntityScope scope : ImmutableList.of(scopeAtStart, scopeAtEnd, scopeAtField)) {
-      Truth8.assertThat(
-              scope.getEntityWithNameAndKind("privateAnnonymousClassMethod", Entity.Kind.METHOD))
+      Truth8.assertThat(getEntity(scope, "privateAnnonymousClassMethod", Entity.Kind.METHOD))
           .isPresent();
-      Truth8.assertThat(scope.getEntityWithNameAndKind("interfaceMethod", Entity.Kind.METHOD))
-          .isPresent();
+      Truth8.assertThat(getEntity(scope, "interfaceMethod", Entity.Kind.METHOD)).isPresent();
     }
   }
 
@@ -361,11 +354,20 @@ public class AstScannerTest {
     EntityScope currentScope = scope;
     Entity entity = null;
     for (String qualifier : qualifiers) {
-      Collection<Entity> entities = currentScope.getAllEntities().get(qualifier);
+      Collection<Entity> entities = currentScope.getMemberEntities().get(qualifier);
       assertThat(entities).isNotEmpty();
       entity = Iterables.getFirst(entities, null);
       currentScope = entity.getChildScope();
     }
     return entity;
+  }
+
+  private static Optional<Entity> getEntity(EntityScope scope, String name, Entity.Kind kind) {
+    for (Entity entity : scope.getMemberEntities().get(name)) {
+      if (entity.getKind() == kind) {
+        return Optional.of(entity);
+      }
+    }
+    return Optional.empty();
   }
 }

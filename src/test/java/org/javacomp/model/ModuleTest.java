@@ -4,8 +4,9 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterables;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
-import java.util.List;
+import java.util.Collection;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -54,7 +55,7 @@ public class ModuleTest {
     module.addOrReplaceFileScope(fileScope3);
     module.addOrReplaceFileScope(fileScope4);
 
-    assertThat(module.getRootPackage().getAllEntities().keys()).containsExactly("foo", "fxx");
+    assertThat(module.getRootPackage().getMemberEntities().keys()).containsExactly("foo", "fxx");
 
     PackageScope foo = getPackage(module.getRootPackage(), "foo").getChildScope();
     PackageScope fooBar = getPackage(foo, "bar").getChildScope();
@@ -62,11 +63,11 @@ public class ModuleTest {
     PackageScope fooBaz = getPackage(foo, "baz").getChildScope();
     PackageScope fxx = getPackage(module.getRootPackage(), "fxx").getChildScope();
 
-    assertThat(foo.getAllEntities().keys()).containsExactly("bar", "baz");
-    assertThat(fooBar.getAllEntities().keys()).containsExactly("baz", "entity1");
-    assertThat(fooBarBaz.getAllEntities().keys()).containsExactly("entity2");
-    assertThat(fooBaz.getAllEntities().keys()).containsExactly("entity3");
-    assertThat(fxx.getAllEntities().keys()).containsExactly("entity4");
+    assertThat(foo.getMemberEntities().keys()).containsExactly("bar", "baz");
+    assertThat(fooBar.getMemberEntities().keys()).containsExactly("baz", "entity1");
+    assertThat(fooBarBaz.getMemberEntities().keys()).containsExactly("entity2");
+    assertThat(fooBaz.getMemberEntities().keys()).containsExactly("entity3");
+    assertThat(fxx.getMemberEntities().keys()).containsExactly("entity4");
   }
 
   @Test
@@ -82,7 +83,7 @@ public class ModuleTest {
 
     PackageScope foo = getPackage(module.getRootPackage(), "foo").getChildScope();
     PackageScope fooBar = getPackage(foo, "bar").getChildScope();
-    assertThat(fooBar.getAllEntities().keys()).containsExactly("entity2");
+    assertThat(fooBar.getMemberEntities().keys()).containsExactly("entity2");
   }
 
   @Test
@@ -101,17 +102,17 @@ public class ModuleTest {
     PackageScope foo = getPackage(module.getRootPackage(), "foo").getChildScope();
     PackageScope fooBar = getPackage(foo, "bar").getChildScope();
     PackageScope fooBarBaz = getPackage(fooBar, "baz").getChildScope();
-    assertThat(fooBarBaz.getAllEntities().keys()).containsExactly("entity1");
+    assertThat(fooBarBaz.getMemberEntities().keys()).containsExactly("entity1");
 
     // Replace with fileScope2. baz is removed from foo.bar. entity2 from fileScope2 is scopeed.
     module.addOrReplaceFileScope(fileScope2);
-    assertThat(fooBar.getAllEntities().keys()).containsExactly("entity2");
+    assertThat(fooBar.getMemberEntities().keys()).containsExactly("entity2");
 
     // Replace with fileScope3. foo package is removed. fxx is added with entity3 from fileScope3
     module.addOrReplaceFileScope(fileScope3);
-    assertThat(module.getRootPackage().getAllEntities().keys()).containsExactly("fxx");
+    assertThat(module.getRootPackage().getMemberEntities().keys()).containsExactly("fxx");
     PackageScope fxx = getPackage(module.getRootPackage(), "fxx").getChildScope();
-    assertThat(fxx.getAllEntities().keys()).containsExactly("entity3");
+    assertThat(fxx.getMemberEntities().keys()).containsExactly("entity3");
   }
 
   private PackageEntity getPackage(EntityScope scope, String simpleName) {
@@ -119,9 +120,9 @@ public class ModuleTest {
   }
 
   private <T> T getOnlyEntity(EntityScope scope, String simpleName, Class<T> entityClass) {
-    List<Entity> entities = scope.getEntitiesWithName(simpleName);
+    Collection<Entity> entities = scope.getMemberEntities().get(simpleName);
     assertThat(entities).hasSize(1);
-    Entity entity = entities.get(0);
+    Entity entity = Iterables.getFirst(entities, null);
     assertThat(entity).isInstanceOf(entityClass);
     @SuppressWarnings("unchecked")
     T typedEntity = (T) entity;

@@ -3,11 +3,9 @@ package org.javacomp.model;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import com.google.common.collect.HashMultimap;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -20,42 +18,6 @@ public class PackageScope implements EntityScope {
   public PackageScope() {
     this.subPackages = HashMultimap.create();
     this.files = new HashSet<>();
-  }
-
-  @Override
-  public List<Entity> getEntitiesWithName(String simpleName) {
-    ImmutableList.Builder<Entity> builder = new ImmutableList.Builder<>();
-    builder.addAll(subPackages.get(simpleName));
-    for (FileScope fileScope : files) {
-      builder.addAll(fileScope.getEntitiesWithName(simpleName));
-    }
-    return builder.build();
-  }
-
-  @Override
-  public Optional<Entity> getEntityWithNameAndKind(String simpleName, Entity.Kind entityKind) {
-    for (Entity entity : subPackages.get(simpleName)) {
-      if (entity.getKind() == entityKind) {
-        return Optional.of(entity);
-      }
-    }
-    for (FileScope fileScope : files) {
-      Optional<Entity> entity = fileScope.getEntityWithNameAndKind(simpleName, entityKind);
-      if (entity.isPresent()) {
-        return entity;
-      }
-    }
-    return Optional.empty();
-  }
-
-  @Override
-  public Multimap<String, Entity> getAllEntities() {
-    ImmutableMultimap.Builder<String, Entity> builder = new ImmutableMultimap.Builder<>();
-    builder.putAll(subPackages);
-    for (FileScope fileScope : files) {
-      builder.putAll(fileScope.getAllEntities());
-    }
-    return builder.build();
   }
 
   @Override

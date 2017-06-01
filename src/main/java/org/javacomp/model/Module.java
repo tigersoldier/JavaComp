@@ -36,7 +36,7 @@ public class Module {
   }
 
   public synchronized void addOrReplaceFileScope(FileScope fileScope) {
-    logger.fine("Adding file: %s: %s", fileScope.getFilename(), fileScope.getAllEntities());
+    logger.fine("Adding file: %s: %s", fileScope.getFilename(), fileScope.getMemberEntities());
     FileScope existingFileScope = fileScopeMap.get(fileScope.getFilename());
     // Add the new file scope to the package first, so that we don't GC the pacakge if
     // the new file and old file are in the same pacakge and is the only file in the package.
@@ -74,10 +74,9 @@ public class Module {
     List<String> currentQualifiers = new ArrayList<>();
     PackageScope currentPackage = rootPackage;
     for (String qualifier : fileScope.getPackageQualifiers()) {
-      Optional<Entity> packageEntity =
-          currentPackage.getEntityWithNameAndKind(qualifier, Entity.Kind.QUALIFIER);
+      Optional<PackageEntity> packageEntity = getPackageEntity(qualifier, currentPackage);
       if (packageEntity.isPresent()) {
-        currentPackage = ((PackageEntity) packageEntity.get()).getChildScope();
+        currentPackage = packageEntity.get().getChildScope();
       } else {
         PackageScope packageScope = new PackageScope();
         currentPackage.addEntity(new PackageEntity(qualifier, currentQualifiers, packageScope));
@@ -100,12 +99,11 @@ public class Module {
     Deque<PackageEntity> stack = new ArrayDeque<>();
     PackageScope currentPackage = rootPackage;
     for (String qualifier : fileScope.getPackageQualifiers()) {
-      Optional<Entity> optionalPackageEntity =
-          currentPackage.getEntityWithNameAndKind(qualifier, Entity.Kind.QUALIFIER);
+      Optional<PackageEntity> optionalPackageEntity = getPackageEntity(qualifier, currentPackage);
       if (!optionalPackageEntity.isPresent()) {
         throw new RuntimeException("Package " + qualifier + " not found");
       }
-      PackageEntity packageEntity = (PackageEntity) optionalPackageEntity.get();
+      PackageEntity packageEntity = optionalPackageEntity.get();
       stack.addFirst(packageEntity);
       currentPackage = packageEntity.getChildScope();
     }
@@ -115,6 +113,15 @@ public class Module {
       currentPackage = stack.isEmpty() ? rootPackage : stack.peekFirst().getChildScope();
       currentPackage.removePackage(packageEntity);
     }
+  }
+
+  private Optional<PackageEntity> getPackageEntity(String name, PackageScope packageScope) {
+    for (Entity entity : packageScope.getMemberEntities().get(name)) {
+      if (entity instanceof PackageEntity) {
+        return Optional.of((PackageEntity) entity);
+      }
+    }
+    return Optional.empty();
   }
 
   public void addDependingModule(Module dependingModule) {

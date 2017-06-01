@@ -6,7 +6,6 @@ import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Range;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import org.javacomp.model.util.QualifiedNames;
 
@@ -40,46 +39,6 @@ public class MethodEntity extends Entity implements EntityScope {
   }
 
   /////////////// EntityScope methods ///////////////
-
-  @Override
-  public List<Entity> getEntitiesWithName(String simpleName) {
-    ImmutableList.Builder<Entity> builder = new ImmutableList.Builder<>();
-    builder.addAll(entities.get(simpleName));
-    builder.addAll(classEntity.getEntitiesWithName(simpleName));
-    builder.addAll(parameters);
-    // TODO: distinguish between static method and instance method
-    return builder.build();
-  }
-
-  @Override
-  public Optional<Entity> getEntityWithNameAndKind(String simpleName, Entity.Kind entityKind) {
-    for (Entity entity : entities.get(simpleName)) {
-      if (entity.getKind() == entityKind) {
-        return Optional.of(entity);
-      }
-    }
-    if (entityKind == Entity.Kind.VARIABLE) {
-      for (VariableEntity parameter : parameters) {
-        if (Objects.equals(parameter.getSimpleName(), simpleName)) {
-          return Optional.of(parameter);
-        }
-      }
-    }
-    // TODO: distinguish between static method and instance method
-    return classEntity.getEntityWithNameAndKind(simpleName, entityKind);
-  }
-
-  @Override
-  public Multimap<String, Entity> getAllEntities() {
-    ImmutableMultimap.Builder<String, Entity> builder = new ImmutableMultimap.Builder<>();
-    builder.putAll(entities);
-    builder.putAll(classEntity.getAllEntities());
-    for (VariableEntity parameter : parameters) {
-      builder.put(parameter.getSimpleName(), parameter);
-    }
-    // TODO: distinguish between static method and instance method
-    return builder.build();
-  }
 
   @Override
   public Multimap<String, Entity> getMemberEntities() {

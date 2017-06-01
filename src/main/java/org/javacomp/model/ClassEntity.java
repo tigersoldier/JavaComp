@@ -6,7 +6,6 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Range;
 import java.util.EnumSet;
@@ -57,48 +56,6 @@ public class ClassEntity extends Entity implements EntityScope {
   @Override
   public ClassEntity getChildScope() {
     return this;
-  }
-
-  @Override
-  public List<Entity> getEntitiesWithName(String simpleName) {
-    // TODO: check imports.
-    // TODO: check super class and interfaces
-    ImmutableList.Builder<Entity> builder = new ImmutableList.Builder<>();
-    builder.addAll(methods.get(simpleName)).addAll(parentScope.getEntitiesWithName(simpleName));
-    if (fields.containsKey(simpleName)) {
-      builder.add(fields.get(simpleName));
-    }
-    return builder.build();
-  }
-
-  @Override
-  public Optional<Entity> getEntityWithNameAndKind(String simpleName, Entity.Kind entityKind) {
-    switch (entityKind) {
-      case VARIABLE:
-        return Optional.ofNullable(fields.get(simpleName));
-      case METHOD:
-        return Optional.ofNullable(Iterables.getFirst(methods.get(simpleName), null));
-      default:
-        if (ALLOWED_KINDS.contains(entityKind)) {
-          return Optional.ofNullable(innerClasses.get(simpleName));
-        }
-    }
-    // TODO: check imports.
-    // TODO: check super class and interfaces
-    return parentScope.getEntityWithNameAndKind(simpleName, entityKind);
-  }
-
-  @Override
-  public Multimap<String, Entity> getAllEntities() {
-    ImmutableMultimap.Builder<String, Entity> builder = new ImmutableMultimap.Builder<>();
-    builder
-        .putAll(fields.entrySet())
-        .putAll(methods)
-        .putAll(innerClasses.entrySet())
-        .putAll(parentScope.getAllEntities());
-    // TODO: check imports.
-    // TODO: check super class and interfaces
-    return builder.build();
   }
 
   @Override

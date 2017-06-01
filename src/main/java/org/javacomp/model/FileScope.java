@@ -41,26 +41,6 @@ public class FileScope implements EntityScope {
   }
 
   @Override
-  public List<Entity> getEntitiesWithName(String simpleName) {
-    return ImmutableList.copyOf(entities.get(simpleName));
-  }
-
-  @Override
-  public Optional<Entity> getEntityWithNameAndKind(String simpleName, Entity.Kind entityKind) {
-    for (Entity entity : entities.get(simpleName)) {
-      if (entity.getKind() == entityKind) {
-        return Optional.of(entity);
-      }
-    }
-    return Optional.empty();
-  }
-
-  @Override
-  public Multimap<String, Entity> getAllEntities() {
-    return ImmutableMultimap.copyOf(entities);
-  }
-
-  @Override
   public Multimap<String, Entity> getMemberEntities() {
     return ImmutableMultimap.copyOf(entities);
   }

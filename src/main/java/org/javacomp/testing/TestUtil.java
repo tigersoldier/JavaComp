@@ -88,7 +88,7 @@ public class TestUtil {
     List<String> currentQualifiers = new ArrayList<>();
     for (String qualifier : qualifiers) {
       currentQualifiers.add(qualifier);
-      Collection<Entity> entities = currentScope.getAllEntities().get(qualifier);
+      Collection<Entity> entities = currentScope.getMemberEntities().get(qualifier);
       assertWithMessage(QUALIFIER_JOINER.join(currentQualifiers)).that(entities).isNotEmpty();
       entity = Iterables.getFirst(entities, null);
       currentScope = entity.getChildScope();
