@@ -35,9 +35,11 @@ public class TypeSolver {
 
   private static final Optional<SolvedType> UNSOLVED = Optional.empty();
   private static final Set<Entity.Kind> CLASS_KINDS = ClassEntity.ALLOWED_KINDS;
-  private static final List<String> JAVA_LANG_QUALIFIERS = ImmutableList.of("java", "lang");
-  private static final List<String> JAVA_LANG_OBJECT_QUALIFIERS =
+  public static final List<String> JAVA_LANG_QUALIFIERS = ImmutableList.of("java", "lang");
+  public static final List<String> JAVA_LANG_OBJECT_QUALIFIERS =
       ImmutableList.of("java", "lang", "Object");
+  public static final List<String> JAVA_LANG_STRING_QUALIFIERS =
+      ImmutableList.of("java", "lang", "String");
 
   public Optional<SolvedType> solve(
       TypeReference typeReference, Module module, EntityScope parentScope) {
@@ -82,7 +84,7 @@ public class TypeSolver {
 
     // The first part of the type full name is not known class inside the package. Try to find in
     // global package.
-    Optional<Entity> classInModule = findClassInModule(module, typeReference.getFullName());
+    Optional<Entity> classInModule = findClassInModule(typeReference.getFullName(), module);
     if (classInModule.isPresent()) {
       return Optional.of(createSolvedType(classInModule.get(), typeReference));
     }
@@ -182,7 +184,7 @@ public class TypeSolver {
     return currentEntity;
   }
 
-  private Optional<Entity> findClassInModule(Module module, List<String> qualifiers) {
+  public Optional<Entity> findClassInModule(List<String> qualifiers, Module module) {
     Optional<Entity> classInModule = findClassOrPackage(qualifiers, module);
     if (classInModule.isPresent() && classInModule.get() instanceof ClassEntity) {
       return classInModule;
@@ -404,7 +406,7 @@ public class TypeSolver {
     // Not declared in the file, try imported classes.
     Optional<List<String>> importedClass = fileScope.getImportedClass(name);
     if (importedClass.isPresent()) {
-      Optional<Entity> classInModule = findClassInModule(module, importedClass.get());
+      Optional<Entity> classInModule = findClassInModule(importedClass.get(), module);
       if (classInModule.isPresent()) {
         return classInModule;
       }
@@ -554,7 +556,7 @@ public class TypeSolver {
 
       if (!javaLangObjectAdded) {
         javaLangObjectAdded = true;
-        Optional<Entity> javaLangObject = findClassInModule(module, JAVA_LANG_OBJECT_QUALIFIERS);
+        Optional<Entity> javaLangObject = findClassInModule(JAVA_LANG_OBJECT_QUALIFIERS, module);
         if (javaLangObject.isPresent()) {
           return (ClassEntity) javaLangObject.get();
         }

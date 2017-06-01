@@ -30,7 +30,7 @@ public class TypeSolverTest {
     "ondemand/OnDemand.java", "ondemand/Shadow.java",
   };
 
-  private static final String[] FAKE_JDK_FILES = {"fakejdk/FakeString.java"};
+  private static final String[] FAKE_JDK_FILES = {"fakejdk/String.java"};
 
   private static final String TEST_DATA_PACKAGE = "org.javacomp.typesolver.testdata";
   private static final String TEST_DATA_OTHER_PACKAGE = TEST_DATA_PACKAGE + ".other";
@@ -153,9 +153,9 @@ public class TypeSolverTest {
   @Test
   public void solveJavaLangType() {
     SolvedType fakeStringClass =
-        solveMethodReturnType(TEST_CLASS_FULL_NAME + ".returnFakeStringMethod");
+        solveMethodReturnType(TEST_CLASS_FULL_NAME + ".returnStringMethod");
     assertThat(fakeStringClass.getEntity())
-        .isSameAs(TestUtil.lookupEntity("java.lang.FakeString", fakeJdkModule));
+        .isSameAs(TestUtil.lookupEntity("java.lang.String", fakeJdkModule));
   }
 
   private SolvedType solveMethodReturnType(String qualifiedMethodName) {

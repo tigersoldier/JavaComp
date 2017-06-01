@@ -28,6 +28,7 @@ public abstract class Entity {
     REFERENCE,
     // A premitive type.
     PRIMITIVE,
+    NULL,
     ;
   }
 

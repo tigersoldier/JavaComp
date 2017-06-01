@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Range;
 import java.util.Map;
+import java.util.Optional;
 
 /** Represents primitive types. */
 public class PrimitiveEntity extends Entity {
@@ -28,6 +29,18 @@ public class PrimitiveEntity extends Entity {
           .put(BOOLEAN.getSimpleName(), BOOLEAN)
           .build();
 
+  private static final Map<Class<?>, PrimitiveEntity> CLASS_MAP =
+      new ImmutableMap.Builder<Class<?>, PrimitiveEntity>()
+          .put(Byte.class, BYTE)
+          .put(Short.class, SHORT)
+          .put(Integer.class, INT)
+          .put(Long.class, LONG)
+          .put(Float.class, FLOAT)
+          .put(Double.class, DOUBLE)
+          .put(Character.class, CHAR)
+          .put(Boolean.class, BOOLEAN)
+          .build();
+
   public static boolean isPrimitive(String typeName) {
     return TYPE_MAP.containsKey(typeName);
   }
@@ -38,6 +51,10 @@ public class PrimitiveEntity extends Entity {
       return new PrimitiveEntity(simpleName);
     }
     return TYPE_MAP.get(simpleName);
+  }
+
+  public static Optional<PrimitiveEntity> get(Class<?> valueClass) {
+    return Optional.ofNullable(CLASS_MAP.get(valueClass));
   }
 
   private PrimitiveEntity(String simpleName) {

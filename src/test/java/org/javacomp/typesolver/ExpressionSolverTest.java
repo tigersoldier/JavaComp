@@ -14,6 +14,7 @@ import org.javacomp.model.Entity;
 import org.javacomp.model.EntityScope;
 import org.javacomp.model.MethodEntity;
 import org.javacomp.model.Module;
+import org.javacomp.model.NullEntity;
 import org.javacomp.model.PrimitiveEntity;
 import org.javacomp.model.SolvedType;
 import org.javacomp.testing.TestUtil;
@@ -29,7 +30,7 @@ public class ExpressionSolverTest {
       ImmutableList.of("TestExpression.java", "TestClass.java");
   private static final List<String> OTHER_FILES =
       ImmutableList.of("other/BaseClass.java", "other/Shadow.java");
-  private static final List<String> FAKE_JDK_FILES = ImmutableList.of("fakejdk/FakeString.java");
+  private static final List<String> FAKE_JDK_FILES = ImmutableList.of("fakejdk/String.java");
   private static final String TOP_LEVEL_CLASS_FULL_NAME =
       "org.javacomp.typesolver.testdata.TestExpression";
   private static final String TEST_CLASS_CLASS_FULL_NAME =
@@ -82,7 +83,7 @@ public class ExpressionSolverTest {
         (ClassEntity) TestUtil.lookupEntity(TOP_LEVEL_CLASS_FULL_NAME + ".InnerB", module);
     innerCClass =
         (ClassEntity) TestUtil.lookupEntity(TOP_LEVEL_CLASS_FULL_NAME + ".InnerC", module);
-    fakeStringClass = (ClassEntity) TestUtil.lookupEntity("java.lang.FakeString", fakeJdkModule);
+    fakeStringClass = (ClassEntity) TestUtil.lookupEntity("java.lang.String", fakeJdkModule);
     lambdaCallMethod =
         (MethodEntity) TestUtil.lookupEntity(TOP_LEVEL_CLASS_FULL_NAME + ".lambdaCall", module);
     methodScope =
@@ -241,7 +242,20 @@ public class ExpressionSolverTest {
 
   @Test
   public void solveJavaLangClass() {
-    assertThat(solveDefinition("FakeString", methodScope)).isSameAs(fakeStringClass);
+    assertThat(solveDefinition("String", methodScope)).isSameAs(fakeStringClass);
+  }
+
+  @Test
+  public void solveLiterals() {
+    assertThat(solveExpression("123", methodScope).getEntity()).isSameAs(PrimitiveEntity.INT);
+    assertThat(solveExpression("123L", methodScope).getEntity()).isSameAs(PrimitiveEntity.LONG);
+    assertThat(solveExpression("12.3f", methodScope).getEntity()).isSameAs(PrimitiveEntity.FLOAT);
+    assertThat(solveExpression("12.3", methodScope).getEntity()).isSameAs(PrimitiveEntity.DOUBLE);
+    assertThat(solveExpression("false", methodScope).getEntity()).isSameAs(PrimitiveEntity.BOOLEAN);
+    assertThat(solveExpression("true", methodScope).getEntity()).isSameAs(PrimitiveEntity.BOOLEAN);
+    assertThat(solveExpression("'c'", methodScope).getEntity()).isSameAs(PrimitiveEntity.CHAR);
+    assertThat(solveExpression("null", methodScope).getEntity()).isSameAs(NullEntity.INSTANCE);
+    assertThat(solveExpression("\"123\"", methodScope).getEntity()).isSameAs(fakeStringClass);
   }
 
   private Entity solveDefinition(String expression, EntityScope baseScope) {

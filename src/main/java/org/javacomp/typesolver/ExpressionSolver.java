@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableSet;
 import com.sun.source.tree.ArrayAccessTree;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.IdentifierTree;
+import com.sun.source.tree.LiteralTree;
 import com.sun.source.tree.MemberSelectTree;
 import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.NewClassTree;
@@ -22,6 +23,7 @@ import org.javacomp.model.Entity;
 import org.javacomp.model.EntityScope;
 import org.javacomp.model.MethodEntity;
 import org.javacomp.model.Module;
+import org.javacomp.model.NullEntity;
 import org.javacomp.model.PackageEntity;
 import org.javacomp.model.PrimitiveEntity;
 import org.javacomp.model.SolvedType;
@@ -123,6 +125,9 @@ public class ExpressionSolver {
       return SolvedType.builder().setEntity(entity).setPrimitive(false).setArray(false).build();
     }
     if (entity instanceof PrimitiveEntity) {
+      return SolvedType.builder().setEntity(entity).setPrimitive(true).setArray(false).build();
+    }
+    if (entity instanceof NullEntity) {
       return SolvedType.builder().setEntity(entity).setPrimitive(true).setArray(false).build();
     }
     return null;
@@ -247,6 +252,27 @@ public class ExpressionSolver {
 
       return toList(
           typeSolver.findClassOrPackage(ImmutableList.of(node.getName().toString()), module));
+    }
+
+    @Override
+    public List<Entity> visitLiteral(LiteralTree node, Void unused) {
+      Object value = node.getValue();
+
+      if (value == null) {
+        return ImmutableList.of(NullEntity.INSTANCE);
+      }
+
+      if (value instanceof String) {
+        return toList(typeSolver.findClassInModule(TypeSolver.JAVA_LANG_STRING_QUALIFIERS, module));
+      }
+
+      Optional<PrimitiveEntity> primitiveEntity = PrimitiveEntity.get(value.getClass());
+      if (primitiveEntity.isPresent()) {
+        return ImmutableList.of(primitiveEntity.get());
+      }
+
+      logger.warning("Unknown literal type: %s", value);
+      return ImmutableList.of();
     }
 
     private Set<Entity.Kind> getAllowedEntityKinds() {

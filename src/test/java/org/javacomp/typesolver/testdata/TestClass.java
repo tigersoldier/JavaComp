@@ -32,7 +32,7 @@ public class TestClass extends BaseClass implements BaseInterface {
 
   public org.javacomp.typesolver.testdata.TestClass.NotExist returnInnerTypeNotExistMethod() {}
 
-  public FakeString returnFakeStringMethod() {}
+  public String returnStringMethod() {}
 
   public class TestClassFactory extends BaseInnerClass implements BaseInterfaceFactory {}
 }
