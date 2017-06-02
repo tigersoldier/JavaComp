@@ -1,9 +1,6 @@
 package org.javacomp.server;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableMap;
@@ -11,6 +8,9 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
 import org.javacomp.server.io.ResponseWriter;
 import org.javacomp.server.protocol.NotificationHandler;
@@ -41,9 +41,9 @@ public class RequestDispatcherTest {
   private final Handler2 handler2 = new Handler2();
   private final NullParamsHandler nullParamsHandler = new NullParamsHandler();
   private final CountingNotificationHandler notificationHandler = new CountingNotificationHandler();
+  private final TestResponseWriter responseWriter = new TestResponseWriter();
 
   @Mock private RequestParser requestParser;
-  @Mock private ResponseWriter responseWriter;
   @Captor private ArgumentCaptor<Response> responseCaptor;
 
   private RequestDispatcher dispatcher;
@@ -75,14 +75,14 @@ public class RequestDispatcherTest {
   @Test
   public void testDispatchNotification_doesNotWriteResponse() {
     dispatchRequest(notificationHandler.getMethod(), null /* id */, null);
+    assertThat(responseWriter.pollResponse()).isNull();
     assertThat(notificationHandler.numReceived).isEqualTo(1);
-    verifyZeroInteractions(responseWriter);
   }
 
   @Test
   public void testNullParamsAndResult() {
     dispatchRequest(nullParamsHandler.getMethod(), "id3", null /* params */);
-    Response response = getWrittenResponse();
+    Response response = responseWriter.pollResponse();
     assertThat(response.getId()).isEqualTo("id3");
     assertThat(response.getResult()).isNull();
   }
@@ -130,6 +130,7 @@ public class RequestDispatcherTest {
     RequestDispatcher.Builder builder =
         new RequestDispatcher.Builder()
             .setGson(gson)
+            .setExecutor(Executors.newSingleThreadExecutor())
             .setRequestParser(requestParser)
             .setResponseWriter(responseWriter);
     for (RequestHandler handler : handlers) {
@@ -149,21 +150,12 @@ public class RequestDispatcherTest {
     return dispatcher.dispatchRequest();
   }
 
-  private Response getWrittenResponse() {
-    try {
-      verify(responseWriter, atLeastOnce()).writeResponse(responseCaptor.capture());
-    } catch (Exception e) {
-      // Will not happen.
-    }
-    return responseCaptor.getValue();
-  }
-
   private void assertResponseWritten(Response expected) {
-    assertThat(getWrittenResponse()).isEqualTo(expected);
+    assertThat(responseWriter.pollResponse()).isEqualTo(expected);
   }
 
   private void assertErrorResponseWritten(ErrorCode errorCode, String id, String message) {
-    Response response = getWrittenResponse();
+    Response response = responseWriter.pollResponse();
     assertThat(response.getId()).isEqualTo(id);
     assertThat(response.getError()).isNotNull();
     assertThat(response.getError().getCode()).isEqualTo(errorCode.getCode());
@@ -261,6 +253,32 @@ public class RequestDispatcherTest {
     @Override
     protected void handleNotification(Request<NullParams> request) throws Exception {
       numReceived++;
+    }
+  }
+
+  private static class TestResponseWriter extends ResponseWriter {
+    private final LinkedBlockingQueue<Response> responseQueue;
+
+    private TestResponseWriter() {
+      super(new Gson(), System.out);
+      responseQueue = new LinkedBlockingQueue<>();
+    }
+
+    @Override
+    public void writeResponse(Response response) {
+      try {
+        responseQueue.put(response);
+      } catch (InterruptedException e) {
+        throw new RuntimeException(e);
+      }
+    }
+
+    private Response pollResponse() {
+      try {
+        return responseQueue.poll(5, TimeUnit.SECONDS);
+      } catch (InterruptedException e) {
+        throw new RuntimeException(e);
+      }
     }
   }
 }

@@ -119,7 +119,7 @@ public class Project {
     }
   }
 
-  private void addOrUpdateFile(Path filePath) {
+  private synchronized void addOrUpdateFile(Path filePath) {
     try {
       Optional<CharSequence> optionalContent = fileManager.getFileContent(filePath);
       if (!optionalContent.isPresent()) {
@@ -152,7 +152,8 @@ public class Project {
    * @param line 0-based line number
    * @param column 0-based character offset of the line
    */
-  public List<CompletionCandidate> getCompletionCandidates(Path filePath, int line, int column) {
+  public synchronized List<CompletionCandidate> getCompletionCandidates(
+      Path filePath, int line, int column) {
     if (!filePath.equals(lastCompletedFile)) {
       lastCompletedFile = filePath;
       addOrUpdateFile(filePath);
@@ -165,11 +166,11 @@ public class Project {
    * @param line 0-based line number
    * @param column 0-based character offset of the line
    */
-  public List<? extends Entity> findDefinitions(Path filePath, int line, int column) {
+  public synchronized List<? extends Entity> findDefinitions(Path filePath, int line, int column) {
     return definitionSolver.getDefinitionEntities(projectModule, filePath, line, column);
   }
 
-  public MethodSignatures findMethodSignatures(Path filePath, int line, int column) {
+  public synchronized MethodSignatures findMethodSignatures(Path filePath, int line, int column) {
     return signatureSolver.getMethodSignatures(projectModule, filePath, line, column);
   }
 

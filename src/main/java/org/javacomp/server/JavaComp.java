@@ -41,12 +41,12 @@ public class JavaComp implements Server {
   private final AtomicBoolean isRunning;
   private final RequestParser requestParser;
   private final ResponseWriter responseWriter;
+  private final ExecutorService executor;
   private final RequestDispatcher requestDispatcher;
   private final Gson gson;
 
   private boolean initialized;
   private int exitCode = 0;
-  private ExecutorService executor;
   private FileManager fileManager;
   private Project project;
 
@@ -56,6 +56,7 @@ public class JavaComp implements Server {
     this.requestParser =
         new RequestParser(this.gson, new RequestReader(inputStream, REQUEST_BUFFER_SIZE));
     this.responseWriter = new ResponseWriter(this.gson, outputStream);
+    this.executor = Executors.newFixedThreadPool(NUM_THREADS);
     this.requestDispatcher =
         new RequestDispatcher.Builder()
             .setGson(gson)
@@ -73,6 +74,7 @@ public class JavaComp implements Server {
             .registerHandler(new DefinitionTextDocumentHandler(this))
             .registerHandler(new SignatureHelpTextDocumentHandler(this))
             .registerHandler(new HoverTextDocumentHandler(this))
+            .setExecutor(executor)
             .build();
   }
 
@@ -104,7 +106,6 @@ public class JavaComp implements Server {
         JLogger.setLogLevel(logLevel);
       }
     }
-    executor = Executors.newFixedThreadPool(NUM_THREADS);
     fileManager = new FileManagerImpl(projectRootUri, options.getIgnorePaths(), executor);
     project = new Project(fileManager, projectRootUri, IndexOptions.FULL_INDEX_BUILDER.build());
     project.initialize();
@@ -118,6 +119,7 @@ public class JavaComp implements Server {
     initialized = false;
     fileManager.shutdown();
     fileManager = null;
+    executor.shutdown();
   }
 
   @Override

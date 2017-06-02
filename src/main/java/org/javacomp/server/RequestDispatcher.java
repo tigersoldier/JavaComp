@@ -5,6 +5,10 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.gson.Gson;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import org.javacomp.logging.JLogger;
 import org.javacomp.server.io.ResponseWriter;
 import org.javacomp.server.io.StreamClosedException;
@@ -19,16 +23,24 @@ import org.javacomp.server.protocol.RequestParams;
 public class RequestDispatcher {
   private static final JLogger logger = JLogger.createForEnclosingClass();
 
-  private final Gson gson;
-  private final ImmutableMap<String, RequestHandler> handlerRegistry;
+  private static final int MAX_REQUESTS_IN_QUEUE = 50;
+
   private final RequestParser requestParser;
-  private final ResponseWriter responseWriter;
+  private final ExecutorService executor;
+  private final BlockingQueue<RawRequest> requestQueue;
+  private Future<?> dispatchFuture;
 
   private RequestDispatcher(Builder builder, ImmutableMap<String, RequestHandler> handlerRegistry) {
-    this.gson = checkNotNull(builder.gson, "gson");
-    this.requestParser = checkNotNull(builder.requestParser, "requestParser");
-    this.responseWriter = checkNotNull(builder.responseWriter, "responseWriter");
-    this.handlerRegistry = checkNotNull(handlerRegistry, "handlerRegistry");
+    this.requestParser = checkNotNull(builder.requestParser, "requestParser is not set");
+    this.executor = checkNotNull(builder.executor, "executor is not set");
+    this.requestQueue = new ArrayBlockingQueue<RawRequest>(MAX_REQUESTS_IN_QUEUE);
+    this.dispatchFuture =
+        executor.submit(
+            new HandleRequestRunnable(
+                checkNotNull(builder.gson, "gson"),
+                checkNotNull(handlerRegistry, "handlerRegistry is not set"),
+                checkNotNull(builder.responseWriter, "responseWriter is not set"),
+                requestQueue));
   }
 
   /**
@@ -38,6 +50,10 @@ public class RequestDispatcher {
    *     shutdown and exit
    */
   public boolean dispatchRequest() {
+    if (dispatchFuture.isCancelled() || dispatchFuture.isDone()) {
+      logger.severe("The dispatch thread exits. Stop parsing and dispatching new requests.");
+    }
+
     RawRequest rawRequest;
     try {
       rawRequest = requestParser.parse();
@@ -49,85 +65,131 @@ public class RequestDispatcher {
       return false;
     }
 
-    Object result = null;
-    Response.ResponseError error = null;
-    try {
-      result = dispatchRequestInternal(rawRequest);
-    } catch (RequestException e) {
-      logger.severe(e, "Failed to process request.");
-      error = new Response.ResponseError(e.getErrorCode(), e.getMessage());
-    } catch (Throwable e) {
-      logger.severe(e, "Failed to process request.");
-      error = new Response.ResponseError(ErrorCode.INTERNAL_ERROR, e.getMessage());
-    }
+    while (!requestQueue.offer(rawRequest)) {
+      RawRequest firstInQueue = requestQueue.poll();
+      if (firstInQueue == null) {
+        continue;
+      }
 
-    String requestId = rawRequest.getContent().getId();
-    if (Strings.isNullOrEmpty(requestId)) {
-      // No ID provided. The request is a notification and the client doesn't expect any response.
+      logger.warning(
+          "Request queue is full. Dropping early request (%s) %s",
+          firstInQueue.getContent().getId(), firstInQueue.getContent().getMethod());
       return true;
-    }
-
-    Response response;
-    if (error != null) {
-      response = Response.createError(requestId, error);
-    } else {
-      response = Response.createResponse(requestId, result);
-    }
-    try {
-      responseWriter.writeResponse(response);
-    } catch (Throwable e) {
-      logger.severe(e, "Failed to write response, shutting down server.");
-      return false;
     }
 
     return true;
   }
 
-  /**
-   * Dispatches a {@link RawRequest} to the {@link RequestHandler} registered for the method of the
-   * request.
-   *
-   * @return the result of processing the request
-   */
-  private Object dispatchRequestInternal(RawRequest rawRequest) throws RequestException, Exception {
-    RawRequest.Content requestContent = rawRequest.getContent();
+  private static class HandleRequestRunnable implements Runnable {
+    private final Gson gson;
+    private final ImmutableMap<String, RequestHandler> handlerRegistry;
+    private final ResponseWriter responseWriter;
+    private final BlockingQueue<RawRequest> requestQueue;
 
-    if (Strings.isNullOrEmpty(requestContent.getMethod())) {
-      throw new RequestException(ErrorCode.INVALID_REQUEST, "Missing request method.");
+    private HandleRequestRunnable(
+        Gson gson,
+        ImmutableMap<String, RequestHandler> handlerRegistry,
+        ResponseWriter responseWriter,
+        BlockingQueue<RawRequest> requestQueue) {
+      this.gson = gson;
+      this.handlerRegistry = handlerRegistry;
+      this.responseWriter = responseWriter;
+      this.requestQueue = requestQueue;
     }
 
-    if (!handlerRegistry.containsKey(requestContent.getMethod())) {
-      throw new RequestException(
-          ErrorCode.METHOD_NOT_FOUND, "Cannot find method %s", requestContent.getMethod());
-    }
+    @Override
+    public void run() {
+      while (true) {
+        try {
+          RawRequest rawRequest = requestQueue.take();
 
-    RequestHandler handler = handlerRegistry.get(requestContent.getMethod());
+          Object result = null;
+          Response.ResponseError error = null;
+          try {
+            result = dispatchRequestInternal(rawRequest);
+          } catch (RequestException e) {
+            logger.severe(e, "Failed to process request.");
+            error = new Response.ResponseError(e.getErrorCode(), e.getMessage());
+          } catch (Throwable e) {
+            logger.severe(e, "Failed to process request.");
+            error = new Response.ResponseError(ErrorCode.INTERNAL_ERROR, e.getMessage());
+          }
 
-    Request typedRequest = convertRawToRequest(rawRequest, handler);
-    logger.info("Handling request %s", requestContent.getMethod());
-    @SuppressWarnings("unchecked")
-    Object result = handler.handleRequest(typedRequest);
-    return result;
-  }
+          String requestId = rawRequest.getContent().getId();
+          if (Strings.isNullOrEmpty(requestId)) {
+            // No ID provided. The request is a notification and the client doesn't expect any response.
+            continue;
+          }
 
-  @SuppressWarnings("unchecked")
-  private Request convertRawToRequest(RawRequest rawRequest, RequestHandler handler)
-      throws RequestException {
-    RequestParams requestParams;
-    RawRequest.Content requestContent = rawRequest.getContent();
-    Class<?> parameterType = handler.getParamsType();
-    if (parameterType == NullParams.class) {
-      requestParams = null;
-    } else {
-      if (requestContent.getParams() == null) {
-        throw new RequestException(ErrorCode.INVALID_REQUEST, "Missing request params.");
+          Response response;
+          if (error != null) {
+            response = Response.createError(requestId, error);
+          } else {
+            response = Response.createResponse(requestId, result);
+          }
+          try {
+            responseWriter.writeResponse(response);
+          } catch (Throwable e) {
+            logger.severe(e, "Failed to write response, shutting down server.");
+            return;
+          }
+        } catch (InterruptedException e) {
+          logger.info("Request dispatching thread is interrupted, shutting down.");
+          return;
+        }
       }
-      // We don't know the type here, but it's OK since GSON has the type.
-      requestParams = (RequestParams) gson.fromJson(requestContent.getParams(), parameterType);
     }
 
-    return Request.create(
-        rawRequest.getHeader(), requestContent.getMethod(), requestContent.getId(), requestParams);
+    /**
+     * Dispatches a {@link RawRequest} to the {@link RequestHandler} registered for the method of
+     * the request.
+     *
+     * @return the result of processing the request
+     */
+    private Object dispatchRequestInternal(RawRequest rawRequest)
+        throws RequestException, Exception {
+      RawRequest.Content requestContent = rawRequest.getContent();
+
+      if (Strings.isNullOrEmpty(requestContent.getMethod())) {
+        throw new RequestException(ErrorCode.INVALID_REQUEST, "Missing request method.");
+      }
+
+      if (!handlerRegistry.containsKey(requestContent.getMethod())) {
+        throw new RequestException(
+            ErrorCode.METHOD_NOT_FOUND, "Cannot find method %s", requestContent.getMethod());
+      }
+
+      RequestHandler handler = handlerRegistry.get(requestContent.getMethod());
+
+      Request typedRequest = convertRawToRequest(rawRequest, handler);
+      logger.info("Handling request %s", requestContent.getMethod());
+      @SuppressWarnings("unchecked")
+      Object result = handler.handleRequest(typedRequest);
+      return result;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Request convertRawToRequest(RawRequest rawRequest, RequestHandler handler)
+        throws RequestException {
+      RequestParams requestParams;
+      RawRequest.Content requestContent = rawRequest.getContent();
+      Class<?> parameterType = handler.getParamsType();
+      if (parameterType == NullParams.class) {
+        requestParams = null;
+      } else {
+        if (requestContent.getParams() == null) {
+          throw new RequestException(ErrorCode.INVALID_REQUEST, "Missing request params.");
+        }
+        // We don't know the type here, but it's OK since GSON has the type.
+        requestParams = (RequestParams) gson.fromJson(requestContent.getParams(), parameterType);
+      }
+
+      return Request.create(
+          rawRequest.getHeader(),
+          requestContent.getMethod(),
+          requestContent.getId(),
+          requestParams);
+    }
   }
 
   /** Builder for {@link RequestDispatcher}. */
@@ -136,6 +198,7 @@ public class RequestDispatcher {
     private ImmutableMap.Builder<String, RequestHandler> registryBuilder;
     private RequestParser requestParser;
     private ResponseWriter responseWriter;
+    private ExecutorService executor;
 
     public Builder() {
       this.registryBuilder = new ImmutableMap.Builder<>();
@@ -159,6 +222,11 @@ public class RequestDispatcher {
     /** Registers a {@link RequestHandler} to the {@link RequestDispatcher} to be built. */
     public Builder registerHandler(RequestHandler handler) {
       registryBuilder.put(handler.getMethod(), handler);
+      return this;
+    }
+
+    public Builder setExecutor(ExecutorService executor) {
+      this.executor = executor;
       return this;
     }
 
