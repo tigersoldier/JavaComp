@@ -68,6 +68,12 @@ class FileWatcher {
   }
 
   synchronized boolean watchDirectory(Path path) {
+
+    if (PathUtils.shouldIgnorePath(path, this.projectRoot, this.ignorePathMatchers)) {
+      logger.info("Ignore watching directory %s", path);
+      return false;
+    }
+
     Path normalizedPath = path.normalize();
     if (watchKeyMap.containsKey(normalizedPath)) {
       logger.info("Directory %s has already been watched.", path);
