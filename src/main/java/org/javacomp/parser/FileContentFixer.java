@@ -13,7 +13,13 @@ import java.util.Set;
 /** Correct the content of a Java file for completion. */
 public class FileContentFixer {
   private static final Set<TokenKind> VALID_MEMBER_SELECTION_TOKENS =
-      ImmutableSet.of(TokenKind.IDENTIFIER, TokenKind.LT, TokenKind.NEW);
+      ImmutableSet.of(
+          TokenKind.IDENTIFIER,
+          TokenKind.LT,
+          TokenKind.NEW,
+          TokenKind.THIS,
+          TokenKind.SUPER,
+          TokenKind.CLASS);
   private final ParserContext parserContext;
 
   public FileContentFixer(ParserContext parserContext) {
