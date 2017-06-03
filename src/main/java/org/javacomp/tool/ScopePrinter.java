@@ -104,7 +104,10 @@ public class ScopePrinter {
     Joiner joiner = Joiner.on(".");
     for (Entity entity : scope.getMemberEntities().values()) {
       System.out.println(formatEntity(entity, indent));
-      printScope(entity.getChildScope(), indent + 2);
+      // VariableEntity's child scope is the same as its parent scope, which is being visited.
+      if (!(entity instanceof VariableEntity)) {
+        printScope(entity.getChildScope(), indent + 2);
+      }
     }
   }
 
