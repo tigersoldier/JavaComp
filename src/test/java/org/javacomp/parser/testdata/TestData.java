@@ -8,6 +8,7 @@ import foo.bar.baz.*;
 public class TestData {
   public static final int publicStaticIntField;
   private final boolean privateMemberBooleanField;
+  public Baz<foo.bar.baz.Baz, ?, ? super B<? extends C>> typeVariableField;
 
   private TestData() {
     a = 0;

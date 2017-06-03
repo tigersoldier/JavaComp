@@ -322,6 +322,7 @@ public class IndexStore {
       ret.fullName = QUALIFIER_JOINER.join(type.getFullName());
       ret.isArray = type.isArray();
     }
+    // TODO: serialize type variables.
     return ret;
   }
 
@@ -332,6 +333,8 @@ public class IndexStore {
             .setFullName(type.fullName.split(QUALIFIER_SEPARATOR))
             .setPrimitive(PrimitiveEntity.isPrimitive(type.fullName))
             .setArray(type.isArray)
+            // TODO: deserialize type variables.
+            .setTypeVariables(ImmutableList.of())
             .build();
     return ret;
   }

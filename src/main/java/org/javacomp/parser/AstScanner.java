@@ -17,6 +17,7 @@ import com.sun.source.tree.PrimitiveTypeTree;
 import com.sun.source.tree.StatementTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.tree.VariableTree;
+import com.sun.source.tree.WildcardTree;
 import com.sun.source.util.TreePathScanner;
 import com.sun.source.util.TreeScanner;
 import com.sun.tools.javac.tree.EndPosTable;
@@ -40,7 +41,9 @@ import org.javacomp.model.EntityScope;
 import org.javacomp.model.FileScope;
 import org.javacomp.model.MethodEntity;
 import org.javacomp.model.TypeReference;
+import org.javacomp.model.TypeVariable;
 import org.javacomp.model.VariableEntity;
+import org.javacomp.model.WildcardTypeVariable;
 import org.javacomp.model.util.NestedRangeMapBuilder;
 import org.javacomp.options.IndexOptions;
 
@@ -292,6 +295,7 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
 
   private static class TypeReferenceScanner extends TreeScanner<Void, Void> {
     private final Deque<String> names = new ArrayDeque<>();
+    private final List<TypeVariable> typeVariables = new ArrayList<>();
     private boolean isPrimitive = false;
     private boolean isArray = false;
 
@@ -299,6 +303,7 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
       names.clear();
       isPrimitive = false;
       isArray = false;
+      typeVariables.clear();
       scan(node, null);
       if (names.isEmpty()) {
         // Malformed input, no type can be referenced
@@ -308,12 +313,25 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
           .setFullName(names)
           .setPrimitive(isPrimitive)
           .setArray(isArray)
+          .setTypeVariables(typeVariables)
           .build();
     }
 
     @Override
     public Void visitParameterizedType(ParameterizedTypeTree node, Void unused) {
       scan(node.getType(), unused);
+      for (Tree typeArgument : node.getTypeArguments()) {
+        if (typeArgument instanceof WildcardTree) {
+          // TODO: handle bounds
+          typeVariables.add(createWildcardTypeVariable((WildcardTree) typeArgument));
+        } else {
+          TypeReference typeReference = new TypeReferenceScanner().getTypeReference(typeArgument);
+          if (typeReference == TypeReference.EMPTY_TYPE) {
+            logger.warning("Unknown type variable: %s", typeArgument);
+          }
+          typeVariables.add(typeReference);
+        }
+      }
       // TODO: handle type parameters.
       return null;
     }
@@ -343,6 +361,33 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
       isPrimitive = true;
       names.addFirst(node.getPrimitiveTypeKind().name().toLowerCase());
       return null;
+    }
+
+    private WildcardTypeVariable createWildcardTypeVariable(WildcardTree node) {
+      Optional<WildcardTypeVariable.Bound> bound;
+      switch (node.getKind()) {
+        case SUPER_WILDCARD:
+          bound =
+              Optional.of(
+                  WildcardTypeVariable.Bound.create(
+                      WildcardTypeVariable.Bound.Kind.SUPER,
+                      new TypeReferenceScanner().getTypeReference(node.getBound())));
+          break;
+        case EXTENDS_WILDCARD:
+          bound =
+              Optional.of(
+                  WildcardTypeVariable.Bound.create(
+                      WildcardTypeVariable.Bound.Kind.EXTENDS,
+                      new TypeReferenceScanner().getTypeReference(node.getBound())));
+          break;
+        case UNBOUNDED_WILDCARD:
+          bound = Optional.empty();
+          break;
+        default:
+          logger.warning("Unknown wildcard type varialbe kind: %s", node.getKind());
+          bound = Optional.empty();
+      }
+      return WildcardTypeVariable.create(bound);
     }
   }
 

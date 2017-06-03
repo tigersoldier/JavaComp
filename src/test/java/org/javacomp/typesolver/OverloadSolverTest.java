@@ -2,6 +2,7 @@ package org.javacomp.typesolver;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import com.google.common.collect.ImmutableList;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -10,6 +11,7 @@ import org.javacomp.model.Entity;
 import org.javacomp.model.Module;
 import org.javacomp.model.SolvedType;
 import org.javacomp.model.TypeReference;
+import org.javacomp.model.TypeVariable;
 import org.javacomp.testing.TestUtil;
 import org.junit.Before;
 import org.junit.Test;
@@ -132,18 +134,38 @@ public class OverloadSolverTest {
   }
 
   private static TypeReference referenceType(String name) {
-    return TypeReference.builder().setFullName(name).setArray(false).setPrimitive(false).build();
+    return TypeReference.builder()
+        .setFullName(name)
+        .setArray(false)
+        .setPrimitive(false)
+        .setTypeVariables(ImmutableList.<TypeVariable>of())
+        .build();
   }
 
   private static TypeReference referenceArrayType(String name) {
-    return TypeReference.builder().setFullName(name).setArray(true).setPrimitive(false).build();
+    return TypeReference.builder()
+        .setFullName(name)
+        .setArray(true)
+        .setPrimitive(false)
+        .setTypeVariables(ImmutableList.<TypeVariable>of())
+        .build();
   }
 
   private static TypeReference primitiveType(String name) {
-    return TypeReference.builder().setFullName(name).setArray(false).setPrimitive(true).build();
+    return TypeReference.builder()
+        .setFullName(name)
+        .setArray(false)
+        .setPrimitive(true)
+        .setTypeVariables(ImmutableList.<TypeVariable>of())
+        .build();
   }
 
   private static TypeReference primitiveArrayType(String name) {
-    return TypeReference.builder().setFullName(name).setArray(true).setPrimitive(true).build();
+    return TypeReference.builder()
+        .setFullName(name)
+        .setArray(true)
+        .setPrimitive(true)
+        .setTypeVariables(ImmutableList.<TypeVariable>of())
+        .build();
   }
 }

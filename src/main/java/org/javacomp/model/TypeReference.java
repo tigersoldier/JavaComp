@@ -7,20 +7,27 @@ import java.util.Collection;
 
 /** A reference to a type for lazy resolution. */
 @AutoValue
-public abstract class TypeReference {
+public abstract class TypeReference implements TypeVariable {
   public static final TypeReference EMPTY_TYPE =
-      TypeReference.builder().setFullName().setPrimitive(false).setArray(false).build();
+      TypeReference.builder()
+          .setFullName()
+          .setPrimitive(false)
+          .setArray(false)
+          .setTypeVariables(ImmutableList.of())
+          .build();
   public static final TypeReference JAVA_LANG_OBJECT =
       TypeReference.builder()
           .setFullName("java", "lang", "Object")
           .setPrimitive(false)
           .setArray(false)
+          .setTypeVariables(ImmutableList.of())
           .build();
   public static final TypeReference JAVA_LANG_ENUM =
       TypeReference.builder()
           .setFullName("java", "lang", "Enum")
           .setPrimitive(false)
           .setArray(false)
+          .setTypeVariables(ImmutableList.of())
           .build();
 
   private static final Joiner JOINER = Joiner.on(".");
@@ -30,6 +37,8 @@ public abstract class TypeReference {
   public abstract boolean isPrimitive();
 
   public abstract boolean isArray();
+
+  public abstract ImmutableList<TypeVariable> getTypeVariables();
 
   public static Builder builder() {
     return new AutoValue_TypeReference.Builder();
@@ -48,13 +57,27 @@ public abstract class TypeReference {
     return "TypeReference<" + JOINER.join(getFullName()) + (isArray() ? "[]>" : ">");
   }
 
+  @Override
   public String toDisplayString() {
-    String simpleName = getSimpleName();
-    if (isArray()) {
-      return simpleName + "[]";
-    } else {
-      return simpleName;
+    StringBuffer sb = new StringBuffer();
+    sb.append(getSimpleName());
+    if (!getTypeVariables().isEmpty()) {
+      sb.append("<");
+      boolean isFirst = true;
+      for (TypeVariable typeVariable : getTypeVariables()) {
+        if (isFirst) {
+          isFirst = false;
+        } else {
+          sb.append(", ");
+        }
+        sb.append(typeVariable.toDisplayString());
+      }
+      sb.append(">");
     }
+    if (isArray()) {
+      sb.append("[]");
+    }
+    return sb.toString();
   }
 
   @AutoValue.Builder
@@ -73,6 +96,12 @@ public abstract class TypeReference {
 
     public Builder setFullName(Collection<String> fullName) {
       return setFullName(ImmutableList.copyOf(fullName));
+    }
+
+    public abstract Builder setTypeVariables(ImmutableList<TypeVariable> typeVariables);
+
+    public Builder setTypeVariables(Collection<TypeVariable> typeVariables) {
+      return setTypeVariables(ImmutableList.copyOf(typeVariables));
     }
   }
 }

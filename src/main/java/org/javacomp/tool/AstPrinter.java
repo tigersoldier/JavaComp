@@ -13,6 +13,7 @@ import com.sun.source.tree.ModifiersTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.tree.TypeParameterTree;
 import com.sun.source.tree.VariableTree;
+import com.sun.source.tree.WildcardTree;
 import com.sun.source.util.TreeScanner;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import java.io.IOException;
@@ -111,6 +112,15 @@ public class AstPrinter extends TreeScanner<Void, Void> {
     scan(node.getImplementsClause(), null);
     printWithIndent("[members]:");
     scan(node.getMembers(), null);
+    return null;
+  }
+
+  @Override
+  public Void visitWildcard(WildcardTree node, Void unused) {
+    printWithIndent("Kind: " + node.getKind());
+    if (node.getBound() != null) {
+      scan(node.getBound(), null);
+    }
     return null;
   }
 
