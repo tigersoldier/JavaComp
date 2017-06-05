@@ -562,22 +562,28 @@ public class TypeSolver {
 
       while (!classQueue.isEmpty()) {
         ClassReference classReference = classQueue.removeFirst();
-        Optional<SolvedType> solvedType =
-            solve(classReference.classType, module, classReference.baseScope);
-        if (!solvedType.isPresent()) {
+        Optional<Entity> solvedEntity;
+        if (classReference.baseScope == null) {
+          solvedEntity = findClassInModule(classReference.classType.getFullName(), module);
+        } else {
+          solvedEntity =
+              solve(classReference.classType, module, classReference.baseScope)
+                  .map(t -> t.getEntity());
+        }
+        if (!solvedEntity.isPresent()) {
           continue;
         }
-        if (solvedType.get().isPrimitive()) {
-          throw new RuntimeException(classReference.classType + " " + solvedType);
+        Entity entity = solvedEntity.get();
+        if (!(entity instanceof ClassEntity)) {
+          throw new RuntimeException(classReference.classType + " " + entity);
         }
 
-        Entity solvedEntity = solvedType.get().getEntity();
-        if (visitedClassEntity.contains(solvedEntity)) {
+        if (visitedClassEntity.contains(entity)) {
           continue;
         }
 
-        visitClass((ClassEntity) solvedEntity);
-        return (ClassEntity) solvedEntity;
+        visitClass((ClassEntity) entity);
+        return (ClassEntity) entity;
       }
 
       if (!javaLangObjectAdded) {
