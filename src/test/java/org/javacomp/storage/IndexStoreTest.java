@@ -55,14 +55,18 @@ public class IndexStoreTest {
   }
 
   private void assertPackagesEqual(
-      PackageEntity deserialized, PackageEntity original, Deque<String> qualifiers) {
-    assertSameMemberEntities(deserialized.getChildScope(), original.getChildScope(), qualifiers);
+      PackageEntity deserialized, PackageEntity original, Deque<String> qualifiedName) {
+    assertQualifiedName(deserialized, qualifiedName);
+    assertThat(deserialized.getQualifiedName()).isEqualTo(original.getQualifiedName());
+    assertSameMemberEntities(deserialized.getChildScope(), original.getChildScope(), qualifiedName);
   }
 
   private void assertClassesEqual(
-      ClassEntity deserialized, ClassEntity original, Deque<String> qualifiers) {
-    assertSameMemberEntities(deserialized, original, qualifiers);
-    assertTypesEqual(deserialized.getSuperClass(), original.getSuperClass(), qualifiers);
+      ClassEntity deserialized, ClassEntity original, Deque<String> qualifiedName) {
+    assertQualifiedName(deserialized, qualifiedName);
+    assertThat(deserialized.getQualifiedName()).isEqualTo(original.getQualifiedName());
+    assertSameMemberEntities(deserialized, original, qualifiedName);
+    assertTypesEqual(deserialized.getSuperClass(), original.getSuperClass(), qualifiedName);
 
     List<TypeReference> deserializedInterfaces =
         TYPE_REFERENCE_SIMPLE_NAME_ORDER.immutableSortedCopy(deserialized.getInterfaces());
@@ -70,32 +74,36 @@ public class IndexStoreTest {
         TYPE_REFERENCE_SIMPLE_NAME_ORDER.immutableSortedCopy(original.getInterfaces());
 
     assertThat(deserializedInterfaces)
-        .named("interfaces of " + QUALIFIER_JOINER.join(qualifiers))
+        .named("interfaces of " + QUALIFIER_JOINER.join(qualifiedName))
         .hasSize(originalInterfaces.size());
 
     for (int i = 0; i < deserializedInterfaces.size(); i++) {
-      assertTypesEqual(deserializedInterfaces.get(i), originalInterfaces.get(i), qualifiers);
+      assertTypesEqual(deserializedInterfaces.get(i), originalInterfaces.get(i), qualifiedName);
     }
   }
 
   private boolean methodsEqual(
-      MethodEntity deserialized, MethodEntity original, Deque<String> qualifiers) {
+      MethodEntity deserialized, MethodEntity original, Deque<String> qualifiedName) {
     List<VariableEntity> deserializedParameters = deserialized.getParameters();
     List<VariableEntity> originalParameters = original.getParameters();
     if (deserializedParameters.size() != originalParameters.size()) {
       return false;
     }
 
+    // parameters do not have qualified names.
     for (int i = 0; i < deserializedParameters.size(); i++) {
+      Deque<String> parameterQualifiedName = new ArrayDeque<>();
+      parameterQualifiedName.add(deserializedParameters.get(i).getSimpleName());
       try {
-        assertVariablesEqual(deserializedParameters.get(i), originalParameters.get(i), qualifiers);
+        assertVariablesEqual(
+            deserializedParameters.get(i), originalParameters.get(i), parameterQualifiedName);
       } catch (Throwable t) {
         return false;
       }
     }
 
     try {
-      assertTypesEqual(deserialized.getReturnType(), original.getReturnType(), qualifiers);
+      assertTypesEqual(deserialized.getReturnType(), original.getReturnType(), qualifiedName);
     } catch (Throwable t) {
       return false;
     }
@@ -104,57 +112,65 @@ public class IndexStoreTest {
   }
 
   private void assertVariablesEqual(
-      VariableEntity deserialized, VariableEntity original, Deque<String> qualifiers) {
-    assertTypesEqual(deserialized.getType(), original.getType(), qualifiers);
+      VariableEntity deserialized, VariableEntity original, Deque<String> qualifiedName) {
+
+    assertTypesEqual(deserialized.getType(), original.getType(), qualifiedName);
+    assertQualifiedName(deserialized, qualifiedName);
+    assertThat(deserialized.getSimpleName()).isEqualTo(original.getSimpleName());
   }
 
-  private void assertEntitiesEqual(Entity deserialized, Entity original, Deque<String> qualifiers) {
+  private void assertEntitiesEqual(
+      Entity deserialized, Entity original, Deque<String> qualifiedName) {
     assertThat(deserialized.getKind())
         .named("Kind of " + deserialized)
         .isEqualTo(original.getKind());
     if (deserialized instanceof ClassEntity) {
-      assertClassesEqual((ClassEntity) deserialized, (ClassEntity) original, qualifiers);
+      assertClassesEqual((ClassEntity) deserialized, (ClassEntity) original, qualifiedName);
     } else if (deserialized instanceof VariableEntity) {
-      assertVariablesEqual((VariableEntity) deserialized, (VariableEntity) original, qualifiers);
+      assertVariablesEqual((VariableEntity) deserialized, (VariableEntity) original, qualifiedName);
     } else if (deserialized instanceof PackageEntity) {
-      assertPackagesEqual((PackageEntity) deserialized, (PackageEntity) original, qualifiers);
+      assertPackagesEqual((PackageEntity) deserialized, (PackageEntity) original, qualifiedName);
     } else {
       throw new RuntimeException("Unsupported entity " + deserialized);
     }
   }
 
   private void assertTypesEqual(
-      TypeReference deserialized, TypeReference original, Deque<String> qualifiers) {
+      TypeReference deserialized, TypeReference original, Deque<String> qualifiedName) {
     assertThat(QUALIFIER_JOINER.join(deserialized.getFullName()))
-        .named("Type of " + QUALIFIER_JOINER.join(qualifiers))
+        .named("Type of " + QUALIFIER_JOINER.join(qualifiedName))
         .contains(QUALIFIER_JOINER.join(original.getFullName()));
+  }
+
+  private void assertQualifiedName(Entity entity, Deque<String> qualifiedName) {
+    assertThat(entity.getQualifiedName()).isEqualTo(QUALIFIER_JOINER.join(qualifiedName));
   }
 
   private void assertTypesEqual(
       Optional<TypeReference> deserialized,
       Optional<TypeReference> original,
-      Deque<String> qualifiers) {
+      Deque<String> qualifiedName) {
     assertThat(deserialized.isPresent())
-        .named("Presence of type of " + QUALIFIER_JOINER.join(qualifiers));
+        .named("Presence of type of " + QUALIFIER_JOINER.join(qualifiedName));
     if (deserialized.isPresent()) {
-      assertTypesEqual(deserialized.get(), original.get(), qualifiers);
+      assertTypesEqual(deserialized.get(), original.get(), qualifiedName);
     }
   }
 
   private void assertSameMemberEntities(
-      EntityScope deserialized, EntityScope original, Deque<String> qualifiers) {
+      EntityScope deserialized, EntityScope original, Deque<String> qualifiedName) {
     assertThat(deserialized.getMemberEntities().keySet())
-        .named("Member entities of " + QUALIFIER_JOINER.join(qualifiers))
+        .named("Member entities of " + QUALIFIER_JOINER.join(qualifiedName))
         .containsExactlyElementsIn(original.getMemberEntities().keySet());
 
     for (String entityName : deserialized.getMemberEntities().keySet()) {
-      qualifiers.add(entityName);
+      qualifiedName.addLast(entityName);
       Collection<Entity> deserializedMembers = deserialized.getMemberEntities().get(entityName);
       Set<Entity> originalMembers = new HashSet<>();
       originalMembers.addAll(deserialized.getMemberEntities().get(entityName));
 
       assertThat(deserializedMembers)
-          .named("entities named '" + entityName + "' in " + QUALIFIER_JOINER.join(qualifiers))
+          .named("entities named '" + entityName + "' in " + QUALIFIER_JOINER.join(qualifiedName))
           .hasSize(originalMembers.size());
 
       for (Entity deserializedMember : deserializedMembers) {
@@ -167,12 +183,12 @@ public class IndexStoreTest {
           if (deserializedMember.getKind() == Entity.Kind.METHOD) {
             // Special handle of method overloading.
             if (methodsEqual(
-                (MethodEntity) deserializedMember, (MethodEntity) originalMember, qualifiers)) {
+                (MethodEntity) deserializedMember, (MethodEntity) originalMember, qualifiedName)) {
               matchedEntity = originalMember;
               break;
             }
           } else {
-            assertEntitiesEqual(deserializedMember, originalMember, qualifiers);
+            assertEntitiesEqual(deserializedMember, originalMember, qualifiedName);
             matchedEntity = originalMember;
             break;
           }
@@ -183,7 +199,7 @@ public class IndexStoreTest {
               String.format("Entity %s not found in %s", deserializedMember, originalMembers));
         }
       }
-      qualifiers.remove();
+      qualifiedName.removeLast();
     }
   }
 }

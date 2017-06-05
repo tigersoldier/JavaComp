@@ -40,6 +40,7 @@ public class IndexStore {
   private static final String QUALIFIER_SEPARATOR = "\\.";
   private static final Joiner QUALIFIER_JOINER = Joiner.on(".");
   private static final Range<Integer> EMPTY_RANGE = Range.closedOpen(0, 0);
+  private static final ImmutableList<String> EMPTY_QUALIFIERS = ImmutableList.of();
 
   private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
   private final TypeSolver typeSolver = new TypeSolver();
@@ -273,11 +274,6 @@ public class IndexStore {
     if (serializedEntity.parameters == null) {
       parameters = ImmutableList.of();
     } else {
-      List<String> childQualifiers =
-          new ImmutableList.Builder<String>()
-              .addAll(qualifiers)
-              .add(serializedEntity.simpleName)
-              .build();
       parameters =
           serializedEntity
               .parameters
@@ -285,7 +281,7 @@ public class IndexStore {
               .map(
                   p ->
                       deserializeVariableEntity(
-                          p, Entity.Kind.VARIABLE, childQualifiers, classEntity))
+                          p, Entity.Kind.VARIABLE, EMPTY_QUALIFIERS, classEntity))
               .collect(ImmutableList.toImmutableList());
     }
     return new MethodEntity(
