@@ -4,6 +4,20 @@ import org.javacomp.typesolver.testdata.ondemand.*;
 import org.javacomp.typesolver.testdata.other.BaseClass;
 import org.javacomp.typesolver.testdata.other.Shadow;
 
+// The invalid imports below tests canonical names for import statements.
+//
+// If resolving import paths allows inner classes defined in super classes or
+// interfaces, the import statements will cause infinit loop for solving
+// BaseInterface. The root cause is when trying to find BaseInterface from
+// imported classes, the type solver tries to find inner classes of TestClass
+// according the import statements below. If inner classes defined in super
+// classes or interfaces are allowed, BaseInterface needs to be solved for
+// getting all inner classes, which in turn triggers solving BaseInterface
+// from the import statements again.
+import org.javacomp.typesolver.testdata.TestClass.BaseInterface;
+import org.javacomp.typesolver.testdata.TestClass.*;
+import org.javacomp.typesolver.testdata.TestClass.BaseInterfaceFactory.*;
+
 public class TestClass extends BaseClass implements BaseInterface {
   public static final TestClassFactory FACTORY = new TestClassFactory();
   public final Shadow shadow;

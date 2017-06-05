@@ -2,7 +2,6 @@ package org.javacomp.typesolver;
 
 import com.google.common.collect.AbstractIterator;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 import java.util.ArrayDeque;
 import java.util.Collection;
@@ -14,6 +13,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.javacomp.logging.JLogger;
 import org.javacomp.model.AggregatePackageScope;
 import org.javacomp.model.ClassEntity;
@@ -93,6 +93,19 @@ public class TypeSolver {
   }
 
   public Optional<Entity> findClassOrPackage(List<String> qualifiers, Module module) {
+    return findClassOrPackage(qualifiers, module, false /* useCanonicalName */);
+  }
+
+  /**
+   * @param useCanonicalName if set to true, consider qualifiers the canonical name of the class or
+   *     package to look for, otherwise it's the fully qualified name. The differences are
+   *     documented by JLS 6.7. In short, fully qualified name allows inner classes declared in
+   *     super classes or interfaces, while canonical name only allows inner classes declared in the
+   *     parent class itself. See
+   *     https://docs.oracle.com/javase/specs/jls/se8/html/jls-6.html#jls-6.7
+   */
+  private Optional<Entity> findClassOrPackage(
+      List<String> qualifiers, Module module, boolean useCanonicalName) {
     EntityScope currentScope = getAggregateRootPackageScope(module);
     if (qualifiers.isEmpty()) {
       return Optional.empty();
@@ -100,18 +113,24 @@ public class TypeSolver {
 
     Entity currentEntity = null;
     for (String qualifier : qualifiers) {
-      if (currentScope instanceof PackageScope) {
-        // All members of Module or PackageScope are either package or class
+      if (currentScope instanceof PackageScope
+          || (currentScope instanceof ClassEntity && useCanonicalName)) {
         Collection<Entity> entities = currentScope.getMemberEntities().get(qualifier);
-        if (entities.isEmpty()) {
+        List<Entity> filteredEntities =
+            entities
+                .stream()
+                .filter(
+                    entity -> (entity instanceof PackageEntity || entity instanceof ClassEntity))
+                .collect(Collectors.toList());
+        if (filteredEntities.isEmpty()) {
           // Either not found, or is ambiguous.
           currentEntity = null;
           break;
-        } else if (entities.size() > 1) {
+        } else if (filteredEntities.size() > 1) {
           logger.warning("More than one class %s are found in package: %s", qualifier, entities);
         }
 
-        currentEntity = Iterables.getFirst(entities, null);
+        currentEntity = filteredEntities.get(0);
       } else if (currentScope instanceof ClassEntity) {
         currentEntity =
             findClassMember(qualifier, (ClassEntity) currentScope, module, CLASS_KINDS)
@@ -185,7 +204,12 @@ public class TypeSolver {
   }
 
   public Optional<Entity> findClassInModule(List<String> qualifiers, Module module) {
-    Optional<Entity> classInModule = findClassOrPackage(qualifiers, module);
+    return findClassInModule(qualifiers, module, false /* useCanonicalName */);
+  }
+
+  private Optional<Entity> findClassInModule(
+      List<String> qualifiers, Module module, boolean useCanonicalName) {
+    Optional<Entity> classInModule = findClassOrPackage(qualifiers, module, useCanonicalName);
     if (classInModule.isPresent() && classInModule.get() instanceof ClassEntity) {
       return classInModule;
     }
@@ -406,17 +430,19 @@ public class TypeSolver {
     // Not declared in the file, try imported classes.
     Optional<List<String>> importedClass = fileScope.getImportedClass(name);
     if (importedClass.isPresent()) {
-      Optional<Entity> classInModule = findClassInModule(importedClass.get(), module);
+      Optional<Entity> classInModule =
+          findClassInModule(importedClass.get(), module, true /* useCanonicalName */);
       if (classInModule.isPresent()) {
         return classInModule;
       }
     }
     // Not directly imported, try on-demand imports (e.g. import foo.bar.*).
     for (List<String> onDemandClassQualifiers : fileScope.getOnDemandClassImportQualifiers()) {
-      Optional<Entity> classOrPackage = findClassOrPackage(onDemandClassQualifiers, module);
+      Optional<Entity> classOrPackage =
+          findClassOrPackage(onDemandClassQualifiers, module, true /* useCanonicalName */);
       if (classOrPackage.isPresent()) {
         Optional<Entity> classEntity =
-            findClass(name, classOrPackage.get().getChildScope(), module);
+            findDirectMember(name, classOrPackage.get().getChildScope(), ClassEntity.ALLOWED_KINDS);
         if (classEntity.isPresent()) {
           return classEntity;
         }
