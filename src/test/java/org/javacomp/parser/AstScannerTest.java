@@ -21,10 +21,10 @@ import org.javacomp.model.Entity;
 import org.javacomp.model.EntityScope;
 import org.javacomp.model.FileScope;
 import org.javacomp.model.MethodEntity;
+import org.javacomp.model.TypeArgument;
 import org.javacomp.model.TypeReference;
-import org.javacomp.model.TypeVariable;
 import org.javacomp.model.VariableEntity;
-import org.javacomp.model.WildcardTypeVariable;
+import org.javacomp.model.WildcardTypeArgument;
 import org.javacomp.options.IndexOptions;
 import org.junit.Before;
 import org.junit.Test;
@@ -294,39 +294,39 @@ public class AstScannerTest {
   }
 
   @Test
-  public void typeVariable() {
-    VariableEntity typeVariableField =
-        (VariableEntity) lookupEntity(fileScope, "TestData.typeVariableField");
+  public void typeArgument() {
+    VariableEntity typeArgumentField =
+        (VariableEntity) lookupEntity(fileScope, "TestData.typeArgumentField");
 
-    List<TypeVariable> typeVariables = typeVariableField.getType().getTypeVariables();
-    assertThat(typeVariables).hasSize(3);
+    List<TypeArgument> typeArguments = typeArgumentField.getType().getTypeArguments();
+    assertThat(typeArguments).hasSize(3);
 
-    assertThat(typeVariables.get(0)).isInstanceOf(TypeReference.class);
-    TypeReference typeVar0 = (TypeReference) typeVariables.get(0);
-    assertThat(typeVar0.getFullName()).containsExactly("foo", "bar", "baz", "Baz").inOrder();
-    assertThat(typeVar0.getTypeVariables()).isEmpty();
+    assertThat(typeArguments.get(0)).isInstanceOf(TypeReference.class);
+    TypeReference typeArg0 = (TypeReference) typeArguments.get(0);
+    assertThat(typeArg0.getFullName()).containsExactly("foo", "bar", "baz", "Baz").inOrder();
+    assertThat(typeArg0.getTypeArguments()).isEmpty();
 
-    assertThat(typeVariables.get(1)).isInstanceOf(WildcardTypeVariable.class);
-    WildcardTypeVariable typeVar1 = (WildcardTypeVariable) typeVariables.get(1);
-    Truth8.assertThat(typeVar1.getBound()).isEmpty();
+    assertThat(typeArguments.get(1)).isInstanceOf(WildcardTypeArgument.class);
+    WildcardTypeArgument typeArg1 = (WildcardTypeArgument) typeArguments.get(1);
+    Truth8.assertThat(typeArg1.getBound()).isEmpty();
 
-    assertThat(typeVariables.get(2)).isInstanceOf(WildcardTypeVariable.class);
-    WildcardTypeVariable typeVar2 = (WildcardTypeVariable) typeVariables.get(2);
-    Truth8.assertThat(typeVar2.getBound()).isPresent();
+    assertThat(typeArguments.get(2)).isInstanceOf(WildcardTypeArgument.class);
+    WildcardTypeArgument typeArg2 = (WildcardTypeArgument) typeArguments.get(2);
+    Truth8.assertThat(typeArg2.getBound()).isPresent();
 
-    WildcardTypeVariable.Bound bound = typeVar2.getBound().get();
-    assertThat(bound.getKind()).isEqualTo(WildcardTypeVariable.Bound.Kind.SUPER);
+    WildcardTypeArgument.Bound bound = typeArg2.getBound().get();
+    assertThat(bound.getKind()).isEqualTo(WildcardTypeArgument.Bound.Kind.SUPER);
 
     TypeReference boundType = bound.getTypeReference();
     assertThat(boundType.getFullName()).containsExactly("B");
-    assertThat(boundType.getTypeVariables()).hasSize(1);
+    assertThat(boundType.getTypeArguments()).hasSize(1);
 
-    assertThat(boundType.getTypeVariables().get(0)).isInstanceOf(WildcardTypeVariable.class);
-    WildcardTypeVariable subTypeVar = (WildcardTypeVariable) boundType.getTypeVariables().get(0);
+    assertThat(boundType.getTypeArguments().get(0)).isInstanceOf(WildcardTypeArgument.class);
+    WildcardTypeArgument subTypeVar = (WildcardTypeArgument) boundType.getTypeArguments().get(0);
     Truth8.assertThat(subTypeVar.getBound()).isPresent();
 
-    WildcardTypeVariable.Bound subBound = subTypeVar.getBound().get();
-    assertThat(subBound.getKind()).isEqualTo(WildcardTypeVariable.Bound.Kind.EXTENDS);
+    WildcardTypeArgument.Bound subBound = subTypeVar.getBound().get();
+    assertThat(subBound.getKind()).isEqualTo(WildcardTypeArgument.Bound.Kind.EXTENDS);
     assertThat(subBound.getTypeReference().getFullName()).containsExactly("C");
   }
 

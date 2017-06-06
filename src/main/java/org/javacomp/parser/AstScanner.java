@@ -40,10 +40,10 @@ import org.javacomp.model.Entity;
 import org.javacomp.model.EntityScope;
 import org.javacomp.model.FileScope;
 import org.javacomp.model.MethodEntity;
+import org.javacomp.model.TypeArgument;
 import org.javacomp.model.TypeReference;
-import org.javacomp.model.TypeVariable;
 import org.javacomp.model.VariableEntity;
-import org.javacomp.model.WildcardTypeVariable;
+import org.javacomp.model.WildcardTypeArgument;
 import org.javacomp.model.util.NestedRangeMapBuilder;
 import org.javacomp.options.IndexOptions;
 
@@ -295,7 +295,7 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
 
   private static class TypeReferenceScanner extends TreeScanner<Void, Void> {
     private final Deque<String> names = new ArrayDeque<>();
-    private final List<TypeVariable> typeVariables = new ArrayList<>();
+    private final List<TypeArgument> typeArguments = new ArrayList<>();
     private boolean isPrimitive = false;
     private boolean isArray = false;
 
@@ -303,7 +303,7 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
       names.clear();
       isPrimitive = false;
       isArray = false;
-      typeVariables.clear();
+      typeArguments.clear();
       scan(node, null);
       if (names.isEmpty()) {
         // Malformed input, no type can be referenced
@@ -313,7 +313,7 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
           .setFullName(names)
           .setPrimitive(isPrimitive)
           .setArray(isArray)
-          .setTypeVariables(typeVariables)
+          .setTypeArguments(typeArguments)
           .build();
     }
 
@@ -323,13 +323,13 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
       for (Tree typeArgument : node.getTypeArguments()) {
         if (typeArgument instanceof WildcardTree) {
           // TODO: handle bounds
-          typeVariables.add(createWildcardTypeVariable((WildcardTree) typeArgument));
+          typeArguments.add(createWildcardTypeArgument((WildcardTree) typeArgument));
         } else {
           TypeReference typeReference = new TypeReferenceScanner().getTypeReference(typeArgument);
           if (typeReference == TypeReference.EMPTY_TYPE) {
-            logger.warning("Unknown type variable: %s", typeArgument);
+            logger.warning("Unknown type argument: %s", typeArgument);
           }
-          typeVariables.add(typeReference);
+          typeArguments.add(typeReference);
         }
       }
       // TODO: handle type parameters.
@@ -363,21 +363,21 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
       return null;
     }
 
-    private WildcardTypeVariable createWildcardTypeVariable(WildcardTree node) {
-      Optional<WildcardTypeVariable.Bound> bound;
+    private WildcardTypeArgument createWildcardTypeArgument(WildcardTree node) {
+      Optional<WildcardTypeArgument.Bound> bound;
       switch (node.getKind()) {
         case SUPER_WILDCARD:
           bound =
               Optional.of(
-                  WildcardTypeVariable.Bound.create(
-                      WildcardTypeVariable.Bound.Kind.SUPER,
+                  WildcardTypeArgument.Bound.create(
+                      WildcardTypeArgument.Bound.Kind.SUPER,
                       new TypeReferenceScanner().getTypeReference(node.getBound())));
           break;
         case EXTENDS_WILDCARD:
           bound =
               Optional.of(
-                  WildcardTypeVariable.Bound.create(
-                      WildcardTypeVariable.Bound.Kind.EXTENDS,
+                  WildcardTypeArgument.Bound.create(
+                      WildcardTypeArgument.Bound.Kind.EXTENDS,
                       new TypeReferenceScanner().getTypeReference(node.getBound())));
           break;
         case UNBOUNDED_WILDCARD:
@@ -387,7 +387,7 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
           logger.warning("Unknown wildcard type varialbe kind: %s", node.getKind());
           bound = Optional.empty();
       }
-      return WildcardTypeVariable.create(bound);
+      return WildcardTypeArgument.create(bound);
     }
   }
 

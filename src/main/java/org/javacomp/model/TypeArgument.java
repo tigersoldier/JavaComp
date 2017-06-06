@@ -9,6 +9,6 @@ package org.javacomp.model;
  * SomeType<TypeVar1, ? extends SomeType2, ? super SompType3>
  * }</pre>
  */
-public interface TypeVariable {
+public interface TypeArgument {
   String toDisplayString();
 }

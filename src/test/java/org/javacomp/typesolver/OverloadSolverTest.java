@@ -10,8 +10,8 @@ import org.javacomp.model.ClassEntity;
 import org.javacomp.model.Entity;
 import org.javacomp.model.Module;
 import org.javacomp.model.SolvedType;
+import org.javacomp.model.TypeArgument;
 import org.javacomp.model.TypeReference;
-import org.javacomp.model.TypeVariable;
 import org.javacomp.testing.TestUtil;
 import org.junit.Before;
 import org.junit.Test;
@@ -138,7 +138,7 @@ public class OverloadSolverTest {
         .setFullName(name)
         .setArray(false)
         .setPrimitive(false)
-        .setTypeVariables(ImmutableList.<TypeVariable>of())
+        .setTypeArguments(ImmutableList.<TypeArgument>of())
         .build();
   }
 
@@ -147,7 +147,7 @@ public class OverloadSolverTest {
         .setFullName(name)
         .setArray(true)
         .setPrimitive(false)
-        .setTypeVariables(ImmutableList.<TypeVariable>of())
+        .setTypeArguments(ImmutableList.<TypeArgument>of())
         .build();
   }
 
@@ -156,7 +156,7 @@ public class OverloadSolverTest {
         .setFullName(name)
         .setArray(false)
         .setPrimitive(true)
-        .setTypeVariables(ImmutableList.<TypeVariable>of())
+        .setTypeArguments(ImmutableList.<TypeArgument>of())
         .build();
   }
 
@@ -165,7 +165,7 @@ public class OverloadSolverTest {
         .setFullName(name)
         .setArray(true)
         .setPrimitive(true)
-        .setTypeVariables(ImmutableList.<TypeVariable>of())
+        .setTypeArguments(ImmutableList.<TypeArgument>of())
         .build();
   }
 }

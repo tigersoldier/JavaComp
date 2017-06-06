@@ -30,10 +30,10 @@ import org.javacomp.model.MethodEntity;
 import org.javacomp.model.Module;
 import org.javacomp.model.PrimitiveEntity;
 import org.javacomp.model.SolvedType;
+import org.javacomp.model.TypeArgument;
 import org.javacomp.model.TypeReference;
-import org.javacomp.model.TypeVariable;
 import org.javacomp.model.VariableEntity;
-import org.javacomp.model.WildcardTypeVariable;
+import org.javacomp.model.WildcardTypeArgument;
 import org.javacomp.typesolver.TypeSolver;
 
 /** Storing and loading indexed Java modules from storage. */
@@ -321,11 +321,11 @@ public class IndexStore {
       ret.isArray = type.isArray();
     }
 
-    if (!type.getTypeVariables().isEmpty()) {
-      ret.typeVariables =
-          type.getTypeVariables()
+    if (!type.getTypeArguments().isEmpty()) {
+      ret.typeArguments =
+          type.getTypeArguments()
               .stream()
-              .map(typeVariable -> serializeTypeVariable(typeVariable, baseScope))
+              .map(typeArgument -> serializeTypeArgument(typeArgument, baseScope))
               .collect(Collectors.toList());
     }
     return ret;
@@ -333,22 +333,22 @@ public class IndexStore {
 
   private TypeReference deserializeTypeReference(SerializedType type) {
     String fullName = type.fullName != null ? type.fullName : "";
-    List<TypeVariable> typeVariables = ImmutableList.of();
+    List<TypeArgument> typeArguments = ImmutableList.of();
 
-    if (type.typeVariables != null && !type.typeVariables.isEmpty()) {
+    if (type.typeArguments != null && !type.typeArguments.isEmpty()) {
       try {
-        typeVariables =
-            type.typeVariables
+        typeArguments =
+            type.typeArguments
                 .stream()
                 .map(
-                    typeVariable -> {
-                      return deserializeTypeVariable(typeVariable);
+                    typeArgument -> {
+                      return deserializeTypeArgument(typeArgument);
                     })
                 .collect(Collectors.toList());
       } catch (Exception e) {
         logger.severe(
-            "Failed to deserialize type variables %s for %s",
-            Arrays.asList(type.typeVariables), type.fullName);
+            "Failed to deserialize type arguments %s for %s",
+            Arrays.asList(type.typeArguments), type.fullName);
       }
     }
 
@@ -357,69 +357,69 @@ public class IndexStore {
             .setFullName(type.fullName.split(QUALIFIER_SEPARATOR))
             .setPrimitive(PrimitiveEntity.isPrimitive(type.fullName))
             .setArray(type.isArray)
-            .setTypeVariables(typeVariables)
+            .setTypeArguments(typeArguments)
             .build();
     return ret;
   }
 
-  private SerializedTypeVariable serializeTypeVariable(
-      TypeVariable typeVariable, EntityScope baseScope) {
-    SerializedTypeVariable ret = new SerializedTypeVariable();
-    if (typeVariable instanceof TypeReference) {
-      ret.kind = SerializedTypeVariableKind.EXPLICIT;
-      ret.explicitType = serializeTypeReference((TypeReference) typeVariable, baseScope);
-    } else if (typeVariable instanceof WildcardTypeVariable) {
-      WildcardTypeVariable wildcardTypeVariable = (WildcardTypeVariable) typeVariable;
-      if (wildcardTypeVariable.getBound().isPresent()) {
-        WildcardTypeVariable.Bound.Kind boundKind = wildcardTypeVariable.getBound().get().getKind();
+  private SerializedTypeArgument serializeTypeArgument(
+      TypeArgument typeArgument, EntityScope baseScope) {
+    SerializedTypeArgument ret = new SerializedTypeArgument();
+    if (typeArgument instanceof TypeReference) {
+      ret.kind = SerializedTypeArgumentKind.EXPLICIT;
+      ret.explicitType = serializeTypeReference((TypeReference) typeArgument, baseScope);
+    } else if (typeArgument instanceof WildcardTypeArgument) {
+      WildcardTypeArgument wildcardTypeArgument = (WildcardTypeArgument) typeArgument;
+      if (wildcardTypeArgument.getBound().isPresent()) {
+        WildcardTypeArgument.Bound.Kind boundKind = wildcardTypeArgument.getBound().get().getKind();
         switch (boundKind) {
           case SUPER:
-            ret.kind = SerializedTypeVariableKind.WILDCARD_SUPER;
+            ret.kind = SerializedTypeArgumentKind.WILDCARD_SUPER;
             break;
           case EXTENDS:
-            ret.kind = SerializedTypeVariableKind.WILDCARD_EXTENDS;
+            ret.kind = SerializedTypeArgumentKind.WILDCARD_EXTENDS;
             break;
         }
         ret.bound =
             serializeTypeReference(
-                wildcardTypeVariable.getBound().get().getTypeReference(), baseScope);
+                wildcardTypeArgument.getBound().get().getTypeReference(), baseScope);
       } else {
-        ret.kind = SerializedTypeVariableKind.WILDCARD_UNBOUNDED;
+        ret.kind = SerializedTypeArgumentKind.WILDCARD_UNBOUNDED;
       }
     } else {
-      throw new RuntimeException("Unknown type variable " + typeVariable);
+      throw new RuntimeException("Unknown type argument " + typeArgument);
     }
     return ret;
   }
 
-  private TypeVariable deserializeTypeVariable(SerializedTypeVariable typeVariable) {
-    switch (typeVariable.kind) {
+  private TypeArgument deserializeTypeArgument(SerializedTypeArgument typeArgument) {
+    switch (typeArgument.kind) {
       case EXPLICIT:
         checkNotNull(
-            typeVariable.explicitType,
-            "Type Variable with kind %s should have explicit type set",
-            typeVariable.kind);
-        return deserializeTypeReference(typeVariable.explicitType);
+            typeArgument.explicitType,
+            "Type Argument with kind %s should have explicit type set",
+            typeArgument.kind);
+        return deserializeTypeReference(typeArgument.explicitType);
       case WILDCARD_UNBOUNDED:
-        return WildcardTypeVariable.create(Optional.empty());
+        return WildcardTypeArgument.create(Optional.empty());
       case WILDCARD_SUPER:
       case WILDCARD_EXTENDS:
         checkNotNull(
-            typeVariable.bound,
-            "Type Variable with kind %s should have bound set",
-            typeVariable.kind);
+            typeArgument.bound,
+            "Type Argument with kind %s should have bound set",
+            typeArgument.kind);
         {
-          WildcardTypeVariable.Bound.Kind boundKind =
-              typeVariable.kind == SerializedTypeVariableKind.WILDCARD_SUPER
-                  ? WildcardTypeVariable.Bound.Kind.SUPER
-                  : WildcardTypeVariable.Bound.Kind.EXTENDS;
-          WildcardTypeVariable.Bound bound =
-              WildcardTypeVariable.Bound.create(
-                  boundKind, deserializeTypeReference(typeVariable.bound));
-          return WildcardTypeVariable.create(Optional.of(bound));
+          WildcardTypeArgument.Bound.Kind boundKind =
+              typeArgument.kind == SerializedTypeArgumentKind.WILDCARD_SUPER
+                  ? WildcardTypeArgument.Bound.Kind.SUPER
+                  : WildcardTypeArgument.Bound.Kind.EXTENDS;
+          WildcardTypeArgument.Bound bound =
+              WildcardTypeArgument.Bound.create(
+                  boundKind, deserializeTypeReference(typeArgument.bound));
+          return WildcardTypeArgument.create(Optional.of(bound));
         }
       default:
-        throw new RuntimeException("Unknown type variable " + typeVariable);
+        throw new RuntimeException("Unknown type argument " + typeArgument);
     }
   }
 
@@ -446,11 +446,11 @@ public class IndexStore {
   private static class SerializedType {
     private String fullName;
     private boolean isArray;
-    private List<SerializedTypeVariable> typeVariables;
+    private List<SerializedTypeArgument> typeArguments;
   }
 
-  private static class SerializedTypeVariable {
-    private SerializedTypeVariableKind kind;
+  private static class SerializedTypeArgument {
+    private SerializedTypeArgumentKind kind;
     private SerializedType explicitType;
     private SerializedType bound;
 
@@ -460,7 +460,7 @@ public class IndexStore {
     }
   }
 
-  private enum SerializedTypeVariableKind {
+  private enum SerializedTypeArgumentKind {
     EXPLICIT,
     WILDCARD_UNBOUNDED,
     WILDCARD_SUPER,

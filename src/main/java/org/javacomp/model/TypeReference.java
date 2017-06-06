@@ -7,27 +7,27 @@ import java.util.Collection;
 
 /** A reference to a type for lazy resolution. */
 @AutoValue
-public abstract class TypeReference implements TypeVariable {
+public abstract class TypeReference implements TypeArgument {
   public static final TypeReference EMPTY_TYPE =
       TypeReference.builder()
           .setFullName()
           .setPrimitive(false)
           .setArray(false)
-          .setTypeVariables(ImmutableList.of())
+          .setTypeArguments(ImmutableList.of())
           .build();
   public static final TypeReference JAVA_LANG_OBJECT =
       TypeReference.builder()
           .setFullName("java", "lang", "Object")
           .setPrimitive(false)
           .setArray(false)
-          .setTypeVariables(ImmutableList.of())
+          .setTypeArguments(ImmutableList.of())
           .build();
   public static final TypeReference JAVA_LANG_ENUM =
       TypeReference.builder()
           .setFullName("java", "lang", "Enum")
           .setPrimitive(false)
           .setArray(false)
-          .setTypeVariables(ImmutableList.of())
+          .setTypeArguments(ImmutableList.of())
           .build();
 
   private static final Joiner JOINER = Joiner.on(".");
@@ -38,7 +38,7 @@ public abstract class TypeReference implements TypeVariable {
 
   public abstract boolean isArray();
 
-  public abstract ImmutableList<TypeVariable> getTypeVariables();
+  public abstract ImmutableList<TypeArgument> getTypeArguments();
 
   public static Builder builder() {
     return new AutoValue_TypeReference.Builder();
@@ -61,16 +61,16 @@ public abstract class TypeReference implements TypeVariable {
   public String toDisplayString() {
     StringBuffer sb = new StringBuffer();
     sb.append(getSimpleName());
-    if (!getTypeVariables().isEmpty()) {
+    if (!getTypeArguments().isEmpty()) {
       sb.append("<");
       boolean isFirst = true;
-      for (TypeVariable typeVariable : getTypeVariables()) {
+      for (TypeArgument typeArgument : getTypeArguments()) {
         if (isFirst) {
           isFirst = false;
         } else {
           sb.append(", ");
         }
-        sb.append(typeVariable.toDisplayString());
+        sb.append(typeArgument.toDisplayString());
       }
       sb.append(">");
     }
@@ -98,10 +98,10 @@ public abstract class TypeReference implements TypeVariable {
       return setFullName(ImmutableList.copyOf(fullName));
     }
 
-    public abstract Builder setTypeVariables(ImmutableList<TypeVariable> typeVariables);
+    public abstract Builder setTypeArguments(ImmutableList<TypeArgument> typeArguments);
 
-    public Builder setTypeVariables(Collection<TypeVariable> typeVariables) {
-      return setTypeVariables(ImmutableList.copyOf(typeVariables));
+    public Builder setTypeArguments(Collection<TypeArgument> typeArguments) {
+      return setTypeArguments(ImmutableList.copyOf(typeArguments));
     }
   }
 }

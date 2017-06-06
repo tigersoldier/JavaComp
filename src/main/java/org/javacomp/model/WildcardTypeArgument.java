@@ -3,12 +3,12 @@ package org.javacomp.model;
 import com.google.auto.value.AutoValue;
 import java.util.Optional;
 
-/** A {@link TypeVariable} starting with question mark (?). */
+/** A {@link TypeArgument} starting with question mark (?). */
 @AutoValue
-public abstract class WildcardTypeVariable implements TypeVariable {
+public abstract class WildcardTypeArgument implements TypeArgument {
 
-  public static WildcardTypeVariable create(Optional<Bound> bound) {
-    return new AutoValue_WildcardTypeVariable(bound);
+  public static WildcardTypeArgument create(Optional<Bound> bound) {
+    return new AutoValue_WildcardTypeArgument(bound);
   }
 
   public abstract Optional<Bound> getBound();
@@ -23,7 +23,7 @@ public abstract class WildcardTypeVariable implements TypeVariable {
 
   @Override
   public String toString() {
-    return "WildcardTypeVariable<" + getBound() + ">";
+    return "WildcardTypeArgument<" + getBound() + ">";
   }
 
   @AutoValue
@@ -49,7 +49,7 @@ public abstract class WildcardTypeVariable implements TypeVariable {
     }
 
     public static Bound create(Kind kind, TypeReference typeReference) {
-      return new AutoValue_WildcardTypeVariable_Bound(kind, typeReference);
+      return new AutoValue_WildcardTypeArgument_Bound(kind, typeReference);
     }
   }
 }

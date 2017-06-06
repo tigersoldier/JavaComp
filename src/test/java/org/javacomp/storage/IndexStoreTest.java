@@ -18,10 +18,10 @@ import org.javacomp.model.EntityScope;
 import org.javacomp.model.MethodEntity;
 import org.javacomp.model.Module;
 import org.javacomp.model.PackageEntity;
+import org.javacomp.model.TypeArgument;
 import org.javacomp.model.TypeReference;
-import org.javacomp.model.TypeVariable;
 import org.javacomp.model.VariableEntity;
-import org.javacomp.model.WildcardTypeVariable;
+import org.javacomp.model.WildcardTypeArgument;
 import org.javacomp.testing.TestUtil;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -142,12 +142,12 @@ public class IndexStoreTest {
     assertThat(QUALIFIER_JOINER.join(deserialized.getFullName()))
         .named("Type of " + QUALIFIER_JOINER.join(qualifiedName))
         .contains(QUALIFIER_JOINER.join(original.getFullName()));
-    assertThat(deserialized.getTypeVariables()).hasSize(original.getTypeVariables().size());
-    for (int i = 0; i < deserialized.getTypeVariables().size(); i++) {
-      TypeVariable deserializedTypeVar = deserialized.getTypeVariables().get(i);
-      TypeVariable originalTypeVar = original.getTypeVariables().get(i);
+    assertThat(deserialized.getTypeArguments()).hasSize(original.getTypeArguments().size());
+    for (int i = 0; i < deserialized.getTypeArguments().size(); i++) {
+      TypeArgument deserializedTypeVar = deserialized.getTypeArguments().get(i);
+      TypeArgument originalTypeVar = original.getTypeArguments().get(i);
       qualifiedName.addLast("<" + i + "th type var>");
-      assertTypeVariablesEqual(deserializedTypeVar, originalTypeVar, qualifiedName);
+      assertTypeArgumentsEqual(deserializedTypeVar, originalTypeVar, qualifiedName);
       qualifiedName.removeLast();
     }
   }
@@ -164,22 +164,22 @@ public class IndexStoreTest {
     }
   }
 
-  private void assertTypeVariablesEqual(
-      TypeVariable deserialized, TypeVariable original, Deque<String> qualifiedName) {
+  private void assertTypeArgumentsEqual(
+      TypeArgument deserialized, TypeArgument original, Deque<String> qualifiedName) {
     assertThat(deserialized.getClass()).isEqualTo(original.getClass());
     if (deserialized instanceof TypeReference) {
       assertTypesEqual((TypeReference) deserialized, (TypeReference) original, qualifiedName);
-    } else if (deserialized instanceof WildcardTypeVariable) {
-      assertWildcardTypeVariablesEqual(
-          (WildcardTypeVariable) deserialized, (WildcardTypeVariable) original, qualifiedName);
+    } else if (deserialized instanceof WildcardTypeArgument) {
+      assertWildcardTypeArgumentsEqual(
+          (WildcardTypeArgument) deserialized, (WildcardTypeArgument) original, qualifiedName);
     } else {
-      throw new RuntimeException("Unknown type variable class " + deserialized);
+      throw new RuntimeException("Unknown type argument class " + deserialized);
     }
   }
 
-  private void assertWildcardTypeVariablesEqual(
-      WildcardTypeVariable deserialized,
-      WildcardTypeVariable original,
+  private void assertWildcardTypeArgumentsEqual(
+      WildcardTypeArgument deserialized,
+      WildcardTypeArgument original,
       Deque<String> qualifiedName) {
     assertThat(deserialized.getBound().isPresent())
         .named("presence of bound of " + QUALIFIER_JOINER.join(qualifiedName))
@@ -188,8 +188,8 @@ public class IndexStoreTest {
       return;
     }
 
-    WildcardTypeVariable.Bound deserializedBound = deserialized.getBound().get();
-    WildcardTypeVariable.Bound originalBound = original.getBound().get();
+    WildcardTypeArgument.Bound deserializedBound = deserialized.getBound().get();
+    WildcardTypeArgument.Bound originalBound = original.getBound().get();
     assertThat(deserializedBound.getKind())
         .named("Bound kind of " + QUALIFIER_JOINER.join(qualifiedName))
         .isEqualTo(originalBound.getKind());
