@@ -109,6 +109,7 @@ public class JavaComp implements Server {
     fileManager = new FileManagerImpl(projectRootUri, options.getIgnorePaths(), executor);
     project = new Project(fileManager, projectRootUri, IndexOptions.FULL_INDEX_BUILDER.build());
     project.initialize();
+    project.loadJdkModule();
 
     //TODO: Someday we should implement monitoring client process for all major platforms.
   }

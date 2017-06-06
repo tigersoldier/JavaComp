@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,7 +31,9 @@ import org.javacomp.model.Module;
 import org.javacomp.model.PrimitiveEntity;
 import org.javacomp.model.SolvedType;
 import org.javacomp.model.TypeReference;
+import org.javacomp.model.TypeVariable;
 import org.javacomp.model.VariableEntity;
+import org.javacomp.model.WildcardTypeVariable;
 import org.javacomp.typesolver.TypeSolver;
 
 /** Storing and loading indexed Java modules from storage. */
@@ -318,21 +321,107 @@ public class IndexStore {
       ret.fullName = QUALIFIER_JOINER.join(type.getFullName());
       ret.isArray = type.isArray();
     }
-    // TODO: serialize type variables.
+
+    if (!type.getTypeVariables().isEmpty()) {
+      ret.typeVariables =
+          type.getTypeVariables()
+              .stream()
+              .map(typeVariable -> serializeTypeVariable(typeVariable, baseScope))
+              .collect(Collectors.toList());
+    }
     return ret;
   }
 
   private TypeReference deserializeTypeReference(SerializedType type) {
     String fullName = type.fullName != null ? type.fullName : "";
+    List<TypeVariable> typeVariables = ImmutableList.of();
+
+    if (type.typeVariables != null && !type.typeVariables.isEmpty()) {
+      try {
+        typeVariables =
+            type.typeVariables
+                .stream()
+                .map(
+                    typeVariable -> {
+                      return deserializeTypeVariable(typeVariable);
+                    })
+                .collect(Collectors.toList());
+      } catch (Exception e) {
+        logger.severe(
+            "Failed to deserialize type variables %s for %s",
+            Arrays.asList(type.typeVariables), type.fullName);
+      }
+    }
+
     TypeReference ret =
         TypeReference.builder()
             .setFullName(type.fullName.split(QUALIFIER_SEPARATOR))
             .setPrimitive(PrimitiveEntity.isPrimitive(type.fullName))
             .setArray(type.isArray)
-            // TODO: deserialize type variables.
-            .setTypeVariables(ImmutableList.of())
+            .setTypeVariables(typeVariables)
             .build();
     return ret;
+  }
+
+  private SerializedTypeVariable serializeTypeVariable(
+      TypeVariable typeVariable, EntityScope baseScope) {
+    SerializedTypeVariable ret = new SerializedTypeVariable();
+    if (typeVariable instanceof TypeReference) {
+      ret.kind = SerializedTypeVariableKind.EXPLICIT;
+      ret.explicitType = serializeTypeReference((TypeReference) typeVariable, baseScope);
+    } else if (typeVariable instanceof WildcardTypeVariable) {
+      WildcardTypeVariable wildcardTypeVariable = (WildcardTypeVariable) typeVariable;
+      if (wildcardTypeVariable.getBound().isPresent()) {
+        WildcardTypeVariable.Bound.Kind boundKind = wildcardTypeVariable.getBound().get().getKind();
+        switch (boundKind) {
+          case SUPER:
+            ret.kind = SerializedTypeVariableKind.WILDCARD_SUPER;
+            break;
+          case EXTENDS:
+            ret.kind = SerializedTypeVariableKind.WILDCARD_EXTENDS;
+            break;
+        }
+        ret.bound =
+            serializeTypeReference(
+                wildcardTypeVariable.getBound().get().getTypeReference(), baseScope);
+      } else {
+        ret.kind = SerializedTypeVariableKind.WILDCARD_UNBOUNDED;
+      }
+    } else {
+      throw new RuntimeException("Unknown type variable " + typeVariable);
+    }
+    return ret;
+  }
+
+  private TypeVariable deserializeTypeVariable(SerializedTypeVariable typeVariable) {
+    switch (typeVariable.kind) {
+      case EXPLICIT:
+        checkNotNull(
+            typeVariable.explicitType,
+            "Type Variable with kind %s should have explicit type set",
+            typeVariable.kind);
+        return deserializeTypeReference(typeVariable.explicitType);
+      case WILDCARD_UNBOUNDED:
+        return WildcardTypeVariable.create(Optional.empty());
+      case WILDCARD_SUPER:
+      case WILDCARD_EXTENDS:
+        checkNotNull(
+            typeVariable.bound,
+            "Type Variable with kind %s should have bound set",
+            typeVariable.kind);
+        {
+          WildcardTypeVariable.Bound.Kind boundKind =
+              typeVariable.kind == SerializedTypeVariableKind.WILDCARD_SUPER
+                  ? WildcardTypeVariable.Bound.Kind.SUPER
+                  : WildcardTypeVariable.Bound.Kind.EXTENDS;
+          WildcardTypeVariable.Bound bound =
+              WildcardTypeVariable.Bound.create(
+                  boundKind, deserializeTypeReference(typeVariable.bound));
+          return WildcardTypeVariable.create(Optional.of(bound));
+        }
+      default:
+        throw new RuntimeException("Unknown type variable " + typeVariable);
+    }
   }
 
   @VisibleForTesting
@@ -358,5 +447,24 @@ public class IndexStore {
   private static class SerializedType {
     private String fullName;
     private boolean isArray;
+    private List<SerializedTypeVariable> typeVariables;
+  }
+
+  private static class SerializedTypeVariable {
+    private SerializedTypeVariableKind kind;
+    private SerializedType explicitType;
+    private SerializedType bound;
+
+    @Override
+    public String toString() {
+      return "kind: " + kind + ", explicitType: " + explicitType + ", bound: " + bound;
+    }
+  }
+
+  private enum SerializedTypeVariableKind {
+    EXPLICIT,
+    WILDCARD_UNBOUNDED,
+    WILDCARD_SUPER,
+    WILDCARD_EXTENDS,
   }
 }

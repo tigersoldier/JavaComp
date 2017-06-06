@@ -12,6 +12,7 @@ public class TestClass {
   }
 
   private final String memberField;
+  public final ParameterizedType<String, ? extends List<? super List<?>>> parameterizedType;
 
   public org.javacomp.storage.testdata.other.OtherPackageClass testMethod(
       InnerClassA innerAParam, OtherClass otherClassParam) {
@@ -25,5 +26,9 @@ public class TestClass {
     overloadMethod(innerA, innerAParam.testClassInA);
     overloadMethod(getInnerA());
     overloadMethod();
+  }
+
+  public static class ParameterizedType<A, B extends A> {
+    public A getA();
   }
 }

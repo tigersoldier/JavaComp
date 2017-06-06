@@ -19,7 +19,9 @@ import org.javacomp.model.MethodEntity;
 import org.javacomp.model.Module;
 import org.javacomp.model.PackageEntity;
 import org.javacomp.model.TypeReference;
+import org.javacomp.model.TypeVariable;
 import org.javacomp.model.VariableEntity;
+import org.javacomp.model.WildcardTypeVariable;
 import org.javacomp.testing.TestUtil;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -140,10 +142,14 @@ public class IndexStoreTest {
     assertThat(QUALIFIER_JOINER.join(deserialized.getFullName()))
         .named("Type of " + QUALIFIER_JOINER.join(qualifiedName))
         .contains(QUALIFIER_JOINER.join(original.getFullName()));
-  }
-
-  private void assertQualifiedName(Entity entity, Deque<String> qualifiedName) {
-    assertThat(entity.getQualifiedName()).isEqualTo(QUALIFIER_JOINER.join(qualifiedName));
+    assertThat(deserialized.getTypeVariables()).hasSize(original.getTypeVariables().size());
+    for (int i = 0; i < deserialized.getTypeVariables().size(); i++) {
+      TypeVariable deserializedTypeVar = deserialized.getTypeVariables().get(i);
+      TypeVariable originalTypeVar = original.getTypeVariables().get(i);
+      qualifiedName.addLast("<" + i + "th type var>");
+      assertTypeVariablesEqual(deserializedTypeVar, originalTypeVar, qualifiedName);
+      qualifiedName.removeLast();
+    }
   }
 
   private void assertTypesEqual(
@@ -151,10 +157,48 @@ public class IndexStoreTest {
       Optional<TypeReference> original,
       Deque<String> qualifiedName) {
     assertThat(deserialized.isPresent())
-        .named("Presence of type of " + QUALIFIER_JOINER.join(qualifiedName));
+        .named("Presence of type of " + QUALIFIER_JOINER.join(qualifiedName))
+        .isEqualTo(original.isPresent());
     if (deserialized.isPresent()) {
       assertTypesEqual(deserialized.get(), original.get(), qualifiedName);
     }
+  }
+
+  private void assertTypeVariablesEqual(
+      TypeVariable deserialized, TypeVariable original, Deque<String> qualifiedName) {
+    assertThat(deserialized.getClass()).isEqualTo(original.getClass());
+    if (deserialized instanceof TypeReference) {
+      assertTypesEqual((TypeReference) deserialized, (TypeReference) original, qualifiedName);
+    } else if (deserialized instanceof WildcardTypeVariable) {
+      assertWildcardTypeVariablesEqual(
+          (WildcardTypeVariable) deserialized, (WildcardTypeVariable) original, qualifiedName);
+    } else {
+      throw new RuntimeException("Unknown type variable class " + deserialized);
+    }
+  }
+
+  private void assertWildcardTypeVariablesEqual(
+      WildcardTypeVariable deserialized,
+      WildcardTypeVariable original,
+      Deque<String> qualifiedName) {
+    assertThat(deserialized.getBound().isPresent())
+        .named("presence of bound of " + QUALIFIER_JOINER.join(qualifiedName))
+        .isEqualTo(original.getBound().isPresent());
+    if (!deserialized.getBound().isPresent()) {
+      return;
+    }
+
+    WildcardTypeVariable.Bound deserializedBound = deserialized.getBound().get();
+    WildcardTypeVariable.Bound originalBound = original.getBound().get();
+    assertThat(deserializedBound.getKind())
+        .named("Bound kind of " + QUALIFIER_JOINER.join(qualifiedName))
+        .isEqualTo(originalBound.getKind());
+    assertTypesEqual(
+        deserializedBound.getTypeReference(), originalBound.getTypeReference(), qualifiedName);
+  }
+
+  private void assertQualifiedName(Entity entity, Deque<String> qualifiedName) {
+    assertThat(entity.getQualifiedName()).isEqualTo(QUALIFIER_JOINER.join(qualifiedName));
   }
 
   private void assertSameMemberEntities(
@@ -167,7 +211,7 @@ public class IndexStoreTest {
       qualifiedName.addLast(entityName);
       Collection<Entity> deserializedMembers = deserialized.getMemberEntities().get(entityName);
       Set<Entity> originalMembers = new HashSet<>();
-      originalMembers.addAll(deserialized.getMemberEntities().get(entityName));
+      originalMembers.addAll(original.getMemberEntities().get(entityName));
 
       assertThat(deserializedMembers)
           .named("entities named '" + entityName + "' in " + QUALIFIER_JOINER.join(qualifiedName))

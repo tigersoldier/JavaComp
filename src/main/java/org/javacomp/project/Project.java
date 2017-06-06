@@ -77,21 +77,17 @@ public class Project {
     fileManager.setFileChangeListener(new ProjectFileChangeListener());
 
     walkDirectory(Paths.get(rootUri));
-
-    Module jdkModule = loadJdkModule();
-    projectModule.addDependingModule(jdkModule);
   }
 
-  private Module loadJdkModule() {
+  public synchronized void loadJdkModule() {
     logger.fine("Loading JDK module");
     try (BufferedReader reader =
         new BufferedReader(
             new InputStreamReader(this.getClass().getResourceAsStream(JDK_RESOURCE_PATH), UTF_8))) {
       logger.fine("JDK module loaded");
-      return new IndexStore().readModule(reader);
+      projectModule.addDependingModule(new IndexStore().readModule(reader));
     } catch (Throwable t) {
       logger.warning(t, "Unable to load JDK module");
-      return new Module();
     }
   }
 

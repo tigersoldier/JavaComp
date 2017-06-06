@@ -23,7 +23,7 @@ public abstract class WildcardTypeVariable implements TypeVariable {
 
   @Override
   public String toString() {
-    return "WildcardTypeVariable<>";
+    return "WildcardTypeVariable<" + getBound() + ">";
   }
 
   @AutoValue
@@ -41,6 +41,11 @@ public abstract class WildcardTypeVariable implements TypeVariable {
       return (getKind() == Kind.SUPER ? "super" : "extends")
           + " "
           + getTypeReference().toDisplayString();
+    }
+
+    @Override
+    public String toString() {
+      return "Bound<" + getKind() + " " + getTypeReference() + ">";
     }
 
     public static Bound create(Kind kind, TypeReference typeReference) {

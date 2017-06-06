@@ -52,7 +52,7 @@ public class Indexer {
       return;
     }
     List<String> ignorePaths = new ArrayList<>();
-    for (int i = 0; i < args.length; i++) {
+    for (int i = 2; i < args.length; i++) {
       ignorePaths.add(args[i]);
     }
 
