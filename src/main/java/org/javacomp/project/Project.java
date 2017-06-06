@@ -43,7 +43,7 @@ public class Project {
   private static final String JDK_RESOURCE_PATH = "/resources/jdk/index.json";
 
   private final Module projectModule;
-  private final AstScanner astScanner;
+  private final IndexOptions indexOptions;
   private final Completor completor;
   private final DefinitionSolver definitionSolver;
   private final SignatureSolver signatureSolver;
@@ -57,10 +57,10 @@ public class Project {
 
   public Project(FileManager fileManager, URI rootUri, IndexOptions indexOptions) {
     projectModule = new Module();
-    astScanner = new AstScanner(indexOptions);
     completor = new Completor();
     parserContext = new ParserContext();
     fileContentFixer = new FileContentFixer(parserContext);
+    this.indexOptions = indexOptions;
     this.fileManager = fileManager;
     this.rootUri = rootUri;
     this.definitionSolver = new DefinitionSolver();
@@ -130,8 +130,9 @@ public class Project {
         adjustedLineMap = fixedContent.getAdjustedLineMap();
       }
       FileScope fileScope =
-          astScanner.startScan(
-              parserContext.parse(filePath.toString(), content), filePath.toString(), content);
+          new AstScanner(indexOptions)
+              .startScan(
+                  parserContext.parse(filePath.toString(), content), filePath.toString(), content);
       fileScope.setAdjustedLineMap(adjustedLineMap);
       projectModule.addOrReplaceFileScope(fileScope);
     } catch (Throwable e) {

@@ -30,6 +30,7 @@ public class ClassEntity extends Entity implements EntityScope {
   private final Optional<TypeReference> superClass;
   private final ImmutableList<TypeReference> interfaces;
   private final Map<String, ClassEntity> innerClasses;
+  private final ImmutableList<TypeParameter> typeParameters;
 
   public ClassEntity(
       String simpleName,
@@ -37,7 +38,8 @@ public class ClassEntity extends Entity implements EntityScope {
       List<String> qualifiers,
       EntityScope parentScope,
       Optional<TypeReference> superClass,
-      ImmutableList<TypeReference> interfaces,
+      List<TypeReference> interfaces,
+      List<TypeParameter> typeParameters,
       Range<Integer> classNameRage) {
     super(simpleName, kind, qualifiers, classNameRage);
     checkArgument(
@@ -50,6 +52,7 @@ public class ClassEntity extends Entity implements EntityScope {
     this.parentScope = parentScope;
     this.superClass = superClass;
     this.interfaces = ImmutableList.copyOf(interfaces);
+    this.typeParameters = ImmutableList.copyOf(typeParameters);
     this.innerClasses = new HashMap<>();
   }
 
@@ -100,10 +103,16 @@ public class ClassEntity extends Entity implements EntityScope {
     return ImmutableMap.copyOf(innerClasses);
   }
 
+  public ImmutableList<TypeParameter> getTypeParameters() {
+    return typeParameters;
+  }
+
   @Override
   public String toString() {
     return "ClassEntity<"
         + QualifiedNames.formatQualifiedName(getQualifiers(), getSimpleName())
-        + ">";
+        + "<"
+        + typeParameters
+        + ">>";
   }
 }

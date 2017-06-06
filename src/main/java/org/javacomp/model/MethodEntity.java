@@ -12,7 +12,8 @@ import org.javacomp.model.util.QualifiedNames;
 /** Represents a method. */
 public class MethodEntity extends Entity implements EntityScope {
   private final TypeReference returnType;
-  private final List<VariableEntity> parameters;
+  private final ImmutableList<VariableEntity> parameters;
+  private final ImmutableList<TypeParameter> typeParameters;
   // Map of simple names -> entities.
   private final Multimap<String, Entity> entities;
   private final ClassEntity classEntity;
@@ -22,11 +23,13 @@ public class MethodEntity extends Entity implements EntityScope {
       List<String> qualifiers,
       TypeReference returnType,
       List<VariableEntity> parameters,
+      List<TypeParameter> typeParameters,
       ClassEntity classEntity,
       Range<Integer> methodNamelRange) {
     super(simpleName, Entity.Kind.METHOD, qualifiers, methodNamelRange);
     this.returnType = returnType;
     this.parameters = ImmutableList.copyOf(parameters);
+    this.typeParameters = ImmutableList.copyOf(typeParameters);
     this.entities = HashMultimap.create();
     this.classEntity = classEntity;
   }
@@ -62,8 +65,12 @@ public class MethodEntity extends Entity implements EntityScope {
 
   /////////////// Other methods ////////////////
 
-  public List<VariableEntity> getParameters() {
+  public ImmutableList<VariableEntity> getParameters() {
     return parameters;
+  }
+
+  public ImmutableList<TypeParameter> getTypeParameters() {
+    return typeParameters;
   }
 
   public TypeReference getReturnType() {
@@ -76,7 +83,9 @@ public class MethodEntity extends Entity implements EntityScope {
 
   @Override
   public String toString() {
-    return "MethodEntity<"
+    return "MethodEntity<<"
+        + getTypeParameters()
+        + "> "
         + QualifiedNames.formatQualifiedName(getQualifiers(), getSimpleName())
         + ">";
   }

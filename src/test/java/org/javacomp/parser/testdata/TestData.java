@@ -108,4 +108,10 @@ public class TestData {
 
     public void publicEnumMethod() {}
   } // PublicInnerEnum
+
+  public static class ParameterizedClass<A, B extends A> {
+    public List<A> getA();
+    public B getB();
+    public <C extends String & List<B>> C getC();
+  }
 } // class TestData

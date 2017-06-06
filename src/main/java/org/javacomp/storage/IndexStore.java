@@ -31,6 +31,7 @@ import org.javacomp.model.Module;
 import org.javacomp.model.PrimitiveEntity;
 import org.javacomp.model.SolvedType;
 import org.javacomp.model.TypeArgument;
+import org.javacomp.model.TypeParameter;
 import org.javacomp.model.TypeReference;
 import org.javacomp.model.VariableEntity;
 import org.javacomp.model.WildcardTypeArgument;
@@ -241,6 +242,8 @@ public class IndexStore {
                 .stream()
                 .map(t -> deserializeTypeReference(t))
                 .collect(ImmutableList.toImmutableList());
+    // TODO: support type parameter.
+    ImmutableList<TypeParameter> typeParameters = ImmutableList.of();
     ClassEntity classEntity =
         new ClassEntity(
             serializedEntity.simpleName,
@@ -249,6 +252,7 @@ public class IndexStore {
             parentScope,
             superClass,
             interfaces,
+            typeParameters,
             EMPTY_RANGE);
     if (serializedEntity.members != null) {
       List<String> childQualifiers =
@@ -286,8 +290,15 @@ public class IndexStore {
                           p, Entity.Kind.VARIABLE, EMPTY_QUALIFIERS, classEntity))
               .collect(ImmutableList.toImmutableList());
     }
+    List<TypeParameter> typeParameters = ImmutableList.of();
     return new MethodEntity(
-        serializedEntity.simpleName, qualifiers, returnType, parameters, classEntity, EMPTY_RANGE);
+        serializedEntity.simpleName,
+        qualifiers,
+        returnType,
+        parameters,
+        typeParameters,
+        classEntity,
+        EMPTY_RANGE);
   }
 
   private VariableEntity deserializeVariableEntity(

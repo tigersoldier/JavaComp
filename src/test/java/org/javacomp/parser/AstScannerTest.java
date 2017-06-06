@@ -17,11 +17,13 @@ import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import org.javacomp.model.ClassEntity;
 import org.javacomp.model.Entity;
 import org.javacomp.model.EntityScope;
 import org.javacomp.model.FileScope;
 import org.javacomp.model.MethodEntity;
 import org.javacomp.model.TypeArgument;
+import org.javacomp.model.TypeParameter;
 import org.javacomp.model.TypeReference;
 import org.javacomp.model.VariableEntity;
 import org.javacomp.model.WildcardTypeArgument;
@@ -328,6 +330,53 @@ public class AstScannerTest {
     WildcardTypeArgument.Bound subBound = subTypeVar.getBound().get();
     assertThat(subBound.getKind()).isEqualTo(WildcardTypeArgument.Bound.Kind.EXTENDS);
     assertThat(subBound.getTypeReference().getFullName()).containsExactly("C");
+  }
+
+  @Test
+  public void typeParameter() {
+    TypeParameter typeParamA = TypeParameter.create("A", ImmutableList.of());
+    TypeParameter typeParamB =
+        TypeParameter.create(
+            "B",
+            ImmutableList.of(
+                TypeReference.builder()
+                    .setFullName("A")
+                    .setPrimitive(false)
+                    .setArray(false)
+                    .setTypeArguments(ImmutableList.of())
+                    .build()));
+    TypeParameter typeParamC =
+        TypeParameter.create(
+            "C",
+            ImmutableList.of(
+                TypeReference.builder()
+                    .setFullName("String")
+                    .setPrimitive(false)
+                    .setArray(false)
+                    .setTypeArguments(ImmutableList.of())
+                    .build(),
+                TypeReference.builder()
+                    .setFullName("List")
+                    .setPrimitive(false)
+                    .setArray(false)
+                    .setTypeArguments(
+                        ImmutableList.of(
+                            TypeReference.builder()
+                                .setFullName("B")
+                                .setPrimitive(false)
+                                .setArray(false)
+                                .setTypeArguments(ImmutableList.of())
+                                .build()))
+                    .build()));
+
+    ClassEntity parameterizedClassEntity =
+        (ClassEntity) lookupEntity(fileScope, "TestData.ParameterizedClass");
+    assertThat(parameterizedClassEntity.getTypeParameters())
+        .containsExactly(typeParamA, typeParamB)
+        .inOrder();
+    MethodEntity getCMethod =
+        (MethodEntity) lookupEntity(fileScope, "TestData.ParameterizedClass.getC");
+    assertThat(getCMethod.getTypeParameters()).containsExactly(typeParamC);
   }
 
   private void assertEntityNameRange(Entity entity, String locator) {

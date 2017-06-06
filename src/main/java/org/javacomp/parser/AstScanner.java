@@ -16,6 +16,7 @@ import com.sun.source.tree.ParameterizedTypeTree;
 import com.sun.source.tree.PrimitiveTypeTree;
 import com.sun.source.tree.StatementTree;
 import com.sun.source.tree.Tree;
+import com.sun.source.tree.TypeParameterTree;
 import com.sun.source.tree.VariableTree;
 import com.sun.source.tree.WildcardTree;
 import com.sun.source.util.TreePathScanner;
@@ -41,6 +42,7 @@ import org.javacomp.model.EntityScope;
 import org.javacomp.model.FileScope;
 import org.javacomp.model.MethodEntity;
 import org.javacomp.model.TypeArgument;
+import org.javacomp.model.TypeParameter;
 import org.javacomp.model.TypeReference;
 import org.javacomp.model.VariableEntity;
 import org.javacomp.model.WildcardTypeArgument;
@@ -161,6 +163,7 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
             currentScope,
             superClass,
             interfaceBuilder.build(),
+            convertTypeParameters(node.getTypeParameters()),
             range);
     currentScope.addEntity(classEntity);
     addScopeRange((JCTree) node, classEntity);
@@ -178,6 +181,22 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
       this.currentQualifiers.remove(this.currentQualifiers.size() - 1);
     }
     return null;
+  }
+
+  private ImmutableList<TypeParameter> convertTypeParameters(
+      List<? extends TypeParameterTree> typeParameterTrees) {
+    return typeParameterTrees
+        .stream()
+        .map(
+            node -> {
+              ImmutableList<TypeReference> extendBounds =
+                  node.getBounds()
+                      .stream()
+                      .map(bound -> typeReferenceScanner.getTypeReference(bound))
+                      .collect(ImmutableList.toImmutableList());
+              return TypeParameter.create(node.getName().toString(), extendBounds);
+            })
+        .collect(ImmutableList.toImmutableList());
   }
 
   @Override
@@ -200,6 +219,8 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
       parameterListBuilder.add(parameterScanner.getParameter(parameter, currentScope));
     }
 
+    ImmutableList<TypeParameter> typeParameters = convertTypeParameters(node.getTypeParameters());
+
     Range<Integer> range = getMethodNameRange((JCMethodDecl) node);
     MethodEntity methodEntity =
         new MethodEntity(
@@ -207,6 +228,7 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
             this.currentQualifiers,
             returnType,
             parameterListBuilder.build(),
+            typeParameters,
             (ClassEntity) currentScope,
             range);
     // TODO: distinguish between static and non-static methods.
@@ -307,6 +329,7 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
       scan(node, null);
       if (names.isEmpty()) {
         // Malformed input, no type can be referenced
+        logger.warning("Empty type name with %s", node);
         return TypeReference.EMPTY_TYPE;
       }
       return TypeReference.builder()
@@ -322,7 +345,6 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
       scan(node.getType(), unused);
       for (Tree typeArgument : node.getTypeArguments()) {
         if (typeArgument instanceof WildcardTree) {
-          // TODO: handle bounds
           typeArguments.add(createWildcardTypeArgument((WildcardTree) typeArgument));
         } else {
           TypeReference typeReference = new TypeReferenceScanner().getTypeReference(typeArgument);
@@ -332,7 +354,6 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
           typeArguments.add(typeReference);
         }
       }
-      // TODO: handle type parameters.
       return null;
     }
 
