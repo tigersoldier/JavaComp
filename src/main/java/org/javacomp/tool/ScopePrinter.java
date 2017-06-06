@@ -88,6 +88,10 @@ public class ScopePrinter {
       sb.append(")->");
       TypeReference returnType = methodEntity.getReturnType();
       sb.append(formatTypeReference(returnType));
+    } else if (entity instanceof VariableEntity) {
+      VariableEntity variableEntity = (VariableEntity) entity;
+      sb.append(": ");
+      sb.append(formatTypeReference(variableEntity.getType()));
     }
     return sb.toString();
   }
@@ -112,7 +116,7 @@ public class ScopePrinter {
   }
 
   private static String formatTypeReference(TypeReference typeReference) {
-    return QUALIFIER_JOINER.join(typeReference.getFullName());
+    return typeReference.toDisplayString();
   }
 
   public static void main(String[] args) {

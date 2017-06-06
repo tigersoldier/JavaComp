@@ -54,12 +54,9 @@ public class IndexStore {
 
   public void writeModuleToFile(Module module, Path filePath) {
     try (BufferedWriter writer = Files.newBufferedWriter(filePath, UTF_8)) {
-      this.module = module;
       gson.toJson(serializeModule(module), writer);
     } catch (IOException e) {
       throw new RuntimeException(e);
-    } finally {
-      this.module = null;
     }
   }
 
@@ -78,6 +75,7 @@ public class IndexStore {
 
   @VisibleForTesting
   SerializedModule serializeModule(Module module) {
+    this.module = module;
     SerializedModule ret = new SerializedModule();
     ret.files =
         module
@@ -90,6 +88,7 @@ public class IndexStore {
             .stream()
             .map(entry -> serializeFileScopes(entry.getKey(), entry.getValue()))
             .collect(Collectors.toList());
+    this.module = null;
     return ret;
   }
 
