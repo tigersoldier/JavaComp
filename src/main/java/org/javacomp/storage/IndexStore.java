@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import javax.annotation.Nullable;
 import org.javacomp.logging.JLogger;
 import org.javacomp.model.ClassEntity;
 import org.javacomp.model.Entity;
@@ -178,6 +179,14 @@ public class IndexStore {
             .stream()
             .map(t -> serializeTypeReference(t, entity.getParentScope().get()))
             .collect(Collectors.toList());
+    if (!entity.getTypeParameters().isEmpty()) {
+      ret.typeParameters =
+          entity
+              .getTypeParameters()
+              .stream()
+              .map(t -> serializeTypeParameter(t, entity))
+              .collect(Collectors.toList());
+    }
     return ret;
   }
 
@@ -191,6 +200,14 @@ public class IndexStore {
             .collect(Collectors.toList());
     if (!entity.getSimpleName().equals("<init>")) {
       ret.type = serializeTypeReference(entity.getReturnType(), entity.getChildScope());
+    }
+    if (!entity.getTypeParameters().isEmpty()) {
+      ret.typeParameters =
+          entity
+              .getTypeParameters()
+              .stream()
+              .map(t -> serializeTypeParameter(t, entity))
+              .collect(Collectors.toList());
     }
     return ret;
   }
@@ -235,15 +252,9 @@ public class IndexStore {
             ? Optional.empty()
             : Optional.of(deserializeTypeReference(serializedEntity.superClass));
     ImmutableList<TypeReference> interfaces =
-        serializedEntity.interfaces == null
-            ? ImmutableList.of()
-            : serializedEntity
-                .interfaces
-                .stream()
-                .map(t -> deserializeTypeReference(t))
-                .collect(ImmutableList.toImmutableList());
-    // TODO: support type parameter.
-    ImmutableList<TypeParameter> typeParameters = ImmutableList.of();
+        deserializeTypeReferences(serializedEntity.interfaces);
+    ImmutableList<TypeParameter> typeParameters =
+        deserializeTypeParameters(serializedEntity.typeParameters);
     ClassEntity classEntity =
         new ClassEntity(
             serializedEntity.simpleName,
@@ -290,7 +301,8 @@ public class IndexStore {
                           p, Entity.Kind.VARIABLE, EMPTY_QUALIFIERS, classEntity))
               .collect(ImmutableList.toImmutableList());
     }
-    List<TypeParameter> typeParameters = ImmutableList.of();
+    ImmutableList<TypeParameter> typeParameters =
+        deserializeTypeParameters(serializedEntity.typeParameters);
     return new MethodEntity(
         serializedEntity.simpleName,
         qualifiers,
@@ -340,6 +352,17 @@ public class IndexStore {
               .collect(Collectors.toList());
     }
     return ret;
+  }
+
+  private ImmutableList<TypeReference> deserializeTypeReferences(
+      @Nullable List<SerializedType> types) {
+    if (types == null) {
+      return ImmutableList.of();
+    }
+    return types
+        .stream()
+        .map(t -> deserializeTypeReference(t))
+        .collect(ImmutableList.toImmutableList());
   }
 
   private TypeReference deserializeTypeReference(SerializedType type) {
@@ -434,6 +457,37 @@ public class IndexStore {
     }
   }
 
+  private SerializedTypeParameter serializeTypeParameter(
+      TypeParameter typeParameter, EntityScope entityScope) {
+    SerializedTypeParameter ret = new SerializedTypeParameter();
+    ret.name = typeParameter.getName();
+    if (!typeParameter.getExtendBounds().isEmpty()) {
+      ret.bounds =
+          typeParameter
+              .getExtendBounds()
+              .stream()
+              .map(bound -> serializeTypeReference(bound, entityScope))
+              .collect(Collectors.toList());
+    }
+    return ret;
+  }
+
+  private ImmutableList<TypeParameter> deserializeTypeParameters(
+      @Nullable List<SerializedTypeParameter> typeParameters) {
+    if (typeParameters == null) {
+      return ImmutableList.of();
+    }
+    return typeParameters
+        .stream()
+        .map(tp -> deserializeTypeParameter(tp))
+        .collect(ImmutableList.toImmutableList());
+  }
+
+  private TypeParameter deserializeTypeParameter(SerializedTypeParameter typeParameter) {
+    return TypeParameter.create(
+        typeParameter.name, deserializeTypeReferences(typeParameter.bounds));
+  }
+
   @VisibleForTesting
   static class SerializedModule {
     private List<SerializedFileScope> files;
@@ -452,6 +506,7 @@ public class IndexStore {
     private SerializedType type;
     private SerializedType superClass;
     private List<SerializedType> interfaces;
+    private List<SerializedTypeParameter> typeParameters;
   }
 
   private static class SerializedType {
@@ -476,5 +531,10 @@ public class IndexStore {
     WILDCARD_UNBOUNDED,
     WILDCARD_SUPER,
     WILDCARD_EXTENDS,
+  }
+
+  private static class SerializedTypeParameter {
+    private String name;
+    private List<SerializedType> bounds;
   }
 }

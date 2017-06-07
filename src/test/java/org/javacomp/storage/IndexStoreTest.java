@@ -19,6 +19,7 @@ import org.javacomp.model.MethodEntity;
 import org.javacomp.model.Module;
 import org.javacomp.model.PackageEntity;
 import org.javacomp.model.TypeArgument;
+import org.javacomp.model.TypeParameter;
 import org.javacomp.model.TypeReference;
 import org.javacomp.model.VariableEntity;
 import org.javacomp.model.WildcardTypeArgument;
@@ -82,6 +83,9 @@ public class IndexStoreTest {
     for (int i = 0; i < deserializedInterfaces.size(); i++) {
       assertTypesEqual(deserializedInterfaces.get(i), originalInterfaces.get(i), qualifiedName);
     }
+
+    assertTypeParametersEqual(
+        deserialized.getTypeParameters(), original.getTypeParameters(), qualifiedName);
   }
 
   private boolean methodsEqual(
@@ -106,6 +110,12 @@ public class IndexStoreTest {
 
     try {
       assertTypesEqual(deserialized.getReturnType(), original.getReturnType(), qualifiedName);
+    } catch (Throwable t) {
+      return false;
+    }
+    try {
+      assertTypeParametersEqual(
+          deserialized.getTypeParameters(), original.getTypeParameters(), qualifiedName);
     } catch (Throwable t) {
       return false;
     }
@@ -195,6 +205,38 @@ public class IndexStoreTest {
         .isEqualTo(originalBound.getKind());
     assertTypesEqual(
         deserializedBound.getTypeReference(), originalBound.getTypeReference(), qualifiedName);
+  }
+
+  private void assertTypeParametersEqual(
+      List<TypeParameter> deserialized, List<TypeParameter> original, Deque<String> qualifiedName) {
+    String qualifiedNameString = QUALIFIER_JOINER.join(qualifiedName);
+    assertThat(deserialized)
+        .named("Type parameters of " + qualifiedNameString)
+        .hasSize(original.size());
+
+    for (int i = 0; i < deserialized.size(); i++) {
+      TypeParameter deserializedParameter = deserialized.get(i);
+      TypeParameter originalParameter = original.get(i);
+      assertThat(deserializedParameter.getName())
+          .named(i + "th type parameter of " + qualifiedNameString)
+          .isEqualTo(originalParameter.getName());
+
+      List<TypeReference> deserializedBounds = deserializedParameter.getExtendBounds();
+      List<TypeReference> originalBounds = originalParameter.getExtendBounds();
+      assertThat(deserializedBounds)
+          .named(
+              "Bounds of type parameter "
+                  + deserializedParameter.getName()
+                  + " of "
+                  + qualifiedNameString)
+          .hasSize(originalBounds.size());
+
+      for (int j = 0; j < deserializedBounds.size(); j++) {
+        qualifiedName.addLast(j + "th bound of type parameter " + deserializedParameter.getName());
+        assertTypesEqual(deserializedBounds.get(j), originalBounds.get(j), qualifiedName);
+        qualifiedName.removeLast();
+      }
+    }
   }
 
   private void assertQualifiedName(Entity entity, Deque<String> qualifiedName) {

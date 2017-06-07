@@ -30,5 +30,6 @@ public class TestClass {
 
   public static class ParameterizedType<A, B extends A> {
     public A getA();
+    public <C extends A & B> C getC();
   }
 }
