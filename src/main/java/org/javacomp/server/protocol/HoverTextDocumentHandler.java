@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableList;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.javacomp.logging.JLogger;
 import org.javacomp.model.ClassEntity;
 import org.javacomp.model.Entity;
@@ -85,6 +86,16 @@ public class HoverTextDocumentHandler extends RequestHandler<TextDocumentPositio
 
   private String formatMethod(MethodEntity method) {
     StringBuilder sb = new StringBuilder();
+    if (!method.getTypeParameters().isEmpty()) {
+      sb.append("<");
+      sb.append(
+          method
+              .getTypeParameters()
+              .stream()
+              .map(t -> t.toDisplayString())
+              .collect(Collectors.joining(", ")));
+      sb.append("> ");
+    }
     if (method.getReturnType() != TypeReference.EMPTY_TYPE) {
       sb.append(method.getReturnType().toDisplayString());
       sb.append(" ");
@@ -167,6 +178,16 @@ public class HoverTextDocumentHandler extends RequestHandler<TextDocumentPositio
     }
     sb.append(" ");
     sb.append(classEntity.getQualifiedName());
+    if (!classEntity.getTypeParameters().isEmpty()) {
+      sb.append("<");
+      sb.append(
+          classEntity
+              .getTypeParameters()
+              .stream()
+              .map(t -> t.toDisplayString())
+              .collect(Collectors.joining(", ")));
+      sb.append(">");
+    }
 
     if (classEntity.getSuperClass().isPresent()) {
       sb.append(" extends ");

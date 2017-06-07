@@ -2,6 +2,7 @@ package org.javacomp.server.protocol;
 
 import com.google.common.collect.ImmutableList;
 import java.nio.file.Paths;
+import java.util.stream.Collectors;
 import org.javacomp.model.MethodEntity;
 import org.javacomp.model.VariableEntity;
 import org.javacomp.project.Project;
@@ -56,6 +57,15 @@ public class SignatureHelpTextDocumentHandler extends RequestHandler<TextDocumen
             .collect(ImmutableList.toImmutableList());
 
     StringBuilder sb = new StringBuilder();
+    if (!method.getTypeParameters().isEmpty()) {
+      sb.append("<");
+      sb.append(
+          method
+              .getTypeParameters()
+              .stream()
+              .map(t -> t.toDisplayString())
+              .collect(Collectors.joining(", ")));
+    }
     sb.append(method.getReturnType().toDisplayString());
     sb.append(" ");
     sb.append(method.getSimpleName());
