@@ -14,6 +14,7 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.Reader;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -62,13 +63,9 @@ public class IndexStore {
     }
   }
 
-  public Module readModuleFromFile(Path filePath) {
-    try {
-      String content = new String(Files.readAllBytes(filePath), UTF_8);
-      return deserializeModule(gson.fromJson(content, SerializedModule.class));
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
+  public Module readModuleFromFile(Path filePath) throws NoSuchFileException, IOException {
+    String content = new String(Files.readAllBytes(filePath), UTF_8);
+    return deserializeModule(gson.fromJson(content, SerializedModule.class));
   }
 
   public Module readModule(Reader reader) {

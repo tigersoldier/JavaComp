@@ -124,5 +124,10 @@ public class Indexer {
     public boolean shouldIgnorePath(Path path) {
       return PathUtils.shouldIgnorePath(path, rootPath, ignorePathMatchers);
     }
+
+    @Override
+    public Path getProjectRootPath() {
+      return rootPath;
+    }
   }
 }

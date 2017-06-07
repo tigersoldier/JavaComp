@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URI;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardWatchEventKinds;
@@ -80,14 +81,30 @@ public class Project {
   }
 
   public synchronized void loadJdkModule() {
-    logger.fine("Loading JDK module");
+    logger.info("Loading JDK module");
     try (BufferedReader reader =
         new BufferedReader(
             new InputStreamReader(this.getClass().getResourceAsStream(JDK_RESOURCE_PATH), UTF_8))) {
-      logger.fine("JDK module loaded");
       projectModule.addDependingModule(new IndexStore().readModule(reader));
+      logger.info("JDK module loaded");
     } catch (Throwable t) {
       logger.warning(t, "Unable to load JDK module");
+    }
+  }
+
+  public synchronized void loadTypeIndexFile(String typeIndexFile) {
+    logger.info("Loading type index file %s", typeIndexFile);
+    IndexStore indexStore = new IndexStore();
+    try {
+      Module module =
+          indexStore.readModuleFromFile(
+              fileManager.getProjectRootPath().resolve(Paths.get(typeIndexFile)));
+      projectModule.addDependingModule(module);
+      logger.info("Loaded type index file %s", typeIndexFile);
+    } catch (NoSuchFileException nsfe) {
+      logger.warning("Unable to load type index file %s: file doesn't exist", typeIndexFile);
+    } catch (Throwable t) {
+      logger.warning(t, "Unable to load type index file %s", typeIndexFile);
     }
   }
 

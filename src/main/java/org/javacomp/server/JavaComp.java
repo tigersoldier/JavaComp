@@ -110,6 +110,9 @@ public class JavaComp implements Server {
     project = new Project(fileManager, projectRootUri, IndexOptions.FULL_INDEX_BUILDER.build());
     project.initialize();
     project.loadJdkModule();
+    for (String indexFilePath : options.getTypeIndexFiles()) {
+      project.loadTypeIndexFile(indexFilePath);
+    }
 
     //TODO: Someday we should implement monitoring client process for all major platforms.
   }

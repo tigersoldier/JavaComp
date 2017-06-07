@@ -67,4 +67,6 @@ public interface FileManager {
 
   /** Whether a given path should be ignored. */
   boolean shouldIgnorePath(Path path);
+
+  Path getProjectRootPath();
 }

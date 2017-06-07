@@ -177,6 +177,11 @@ public class FileManagerImpl implements FileManager {
     return PathUtils.shouldIgnorePath(path, projectRoot, ignorePathMatchers);
   }
 
+  @Override
+  public Path getProjectRootPath() {
+    return projectRoot;
+  }
+
   /**
    * Convert a {@link URI} to a normalized {@link Path}. If the path is relative, throws an
    * exception.

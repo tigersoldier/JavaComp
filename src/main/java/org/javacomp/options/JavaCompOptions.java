@@ -15,4 +15,6 @@ public interface JavaCompOptions {
   public Level getLogLevel();
 
   public List<String> getIgnorePaths();
+
+  public List<String> getTypeIndexFiles();
 }
