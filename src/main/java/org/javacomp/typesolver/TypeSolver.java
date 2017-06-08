@@ -25,6 +25,10 @@ import org.javacomp.model.Module;
 import org.javacomp.model.PackageEntity;
 import org.javacomp.model.PackageScope;
 import org.javacomp.model.PrimitiveEntity;
+import org.javacomp.model.SolvedArrayType;
+import org.javacomp.model.SolvedPackageType;
+import org.javacomp.model.SolvedPrimitiveType;
+import org.javacomp.model.SolvedReferenceType;
 import org.javacomp.model.SolvedType;
 import org.javacomp.model.TypeReference;
 import org.javacomp.model.VariableEntity;
@@ -507,11 +511,23 @@ public class TypeSolver {
   }
 
   private SolvedType createSolvedType(Entity solvedEntity, TypeReference typeReference) {
-    return SolvedType.builder()
-        .setEntity(solvedEntity)
-        .setPrimitive(typeReference.isPrimitive())
-        .setArray(typeReference.isArray())
-        .build();
+    if (typeReference.isArray()) {
+      return SolvedArrayType.create(createSolvedEntityType(solvedEntity));
+    }
+    return createSolvedEntityType(solvedEntity);
+  }
+
+  private SolvedType createSolvedEntityType(Entity solvedEntity) {
+    if (solvedEntity instanceof ClassEntity) {
+      return SolvedReferenceType.create((ClassEntity) solvedEntity);
+    } else if (solvedEntity instanceof PrimitiveEntity) {
+      return SolvedPrimitiveType.create((PrimitiveEntity) solvedEntity);
+    } else if (solvedEntity instanceof PackageEntity) {
+      return SolvedPackageType.create((PackageEntity) solvedEntity);
+    } else {
+      throw new RuntimeException(
+          "Unsupported type of entity for creating solved type: " + solvedEntity);
+    }
   }
 
   /** Returns an iterable over a class and all its ancestor classes and interfaces. */
@@ -568,7 +584,8 @@ public class TypeSolver {
         } else {
           solvedEntity =
               solve(classReference.classType, module, classReference.baseScope)
-                  .map(t -> t.getEntity());
+                  .filter(t -> t instanceof SolvedReferenceType)
+                  .map(t -> ((SolvedReferenceType) t).getEntity());
         }
         if (!solvedEntity.isPresent()) {
           continue;

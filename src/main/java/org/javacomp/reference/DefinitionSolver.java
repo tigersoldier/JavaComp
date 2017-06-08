@@ -19,6 +19,7 @@ import org.javacomp.model.ClassEntity;
 import org.javacomp.model.Entity;
 import org.javacomp.model.EntityScope;
 import org.javacomp.model.Module;
+import org.javacomp.model.SolvedEntityType;
 import org.javacomp.model.SolvedType;
 import org.javacomp.model.VariableEntity;
 import org.javacomp.parser.PositionContext;
@@ -141,6 +142,9 @@ public class DefinitionSolver {
   }
 
   private static List<Entity> solvedTypeToEntityList(Optional<SolvedType> solvedType) {
-    return toEntityList(solvedType.map(t -> t.getEntity()));
+    return toEntityList(
+        solvedType
+            .filter(t -> t instanceof SolvedEntityType)
+            .map(t -> ((SolvedEntityType) t).getEntity()));
   }
 }

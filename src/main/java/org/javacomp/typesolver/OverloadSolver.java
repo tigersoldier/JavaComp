@@ -3,6 +3,7 @@ package org.javacomp.typesolver;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 
+import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSetMultimap;
@@ -21,6 +22,10 @@ import org.javacomp.model.Entity;
 import org.javacomp.model.MethodEntity;
 import org.javacomp.model.Module;
 import org.javacomp.model.PrimitiveEntity;
+import org.javacomp.model.SolvedArrayType;
+import org.javacomp.model.SolvedNullType;
+import org.javacomp.model.SolvedPrimitiveType;
+import org.javacomp.model.SolvedReferenceType;
 import org.javacomp.model.SolvedType;
 import org.javacomp.model.TypeReference;
 
@@ -91,7 +96,7 @@ public class OverloadSolver {
   }
 
   /** Defines how a parameter defined by a method matches an argument passed to it. */
-  private enum TypeMatchLevel {
+  enum TypeMatchLevel {
     /** The argument type and parameter type don't match at all. */
     NOT_MATCH,
     /** The parameter type match the argument type with the need of auto-boxing. */
@@ -190,7 +195,7 @@ public class OverloadSolver {
       Optional<SolvedType> solvedParameterType =
           typeSolver.solve(
               parameterTypes.get(i), module, method.getChildScope().getParentScope().get());
-      switch (matchArgumentType(argumentTypes.get(i), solvedParameterType, method, module)) {
+      switch (matchArgumentType(argumentTypes.get(i), solvedParameterType, module)) {
         case NOT_MATCH:
           return SignatureMatchLevel.TYPE_NOT_MATCH;
         case MATCH_WITH_BOXING:
@@ -217,8 +222,7 @@ public class OverloadSolver {
       return SignatureMatchLevel.TYPE_NOT_MATCH;
     }
     TypeMatchLevel lastParameterMatchLevel =
-        matchArgumentType(
-            argumentTypes.get(parameterTypes.size() - 1), lastParameterType, method, module);
+        matchArgumentType(argumentTypes.get(parameterTypes.size() - 1), lastParameterType, module);
     if (lastParameterMatchLevel == TypeMatchLevel.MATCH_WITH_BOXING) {
       matchLevel = SignatureMatchLevel.LOOSE_INVOCATION;
     }
@@ -234,12 +238,17 @@ public class OverloadSolver {
       return SignatureMatchLevel.TYPE_NOT_MATCH;
     }
 
+    checkState(
+        lastParameterType.get() instanceof SolvedArrayType,
+        "Method is variable arity invocation, but the last parameter is not an array: %s",
+        lastParameterType.get());
+
     // Check all of the rest arguments with the de-arrayed last parameter.
     Optional<SolvedType> variableVarityParameter =
-        lastParameterType.map((t) -> t.toBuilder().setArray(false).build());
+        lastParameterType.map((t) -> ((SolvedArrayType) t).getBaseType());
     // Variable arity, check if any type mismatch with the last parameter.
     for (int i = parameterTypes.size(); i < argumentTypes.size(); i++) {
-      if (matchArgumentType(argumentTypes.get(i), variableVarityParameter, method, module)
+      if (matchArgumentType(argumentTypes.get(i), variableVarityParameter, module)
           == TypeMatchLevel.NOT_MATCH) {
         return SignatureMatchLevel.TYPE_NOT_MATCH;
       }
@@ -253,10 +262,7 @@ public class OverloadSolver {
    * @return how does the parameter type match the argument type
    */
   private TypeMatchLevel matchArgumentType(
-      Optional<SolvedType> argumentType,
-      Optional<SolvedType> parameterType,
-      MethodEntity method,
-      Module module) {
+      Optional<SolvedType> argumentType, Optional<SolvedType> parameterType, Module module) {
     if (!argumentType.isPresent()) {
       // Unknown type or untyped lambda, consider as a match since it's the same to all method overloads.
       return TypeMatchLevel.MATCH_WITHOUT_BOXING;
@@ -266,89 +272,89 @@ public class OverloadSolver {
       return TypeMatchLevel.NOT_MATCH;
     }
 
-    // Object can match everything.
-    if (OBJECT_FULL_NAME.equals(parameterType.get().getEntity().getQualifiedName())) {
-      if (argumentType.get().isPrimitive()) {
-        return TypeMatchLevel.MATCH_WITH_BOXING;
-      } else {
-        return TypeMatchLevel.MATCH_WITHOUT_BOXING;
-      }
-    }
-
-    if (typeMatchWithoutBoxing(argumentType.get(), parameterType.get(), module)) {
-      return TypeMatchLevel.MATCH_WITHOUT_BOXING;
-    } else if (typeMatchWithAutoBoxing(argumentType.get(), parameterType.get())) {
-      return TypeMatchLevel.MATCH_WITH_BOXING;
-    } else {
-      return TypeMatchLevel.NOT_MATCH;
-    }
+    return matchArgumentType(argumentType.get(), parameterType.get(), module).getTypeMatchLevel();
   }
 
-  /** @return {@code true} if argumentType can be assigned to parameterTypes without auto-boxing */
-  private boolean typeMatchWithoutBoxing(
+  private TypeMatchResult matchArgumentType(
       SolvedType argumentType, SolvedType parameterType, Module module) {
-    if (argumentType.isArray() != parameterType.isArray()
-        || argumentType.isPrimitive() != parameterType.isPrimitive()) {
-      return false;
-    }
-
-    if (argumentType.isPrimitive()) {
-      if (argumentType.isArray()) {
-        // No type coercion for arrays.
-        return argumentType.getEntity().equals(parameterType.getEntity());
+    // Object can match everything.
+    TypeMatchResult.Builder resultBuilder =
+        TypeMatchResult.builder().setHasPrimitiveWidening(false);
+    if ((parameterType instanceof SolvedReferenceType)
+        && OBJECT_FULL_NAME.equals(
+            ((SolvedReferenceType) parameterType).getEntity().getQualifiedName())) {
+      if (argumentType instanceof SolvedPrimitiveType) {
+        return resultBuilder.setTypeMatchLevel(TypeMatchLevel.MATCH_WITH_BOXING).build();
+      } else {
+        return resultBuilder.setTypeMatchLevel(TypeMatchLevel.MATCH_WITHOUT_BOXING).build();
       }
-      return primitiveTypeMatch(
-          (PrimitiveEntity) argumentType.getEntity(), (PrimitiveEntity) parameterType.getEntity());
     }
 
-    if (!(argumentType.getEntity() instanceof ClassEntity
-        && parameterType.getEntity() instanceof ClassEntity)) {
+    // Null can be assigned to any non-primitive type.
+    if (argumentType instanceof SolvedNullType) {
+      if (parameterType instanceof SolvedPrimitiveType) {
+        return TypeMatchResult.NOT_MATCH;
+      } else {
+        return resultBuilder.setTypeMatchLevel(TypeMatchLevel.MATCH_WITHOUT_BOXING).build();
+      }
+    }
+
+    /// Handle array matching
+
+    boolean parameterIsArray = parameterType instanceof SolvedArrayType;
+    boolean argumentIsArray = argumentType instanceof SolvedArrayType;
+
+    if (argumentIsArray != parameterIsArray) {
+      return TypeMatchResult.NOT_MATCH;
+    }
+
+    if (parameterIsArray) {
+      TypeMatchResult baseTypeMatch =
+          matchArgumentType(
+              ((SolvedArrayType) parameterType).getBaseType(),
+              ((SolvedArrayType) argumentType).getBaseType(),
+              module);
+      // Array type are not compatible if auto-boxing or primitive widening are needed for matching base types.
+      if (baseTypeMatch.getTypeMatchLevel() != TypeMatchLevel.MATCH_WITHOUT_BOXING
+          || baseTypeMatch.getHasPrimitiveWidening()) {
+        return resultBuilder.setTypeMatchLevel(TypeMatchLevel.NOT_MATCH).build();
+      }
+      return baseTypeMatch;
+    }
+
+    /// Handle primitive type matching
+
+    if (argumentType instanceof SolvedPrimitiveType) {
+      return primitiveTypeMatch(((SolvedPrimitiveType) argumentType).getEntity(), parameterType);
+    }
+    if (parameterType instanceof SolvedPrimitiveType) {
+      TypeMatchResult parameterPrimitiveMatch =
+          primitiveTypeMatch(((SolvedPrimitiveType) parameterType).getEntity(), argumentType);
+      if (parameterPrimitiveMatch.getHasPrimitiveWidening()) {
+        // Argument type needs to be narrowed to match parameter type. Not a match.
+        return resultBuilder.setTypeMatchLevel(TypeMatchLevel.NOT_MATCH).build();
+      }
+      return parameterPrimitiveMatch;
+    }
+
+    /// Handle reference type matching
+
+    if (!(argumentType instanceof SolvedReferenceType
+        && parameterType instanceof SolvedReferenceType)) {
       // You wrote wrong code to pass a package as an argument.
-      return false;
+      return resultBuilder.setTypeMatchLevel(TypeMatchLevel.NOT_MATCH).build();
     }
 
     for (ClassEntity argumentBaseClass :
-        typeSolver.classHierarchy((ClassEntity) argumentType.getEntity(), module)) {
+        typeSolver.classHierarchy(((SolvedReferenceType) argumentType).getEntity(), module)) {
       if (argumentBaseClass
           .getQualifiedName()
-          .equals(parameterType.getEntity().getQualifiedName())) {
+          .equals(((SolvedReferenceType) parameterType).getEntity().getQualifiedName())) {
         // TODO: consider type parameters.
-        return true;
+        return resultBuilder.setTypeMatchLevel(TypeMatchLevel.MATCH_WITHOUT_BOXING).build();
       }
     }
-    return false;
-  }
-
-  /** Checks if argumentType can be assigned to parameterType with auto-boxing. */
-  private static boolean typeMatchWithAutoBoxing(
-      SolvedType argumentType, SolvedType parameterType) {
-    if (argumentType.isArray() || parameterType.isArray()) {
-      // Arrays cannot be applied to auto-boxing.
-      return false;
-    }
-    String primitiveArgumentType = primitiveTypeOf(argumentType);
-    if (primitiveArgumentType == null) {
-      // Argument type is neither primitive nor boxed primitive type.
-      return false;
-    }
-    String primitiveParameterType = primitiveTypeOf(parameterType);
-    return primitiveArgumentType.equals(primitiveParameterType);
-  }
-
-  /**
-   * Try to get the primitive type of given solvedType.
-   *
-   * @return the name of the primitive type, or {@code null} if cannot be unboxed to primitive type
-   */
-  @Nullable
-  private static String primitiveTypeOf(SolvedType solvedType) {
-    if (solvedType.isArray()) {
-      return null;
-    }
-    if (solvedType.isPrimitive()) {
-      return solvedType.getEntity().getSimpleName();
-    }
-    return UNBOXING_MAP.get(solvedType.getEntity().getQualifiedName());
+    return TypeMatchResult.NOT_MATCH;
   }
 
   /**
@@ -357,14 +363,53 @@ public class OverloadSolver {
    * <p>artumentType can be assigned to parameterType if they are the same type, or argumentType can
    * be widening converted to parameterType.
    */
-  private static boolean primitiveTypeMatch(
+  private static TypeMatchResult primitiveTypeMatch(
       PrimitiveEntity argumentType, PrimitiveEntity parameterType) {
     if (argumentType.equals(parameterType)) {
-      return true;
+      return TypeMatchResult.builder()
+          .setTypeMatchLevel(TypeMatchLevel.MATCH_WITHOUT_BOXING)
+          .setHasPrimitiveWidening(false)
+          .build();
     }
-    return WIDENING_PRIMITIVE_CONVERSION_MAP
+    if (WIDENING_PRIMITIVE_CONVERSION_MAP
         .get(argumentType.getSimpleName())
-        .contains(parameterType.getSimpleName());
+        .contains(parameterType.getSimpleName())) {
+      return TypeMatchResult.builder()
+          .setTypeMatchLevel(TypeMatchLevel.MATCH_WITHOUT_BOXING)
+          .setHasPrimitiveWidening(true)
+          .build();
+    }
+    return TypeMatchResult.NOT_MATCH;
+  }
+
+  private static TypeMatchResult primitiveTypeMatch(
+      PrimitiveEntity primitiveEntity, SolvedType otherType) {
+    if (otherType instanceof SolvedPrimitiveType) {
+      return primitiveTypeMatch(primitiveEntity, ((SolvedPrimitiveType) otherType).getEntity());
+    }
+
+    if (otherType instanceof SolvedReferenceType) {
+      String primitiveOtherType = primitiveTypeOf(((SolvedReferenceType) otherType).getEntity());
+      if (primitiveEntity.getSimpleName().equals(primitiveOtherType)) {
+        return TypeMatchResult.builder()
+            .setTypeMatchLevel(TypeMatchLevel.MATCH_WITH_BOXING)
+            .setHasPrimitiveWidening(false)
+            .build();
+      }
+      return TypeMatchResult.NOT_MATCH;
+    }
+    logger.info("Primitive type %s cannot be match to type %s", primitiveEntity, otherType);
+    return TypeMatchResult.NOT_MATCH;
+  }
+
+  /**
+   * Try to get the primitive type of given solvedType.
+   *
+   * @return the name of the primitive type, or {@code null} if cannot be unboxed to primitive type
+   */
+  @Nullable
+  private static String primitiveTypeOf(ClassEntity classEntity) {
+    return UNBOXING_MAP.get(classEntity.getQualifiedName());
   }
 
   /**
@@ -520,7 +565,7 @@ public class OverloadSolver {
           getParameterTypesAtIndex(lhsParameterTypes, i, isVariableArityInvocation)) {
         for (Optional<SolvedType> rhsParameterType :
             getParameterTypesAtIndex(rhsParameterTypes, i, isVariableArityInvocation)) {
-          if (matchArgumentType(lhsParameterType, rhsParameterType, lhs, module)
+          if (matchArgumentType(lhsParameterType, rhsParameterType, module)
               == TypeMatchLevel.NOT_MATCH) {
             return false;
           }
@@ -567,10 +612,37 @@ public class OverloadSolver {
 
     // index >= formalParameterTypes.size() and isVariableArityInvocation
     checkState(
-        lastFormalParameterType.isPresent() && lastFormalParameterType.get().isArray(),
+        lastFormalParameterType.isPresent()
+            && (lastFormalParameterType.get() instanceof SolvedArrayType),
         "Variable arity invocation with unknown type or non-array last parameter");
     Optional<SolvedType> variableArityType =
-        Optional.of(lastFormalParameterType.get().toBuilder().setArray(false).build());
+        lastFormalParameterType.map(t -> ((SolvedArrayType) t).getBaseType());
     return ImmutableList.of(variableArityType);
+  }
+
+  @AutoValue
+  abstract static class TypeMatchResult {
+    private static final TypeMatchResult NOT_MATCH =
+        builder()
+            .setTypeMatchLevel(TypeMatchLevel.NOT_MATCH)
+            .setHasPrimitiveWidening(false)
+            .build();
+
+    abstract TypeMatchLevel getTypeMatchLevel();
+
+    abstract boolean getHasPrimitiveWidening();
+
+    static Builder builder() {
+      return new AutoValue_OverloadSolver_TypeMatchResult.Builder();
+    }
+
+    @AutoValue.Builder
+    abstract static class Builder {
+      abstract Builder setTypeMatchLevel(TypeMatchLevel value);
+
+      abstract Builder setHasPrimitiveWidening(boolean value);
+
+      abstract TypeMatchResult build();
+    }
   }
 }

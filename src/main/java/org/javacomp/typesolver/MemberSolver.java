@@ -11,6 +11,9 @@ import org.javacomp.model.Entity;
 import org.javacomp.model.MethodEntity;
 import org.javacomp.model.Module;
 import org.javacomp.model.PrimitiveEntity;
+import org.javacomp.model.SolvedArrayType;
+import org.javacomp.model.SolvedEntityType;
+import org.javacomp.model.SolvedReferenceType;
 import org.javacomp.model.SolvedType;
 import org.javacomp.model.VariableEntity;
 
@@ -44,19 +47,23 @@ public class MemberSolver {
       String identifier, SolvedType baseType, Module module, Set<Entity.Kind> allowedKinds) {
     ///////
     // OuterClass.this
-    if (IDENT_THIS.equals(identifier)) {
-      return Optional.of(baseType.getEntity());
+    if (baseType instanceof SolvedReferenceType && IDENT_THIS.equals(identifier)) {
+      return Optional.of(((SolvedReferenceType) baseType).getEntity());
     }
 
     ////////
     //  someArray.length
-    if (baseType.isArray() && IDENT_LENGTH.equals(identifier)) {
+    if (baseType instanceof SolvedArrayType && IDENT_LENGTH.equals(identifier)) {
       return Optional.of(PrimitiveEntity.INT);
     }
 
     ////////
     //  foo.bar
-    return typeSolver.findEntityMember(identifier, baseType.getEntity(), module, allowedKinds);
+    if (baseType instanceof SolvedEntityType) {
+      return typeSolver.findEntityMember(
+          identifier, ((SolvedEntityType) baseType).getEntity(), module, allowedKinds);
+    }
+    return Optional.empty();
   }
 
   /**
@@ -66,14 +73,14 @@ public class MemberSolver {
   public List<Entity> findMethodMembers(
       String identifier, List<Optional<SolvedType>> arguments, SolvedType baseType, Module module) {
     // Methods must be defined in classes.
-    if (!(baseType.getEntity() instanceof ClassEntity)) {
-      logger.warning(
-          new Throwable(), "Cannot find method of non-class entities %s", baseType.getEntity());
+    if (!(baseType instanceof SolvedReferenceType)) {
+      logger.warning(new Throwable(), "Cannot find method of non-class entities %s", baseType);
       return ImmutableList.of();
     }
 
     List<Entity> methodEntities =
-        typeSolver.findClassMethods(identifier, (ClassEntity) baseType.getEntity(), module);
+        typeSolver.findClassMethods(
+            identifier, ((SolvedReferenceType) baseType).getEntity(), module);
     if (methodEntities.isEmpty()) {
       return ImmutableList.of();
     }

@@ -10,8 +10,9 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import org.javacomp.logging.JLogger;
-import org.javacomp.model.ClassEntity;
 import org.javacomp.model.Entity;
+import org.javacomp.model.SolvedEntityType;
+import org.javacomp.model.SolvedReferenceType;
 import org.javacomp.model.SolvedType;
 import org.javacomp.parser.PositionContext;
 import org.javacomp.typesolver.ExpressionSolver;
@@ -49,17 +50,26 @@ class CompleteMemberAction implements CompletionAction {
       return ImmutableList.of();
     }
 
-    Entity expressionEntity = solvedType.get().getEntity();
-    if (expressionEntity instanceof ClassEntity) {
+    if (solvedType.get() instanceof SolvedReferenceType) {
       Collection<Entity> classMembers =
           new ClassMemberCompletor(typeSolver, expressionSolver)
-              .getClassMembers((ClassEntity) expressionEntity, positionContext.getModule())
+              .getClassMembers(
+                  ((SolvedReferenceType) solvedType.get()).getEntity(), positionContext.getModule())
               .values();
       return createCompletionCandidates(classMembers);
     }
 
-    return createCompletionCandidates(
-        solvedType.get().getEntity().getChildScope().getMemberEntities().values());
+    if (solvedType.get() instanceof SolvedEntityType)
+      return createCompletionCandidates(
+          ((SolvedEntityType) solvedType.get())
+              .getEntity()
+              .getChildScope()
+              .getMemberEntities()
+              .values());
+
+    // TODO: handle array type
+    logger.warning("Unsupported member completion of type %s", solvedType.get());
+    return ImmutableList.of();
   }
 
   private static List<CompletionCandidate> createCompletionCandidates(Collection<Entity> entities) {

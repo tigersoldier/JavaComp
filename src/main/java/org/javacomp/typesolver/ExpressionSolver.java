@@ -27,6 +27,12 @@ import org.javacomp.model.Module;
 import org.javacomp.model.NullEntity;
 import org.javacomp.model.PackageEntity;
 import org.javacomp.model.PrimitiveEntity;
+import org.javacomp.model.SolvedArrayType;
+import org.javacomp.model.SolvedEntityType;
+import org.javacomp.model.SolvedNullType;
+import org.javacomp.model.SolvedPackageType;
+import org.javacomp.model.SolvedPrimitiveType;
+import org.javacomp.model.SolvedReferenceType;
 import org.javacomp.model.SolvedType;
 import org.javacomp.model.VariableEntity;
 
@@ -120,16 +126,16 @@ public class ExpressionSolver {
           .orElse(null);
     }
     if (entity instanceof ClassEntity) {
-      return SolvedType.builder().setEntity(entity).setPrimitive(false).setArray(false).build();
+      return SolvedReferenceType.create((ClassEntity) entity);
     }
     if (entity instanceof PackageEntity) {
-      return SolvedType.builder().setEntity(entity).setPrimitive(false).setArray(false).build();
+      return SolvedPackageType.create((PackageEntity) entity);
     }
     if (entity instanceof PrimitiveEntity) {
-      return SolvedType.builder().setEntity(entity).setPrimitive(true).setArray(false).build();
+      return SolvedPrimitiveType.create((PrimitiveEntity) entity);
     }
     if (entity instanceof NullEntity) {
-      return SolvedType.builder().setEntity(entity).setPrimitive(true).setArray(false).build();
+      return SolvedNullType.create((NullEntity) entity);
     }
     return null;
   }
@@ -168,13 +174,12 @@ public class ExpressionSolver {
         // <EnclosingExpression>.new <identifier>(...).
         SolvedType enclosingClassType =
             solveEntityType(scan(node.getEnclosingExpression(), null), module);
-        if (enclosingClassType == null
-            || !(enclosingClassType.getEntity() instanceof ClassEntity)) {
+        if (enclosingClassType == null || !(enclosingClassType instanceof SolvedReferenceType)) {
           return ImmutableList.of();
         }
         return new ExpressionDefinitionScanner(
                 module,
-                enclosingClassType.getEntity().getChildScope(),
+                ((SolvedReferenceType) enclosingClassType).getEntity().getChildScope(),
                 -1 /* position is useless for solving classes. */,
                 allowedEntityKinds)
             .scan(node.getIdentifier(), null);
@@ -207,11 +212,17 @@ public class ExpressionSolver {
     @Override
     public List<Entity> visitArrayAccess(ArrayAccessTree node, Void unused) {
       SolvedType expType = solveEntityType(scan(node.getExpression(), null), module);
-      if (expType == null || !expType.isArray()) {
+      if (expType == null || !(expType instanceof SolvedArrayType)) {
         return ImmutableList.of();
       }
 
-      return ImmutableList.of(expType.getEntity());
+      SolvedType baseType = ((SolvedArrayType) expType).getBaseType();
+      if (!(baseType instanceof SolvedEntityType)) {
+        // TODO: support multi dimentional array.
+        return ImmutableList.of();
+      }
+
+      return ImmutableList.of(((SolvedEntityType) baseType).getEntity());
     }
 
     @Override
@@ -231,7 +242,8 @@ public class ExpressionSolver {
                       enclosingClass.getSuperClass().get(),
                       module,
                       enclosingClass.getParentScope().get())
-                  .map(solvedType -> solvedType.getEntity()));
+                  .filter(solvedType -> solvedType instanceof SolvedEntityType)
+                  .map(solvedType -> ((SolvedEntityType) solvedType).getEntity()));
         }
       }
 

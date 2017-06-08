@@ -31,6 +31,8 @@ import org.javacomp.model.FileScope;
 import org.javacomp.model.MethodEntity;
 import org.javacomp.model.Module;
 import org.javacomp.model.PrimitiveEntity;
+import org.javacomp.model.SolvedArrayType;
+import org.javacomp.model.SolvedReferenceType;
 import org.javacomp.model.SolvedType;
 import org.javacomp.model.TypeArgument;
 import org.javacomp.model.TypeParameter;
@@ -333,13 +335,21 @@ public class IndexStore {
       optionalSolvedType = Optional.empty();
     }
     if (optionalSolvedType.isPresent()) {
+      boolean isArray = false;
       SolvedType solvedType = optionalSolvedType.get();
-      ret.fullName = solvedType.getEntity().getQualifiedName();
-      ret.isArray = solvedType.isArray();
+      while (solvedType instanceof SolvedArrayType) {
+        isArray = true;
+        solvedType = ((SolvedArrayType) solvedType).getBaseType();
+      }
+      if (solvedType instanceof SolvedReferenceType) {
+        ret.fullName = ((SolvedReferenceType) solvedType).getEntity().getQualifiedName();
+      } else {
+        ret.fullName = QUALIFIER_JOINER.join(type.getFullName());
+      }
     } else {
       ret.fullName = QUALIFIER_JOINER.join(type.getFullName());
-      ret.isArray = type.isArray();
     }
+    ret.isArray = type.isArray();
 
     if (!type.getTypeArguments().isEmpty()) {
       ret.typeArguments =
