@@ -8,7 +8,10 @@ public abstract class SolvedReferenceType extends SolvedEntityType {
   @Override
   public abstract ClassEntity getEntity();
 
-  public static SolvedReferenceType create(ClassEntity classEntity) {
-    return new AutoValue_SolvedReferenceType(classEntity);
+  public abstract SolvedTypeParameters getTypeParameters();
+
+  public static SolvedReferenceType create(
+      ClassEntity classEntity, SolvedTypeParameters typeParameters) {
+    return new AutoValue_SolvedReferenceType(classEntity, typeParameters);
   }
 }

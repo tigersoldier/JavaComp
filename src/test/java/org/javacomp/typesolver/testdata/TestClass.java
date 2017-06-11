@@ -49,4 +49,12 @@ public class TestClass extends BaseClass implements BaseInterface {
   public String returnStringMethod() {}
 
   public class TestClassFactory extends BaseInnerClass implements BaseInterfaceFactory {}
+
+  public final ParameterizedType<String, ? extends TestClassFactory> getParameterizedType();
+
+  public static class ParameterizedType<A, B extends BaseInnerClass> {
+    public A getA();
+    public B getB();
+    public <C extends B & A> C getC() {}
+  }
 }

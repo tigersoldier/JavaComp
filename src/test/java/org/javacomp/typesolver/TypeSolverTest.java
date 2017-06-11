@@ -10,6 +10,9 @@ import org.javacomp.model.EntityScope;
 import org.javacomp.model.MethodEntity;
 import org.javacomp.model.Module;
 import org.javacomp.model.SolvedEntityType;
+import org.javacomp.model.SolvedReferenceType;
+import org.javacomp.model.SolvedType;
+import org.javacomp.model.SolvedTypeParameters;
 import org.javacomp.model.TypeReference;
 import org.javacomp.testing.TestUtil;
 import org.junit.Before;
@@ -39,6 +42,8 @@ public class TypeSolverTest {
   private static final String TEST_CLASS_FULL_NAME = TEST_DATA_PACKAGE + ".TestClass";
   private static final String TEST_CLASS_FACTORY_FULL_NAME =
       TEST_CLASS_FULL_NAME + ".TestClassFactory";
+  private static final String PARAMETERIZED_TYPE_FULL_NAME =
+      TEST_CLASS_FULL_NAME + ".ParameterizedType";
   private static final String BASE_INTERFACE_FULL_NAME = TEST_DATA_PACKAGE + ".BaseInterface";
   private static final String BASE_INTERFACE_FACTORY_FULL_NAME =
       BASE_INTERFACE_FULL_NAME + ".BaseInterfaceFactory";
@@ -160,6 +165,39 @@ public class TypeSolverTest {
         .isSameAs(TestUtil.lookupEntity("java.lang.String", fakeJdkModule));
   }
 
+  @Test
+  public void solveTypeParametersInScope() {
+    SolvedEntityType typeParameterB = solveMethodReturnType(PARAMETERIZED_TYPE_FULL_NAME + ".getB");
+    assertThat(typeParameterB.getEntity())
+        .isSameAs(TestUtil.lookupEntity(BASE_CLASS_FULL_NAME + ".BaseInnerClass", otherModule));
+
+    SolvedEntityType typeParameterC = solveMethodReturnType(PARAMETERIZED_TYPE_FULL_NAME + ".getC");
+    assertThat(typeParameterC.getEntity())
+        .isSameAs(TestUtil.lookupEntity(BASE_CLASS_FULL_NAME + ".BaseInnerClass", otherModule));
+  }
+
+  @Test
+  public void solveTypeParametersWithTypeArguments() {
+    SolvedEntityType parameterizedType =
+        solveMethodReturnType(TEST_CLASS_FULL_NAME + ".getParameterizedType");
+    assertThat(parameterizedType.getEntity())
+        .isSameAs(TestUtil.lookupEntity(TEST_CLASS_FULL_NAME + ".ParameterizedType", testModule));
+
+    assertThat(parameterizedType).isInstanceOf(SolvedReferenceType.class);
+    SolvedTypeParameters solvedTypeParameters =
+        ((SolvedReferenceType) parameterizedType).getTypeParameters();
+    Optional<SolvedType> typeParameterB = solvedTypeParameters.getTypeParameter("B");
+    Truth8.assertThat(typeParameterB)
+        .named("Type parameter B of getParameterizedType()")
+        .isPresent();
+    assertThat(typeParameterB.get())
+        .named("Type parameter B of getParameterizedType()")
+        .isInstanceOf(SolvedEntityType.class);
+    assertThat(((SolvedEntityType) typeParameterB.get()).getEntity())
+        .named("Type parameter B of getParameterizedType()")
+        .isSameAs(TestUtil.lookupEntity(TEST_CLASS_FACTORY_FULL_NAME, testModule));
+  }
+
   private Optional<SolvedEntityType> solveEntityType(
       TypeReference typeReference, Module module, EntityScope parentScope) {
     return typeSolver
@@ -172,8 +210,7 @@ public class TypeSolverTest {
     assertThat(method).named(qualifiedMethodName).isNotNull();
     TypeReference methodReturnType = method.getReturnType();
     Optional<SolvedEntityType> solvedType =
-        solveEntityType(
-            methodReturnType, testModule, method.getChildScope().getParentScope().get());
+        solveEntityType(methodReturnType, testModule, method.getChildScope());
     Truth8.assertThat(solvedType).named(methodReturnType.toString()).isPresent();
     return solvedType.get();
   }

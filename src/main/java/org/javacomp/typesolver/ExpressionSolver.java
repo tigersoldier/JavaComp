@@ -34,6 +34,7 @@ import org.javacomp.model.SolvedPackageType;
 import org.javacomp.model.SolvedPrimitiveType;
 import org.javacomp.model.SolvedReferenceType;
 import org.javacomp.model.SolvedType;
+import org.javacomp.model.SolvedTypeParameters;
 import org.javacomp.model.VariableEntity;
 
 /** Logic for solving the result type of an expression. */
@@ -126,7 +127,8 @@ public class ExpressionSolver {
           .orElse(null);
     }
     if (entity instanceof ClassEntity) {
-      return SolvedReferenceType.create((ClassEntity) entity);
+      // TODO: implement solving type reference
+      return SolvedReferenceType.create((ClassEntity) entity, SolvedTypeParameters.EMPTY);
     }
     if (entity instanceof PackageEntity) {
       return SolvedPackageType.create((PackageEntity) entity);

@@ -30,8 +30,12 @@ import org.javacomp.model.SolvedPackageType;
 import org.javacomp.model.SolvedPrimitiveType;
 import org.javacomp.model.SolvedReferenceType;
 import org.javacomp.model.SolvedType;
+import org.javacomp.model.SolvedTypeParameters;
+import org.javacomp.model.TypeArgument;
+import org.javacomp.model.TypeParameter;
 import org.javacomp.model.TypeReference;
 import org.javacomp.model.VariableEntity;
+import org.javacomp.model.WildcardTypeArgument;
 
 /** Logic for solvfing the type of a given entity. */
 public class TypeSolver {
@@ -47,9 +51,23 @@ public class TypeSolver {
 
   public Optional<SolvedType> solve(
       TypeReference typeReference, Module module, EntityScope parentScope) {
+    return solve(
+        typeReference, solveTypeParametersInScope(parentScope, module), module, parentScope);
+  }
+
+  public Optional<SolvedType> solve(
+      TypeReference typeReference,
+      SolvedTypeParameters contextTypeParameters,
+      Module module,
+      EntityScope parentScope) {
     if (typeReference.isPrimitive()) {
       return Optional.of(
-          createSolvedType(PrimitiveEntity.get(typeReference.getSimpleName()), typeReference));
+          createSolvedType(
+              PrimitiveEntity.get(typeReference.getSimpleName()),
+              typeReference,
+              contextTypeParameters,
+              parentScope,
+              module));
     }
 
     List<String> fullName = typeReference.getFullName();
@@ -64,6 +82,15 @@ public class TypeSolver {
       // TODO: solve() should never be called for case 1. For case 2 we should infer the type
       // from the context.
       return Optional.empty();
+    }
+
+    // Try to lookup in type parameters first.
+    if (fullName.size() == 1) {
+      Optional<SolvedType> typeInTypeParameters =
+          contextTypeParameters.getTypeParameter(typeReference.getSimpleName());
+      if (typeInTypeParameters.isPresent()) {
+        return typeInTypeParameters;
+      }
     }
 
     Optional<Entity> currentClass =
@@ -83,14 +110,18 @@ public class TypeSolver {
       }
     }
     if (currentClass.isPresent()) {
-      return Optional.of(createSolvedType(currentClass.get(), typeReference));
+      return Optional.of(
+          createSolvedType(
+              currentClass.get(), typeReference, contextTypeParameters, parentScope, module));
     }
 
     // The first part of the type full name is not known class inside the package. Try to find in
     // global package.
     Optional<Entity> classInModule = findClassInModule(typeReference.getFullName(), module);
     if (classInModule.isPresent()) {
-      return Optional.of(createSolvedType(classInModule.get(), typeReference));
+      return Optional.of(
+          createSolvedType(
+              classInModule.get(), typeReference, contextTypeParameters, parentScope, module));
     }
 
     return Optional.empty();
@@ -205,6 +236,18 @@ public class TypeSolver {
     }
 
     return currentEntity;
+  }
+
+  public Optional<SolvedType> solveJavaLangObject(Module module) {
+    return findClassInModule(JAVA_LANG_OBJECT_QUALIFIERS, module)
+        .map(
+            entity ->
+                createSolvedEntityType(
+                    entity,
+                    ImmutableList.<TypeArgument>of(),
+                    SolvedTypeParameters.EMPTY,
+                    entity.getChildScope(),
+                    module));
   }
 
   public Optional<Entity> findClassInModule(List<String> qualifiers, Module module) {
@@ -510,16 +553,152 @@ public class TypeSolver {
     return Optional.of(currentScope);
   }
 
-  private SolvedType createSolvedType(Entity solvedEntity, TypeReference typeReference) {
-    if (typeReference.isArray()) {
-      return SolvedArrayType.create(createSolvedEntityType(solvedEntity));
+  private SolvedTypeParameters solveTypeParameters(
+      List<TypeParameter> typeParameters,
+      List<TypeArgument> typeArguments,
+      SolvedTypeParameters contextTypeParameters,
+      EntityScope baseScope,
+      Module module) {
+    if (typeParameters.isEmpty()) {
+      return SolvedTypeParameters.EMPTY;
     }
-    return createSolvedEntityType(solvedEntity);
+
+    SolvedTypeParameters.Builder builder = SolvedTypeParameters.builder();
+
+    for (int i = 0; i < typeParameters.size(); i++) {
+      TypeParameter typeParameter = typeParameters.get(i);
+      Optional<SolvedType> solvedTypeParameter;
+      if (i < typeArguments.size()) {
+        TypeArgument typeArgument = typeArguments.get(i);
+        solvedTypeParameter =
+            solveTypeArgument(typeArgument, contextTypeParameters, baseScope, module);
+      } else {
+        // Not enough type arguments. This can be caused by a) using raw type, or b) the code is
+        // incorrect. Use the bounds of the type parameters.
+        solvedTypeParameter =
+            solveTypeParameterBounds(typeParameter, contextTypeParameters, baseScope, module);
+      }
+      if (solvedTypeParameter.isPresent()) {
+        builder.putTypeParameter(typeParameter.getName(), solvedTypeParameter.get());
+      }
+    }
+    return builder.build();
   }
 
-  private SolvedType createSolvedEntityType(Entity solvedEntity) {
+  private Optional<SolvedType> solveTypeArgument(
+      TypeArgument typeArgument,
+      SolvedTypeParameters contextTypeParameters,
+      EntityScope baseScope,
+      Module module) {
+    if (typeArgument instanceof TypeReference) {
+      return solve((TypeReference) typeArgument, contextTypeParameters, module, baseScope);
+    } else if (typeArgument instanceof WildcardTypeArgument) {
+      WildcardTypeArgument wildCardTypeArgument = (WildcardTypeArgument) typeArgument;
+      Optional<WildcardTypeArgument.Bound> bound = wildCardTypeArgument.getBound();
+      if (bound.isPresent() && bound.get().getKind() == WildcardTypeArgument.Bound.Kind.EXTENDS) {
+        return solve(bound.get().getTypeReference(), contextTypeParameters, module, baseScope);
+      } else {
+        return solveJavaLangObject(module);
+      }
+    } else {
+      logger.warning("Unsupported type of type argument: %s", typeArgument);
+      return Optional.empty();
+    }
+  }
+
+  private Optional<SolvedType> solveTypeParameterBounds(
+      TypeParameter typeParameter,
+      SolvedTypeParameters contextTypeParameters,
+      EntityScope baseScope,
+      Module module) {
+    List<TypeReference> bounds = typeParameter.getExtendBounds();
+    if (bounds.isEmpty()) {
+      // No bound defined, Object is the bound.
+      return solveJavaLangObject(module);
+    } else {
+      // TODO: support multiple bounds.
+      TypeReference bound = bounds.get(0);
+      return solve(bound, contextTypeParameters, module, baseScope);
+    }
+  }
+
+  /**
+   * Solve type parameter bindings based on the type parameters declared in the given scope and its
+   * parent scopes.
+   */
+  private SolvedTypeParameters solveTypeParametersInScope(EntityScope baseScope, Module module) {
+    Deque<List<TypeParameter>> typeParametersStack = new ArrayDeque<>();
+    Deque<EntityScope> entityScopeStack = new ArrayDeque<>();
+    for (EntityScope currentScope = baseScope;
+        currentScope != null;
+        currentScope = currentScope.getParentScope().orElse(null)) {
+      List<TypeParameter> typeParameters = ImmutableList.of();
+      if (currentScope instanceof ClassEntity) {
+        typeParameters = ((ClassEntity) currentScope).getTypeParameters();
+      } else if (currentScope instanceof MethodEntity) {
+        typeParameters = ((MethodEntity) currentScope).getTypeParameters();
+      }
+      if (!typeParameters.isEmpty()) {
+        typeParametersStack.push(typeParameters);
+        entityScopeStack.push(currentScope);
+      }
+    }
+
+    SolvedTypeParameters solvedTypeParameters = SolvedTypeParameters.EMPTY;
+    // Solve type parameters from parent scopes to child scopes. Child scopes may reference type
+    // parameters defined by parent scopes.
+    while (!typeParametersStack.isEmpty()) {
+      SolvedTypeParameters.Builder builder = solvedTypeParameters.toBuilder();
+      List<TypeParameter> typeParameters = typeParametersStack.pop();
+      EntityScope typeParametersScope = entityScopeStack.pop();
+      for (TypeParameter typeParameter : typeParameters) {
+        Optional<SolvedType> solvedBounds =
+            solveTypeParameterBounds(
+                typeParameter, solvedTypeParameters, typeParametersScope, module);
+        if (solvedBounds.isPresent()) {
+          builder.putTypeParameter(typeParameter.getName(), solvedBounds.get());
+        }
+      }
+      solvedTypeParameters = builder.build();
+    }
+    return solvedTypeParameters;
+  }
+
+  private SolvedType createSolvedType(
+      Entity solvedEntity,
+      TypeReference typeReference,
+      SolvedTypeParameters contextTypeParameters,
+      EntityScope baseScope,
+      Module module) {
+    if (typeReference.isArray()) {
+      return SolvedArrayType.create(
+          createSolvedEntityType(
+              solvedEntity,
+              typeReference.getTypeArguments(),
+              contextTypeParameters,
+              baseScope,
+              module));
+    }
+    return createSolvedEntityType(
+        solvedEntity, typeReference.getTypeArguments(), contextTypeParameters, baseScope, module);
+  }
+
+  private SolvedType createSolvedEntityType(
+      Entity solvedEntity,
+      List<TypeArgument> typeArguments,
+      SolvedTypeParameters contextTypeParameters,
+      EntityScope baseScope,
+      Module module) {
     if (solvedEntity instanceof ClassEntity) {
-      return SolvedReferenceType.create((ClassEntity) solvedEntity);
+      ClassEntity classEntity = (ClassEntity) solvedEntity;
+      return SolvedReferenceType.create(
+          classEntity,
+          solveTypeParameters(
+              classEntity.getTypeParameters(),
+              typeArguments,
+              contextTypeParameters,
+              baseScope,
+              module));
     } else if (solvedEntity instanceof PrimitiveEntity) {
       return SolvedPrimitiveType.create((PrimitiveEntity) solvedEntity);
     } else if (solvedEntity instanceof PackageEntity) {
