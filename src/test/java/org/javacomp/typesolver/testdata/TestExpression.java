@@ -1,6 +1,6 @@
 package org.javacomp.typesolver.testdata;
 
-public class TestExpression {
+public class TestExpression<T> {
   public final InnerA innerA = new InnerA();
   public final TestClass testClass = new TestClass();
 
@@ -14,15 +14,25 @@ public class TestExpression {
 
   public LambdaStub lambdaCall(LambdaStub in);
 
+  public T getT(T argument);
 
   public void method() {
     InnerA varA = new InnerA();
     InnerB varB = new InnerB();
   }
 
-  public class InnerA extends TestExpression {
+  public class InnerA<A extends InnerB> extends TestExpression<A> {
     public final InnerB innerB = new InnerB();
     public final InnerB[] innerBArray;
+
+    public InnerA() {}
+
+    public A typeParameterA;
+    public A getTypeParameterA();
+
+    public static <V extends InnerC> InnerA<V> create(V arg);
+
+    public class InnerInnerA {}
   }
 
   public class InnerB {
@@ -31,7 +41,7 @@ public class TestExpression {
     public final InnerC innerC = null;
   }
 
-  public class InnerC {}
+  public class InnerC extends InnerB {}
 
   public static interface LambdaStub {
     void lambdaMethod(String arg);

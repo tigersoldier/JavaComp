@@ -95,7 +95,7 @@ public class SignatureSolver {
                 -1 /* position doesn't matter for solving methods. */,
                 METHOD_KIND_SET)
             .stream()
-            .map(entity -> (MethodEntity) entity)
+            .map(entityWithContext -> (MethodEntity) entityWithContext.getEntity())
             .collect(ImmutableList.toImmutableList());
     if (methods.isEmpty()) {
       return emptySignature();

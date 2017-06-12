@@ -83,12 +83,16 @@ public class DefinitionSolver {
       } else if (treeIsTypeReference(treePath)) {
         allowedKinds = ALLOWED_ENTITY_KINDS_FOR_TYPE_REFERENCE;
       }
-      return expressionSolver.solveDefinitions(
-          (ExpressionTree) leafTree,
-          positionContext.get().getModule(),
-          positionContext.get().getScopeAtPosition(),
-          positionContext.get().getPosition(),
-          allowedKinds);
+      return expressionSolver
+          .solveDefinitions(
+              (ExpressionTree) leafTree,
+              positionContext.get().getModule(),
+              positionContext.get().getScopeAtPosition(),
+              positionContext.get().getPosition(),
+              allowedKinds)
+          .stream()
+          .map(entityWithContext -> entityWithContext.getEntity())
+          .collect(ImmutableList.toImmutableList());
     }
     return ImmutableList.of();
   }

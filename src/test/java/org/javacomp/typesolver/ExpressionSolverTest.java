@@ -12,12 +12,14 @@ import java.util.Optional;
 import org.javacomp.model.ClassEntity;
 import org.javacomp.model.Entity;
 import org.javacomp.model.EntityScope;
+import org.javacomp.model.EntityWithContext;
 import org.javacomp.model.MethodEntity;
 import org.javacomp.model.Module;
 import org.javacomp.model.PrimitiveEntity;
 import org.javacomp.model.SolvedArrayType;
 import org.javacomp.model.SolvedEntityType;
 import org.javacomp.model.SolvedNullType;
+import org.javacomp.model.SolvedReferenceType;
 import org.javacomp.model.SolvedType;
 import org.javacomp.testing.TestUtil;
 import org.junit.Before;
@@ -56,6 +58,7 @@ public class ExpressionSolverTest {
   private ClassEntity testClassFactoryClass;
   private ClassEntity shadowClass;
   private ClassEntity innerAClass;
+  private ClassEntity innerInnerAClass;
   private ClassEntity innerBClass;
   private ClassEntity innerCClass;
   private ClassEntity baseInnerClass;
@@ -81,6 +84,9 @@ public class ExpressionSolverTest {
         (ClassEntity) TestUtil.lookupEntity(BASE_CLASS_FULL_NAME + ".BaseInnerClass", otherModule);
     innerAClass =
         (ClassEntity) TestUtil.lookupEntity(TOP_LEVEL_CLASS_FULL_NAME + ".InnerA", module);
+    innerInnerAClass =
+        (ClassEntity)
+            TestUtil.lookupEntity(TOP_LEVEL_CLASS_FULL_NAME + ".InnerA.InnerInnerA", module);
     innerBClass =
         (ClassEntity) TestUtil.lookupEntity(TOP_LEVEL_CLASS_FULL_NAME + ".InnerB", module);
     innerCClass =
@@ -99,6 +105,14 @@ public class ExpressionSolverTest {
         .isEqualTo(innerBClass);
     assertThat(solveEntityExpression("innerA.innerB.innerC", topLevelClass).getEntity())
         .isEqualTo(innerCClass);
+  }
+
+  @Test
+  public void solveMemberSelectionWithTypeParameter() {
+    assertThat(solveEntityExpression("typeParameterA", innerAClass).getEntity())
+        .isEqualTo(innerBClass);
+    assertThat(solveEntityExpression("innerA.typeParameterA", innerAClass).getEntity())
+        .isEqualTo(innerBClass);
   }
 
   @Test
@@ -150,18 +164,36 @@ public class ExpressionSolverTest {
     assertThat(solveEntityExpression("this", topLevelClass).getEntity()).isEqualTo(topLevelClass);
     assertThat(solveEntityExpression("this.innerA", topLevelClass).getEntity())
         .isEqualTo(innerAClass);
+
+    SolvedEntityType innerAThis = solveEntityExpression("this", innerAClass);
+    assertThat(innerAThis.getEntity()).isEqualTo(innerAClass);
+    assertThat(innerAThis).isInstanceOf(SolvedReferenceType.class);
+    Optional<SolvedType> typeParameterA =
+        ((SolvedReferenceType) innerAThis).getTypeParameters().getTypeParameter("A");
+    Truth8.assertThat(typeParameterA).isPresent();
+    assertThat(typeParameterA.get()).isInstanceOf(SolvedReferenceType.class);
+    assertThat(((SolvedReferenceType) typeParameterA.get()).getEntity()).isEqualTo(innerBClass);
   }
 
   @Test
   public void solveSuper() {
     assertThat(solveEntityExpression("super.innerA", innerAClass).getEntity())
         .isEqualTo(innerAClass);
+
+    assertThat(solveEntityExpression("super.getT(null)", innerAClass).getEntity())
+        .isEqualTo(innerBClass);
   }
 
   @Test
-  public void solveThisOfSuperClass() {
-    assertThat(solveEntityExpression("TestExpression.this", innerAClass).getEntity())
-        .isEqualTo(topLevelClass);
+  public void solveQualifiedThis() {
+    SolvedEntityType qualifiedThis = solveEntityExpression("InnerA.this", innerInnerAClass);
+    assertThat(qualifiedThis.getEntity()).isEqualTo(innerAClass);
+    assertThat(qualifiedThis).isInstanceOf(SolvedReferenceType.class);
+    Optional<SolvedType> typeParameterA =
+        ((SolvedReferenceType) qualifiedThis).getTypeParameters().getTypeParameter("A");
+    Truth8.assertThat(typeParameterA).isPresent();
+    assertThat(typeParameterA.get()).isInstanceOf(SolvedEntityType.class);
+    assertThat(((SolvedEntityType) typeParameterA.get()).getEntity()).isEqualTo(innerBClass);
   }
 
   @Test
@@ -172,6 +204,20 @@ public class ExpressionSolverTest {
         .isEqualTo(innerBClass);
     assertThat(solveEntityExpression("this.baseMethod()", topLevelClass).getEntity())
         .isEqualTo(innerCClass);
+  }
+
+  @Test
+  public void solveMethodReturnTypeWithTypeParameters() {
+    assertThat(solveEntityExpression("getTypeParameterA()", innerAClass).getEntity())
+        .isEqualTo(innerBClass);
+    assertThat(solveEntityExpression("innerA.getTypeParameterA()", innerAClass).getEntity())
+        .isEqualTo(innerBClass);
+  }
+
+  // TODO: enable this test once TypeSolver is fixed.
+  // @Test
+  public void solveSuperClassMethodReturnTypeWithTypeParameters() {
+    assertThat(solveEntityExpression("getT()", innerAClass).getEntity()).isEqualTo(innerBClass);
   }
 
   @Test
@@ -284,11 +330,11 @@ public class ExpressionSolverTest {
 
   private Entity solveDefinition(String expression, EntityScope baseScope) {
     ExpressionTree expressionTree = TestUtil.parseExpression(expression);
-    List<Entity> solvedExpression =
+    List<EntityWithContext> solvedExpression =
         expressionSolver.solveDefinitions(
             expressionTree, module, baseScope, -1 /* position */, EnumSet.allOf(Entity.Kind.class));
     assertThat(solvedExpression).named(expression).isNotEmpty();
-    return solvedExpression.get(0);
+    return solvedExpression.get(0).getEntity();
   }
 
   private SolvedType solveExpression(String expression, EntityScope baseScope, int position) {

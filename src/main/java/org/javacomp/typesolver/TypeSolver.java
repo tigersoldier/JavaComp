@@ -553,7 +553,7 @@ public class TypeSolver {
     return Optional.of(currentScope);
   }
 
-  private SolvedTypeParameters solveTypeParameters(
+  public SolvedTypeParameters solveTypeParameters(
       List<TypeParameter> typeParameters,
       List<TypeArgument> typeArguments,
       SolvedTypeParameters contextTypeParameters,
@@ -611,6 +611,9 @@ public class TypeSolver {
       SolvedTypeParameters contextTypeParameters,
       EntityScope baseScope,
       Module module) {
+    if (contextTypeParameters.getTypeParameter(typeParameter.getName()).isPresent()) {
+      return contextTypeParameters.getTypeParameter(typeParameter.getName());
+    }
     List<TypeReference> bounds = typeParameter.getExtendBounds();
     if (bounds.isEmpty()) {
       // No bound defined, Object is the bound.
@@ -626,7 +629,7 @@ public class TypeSolver {
    * Solve type parameter bindings based on the type parameters declared in the given scope and its
    * parent scopes.
    */
-  private SolvedTypeParameters solveTypeParametersInScope(EntityScope baseScope, Module module) {
+  public SolvedTypeParameters solveTypeParametersInScope(EntityScope baseScope, Module module) {
     Deque<List<TypeParameter>> typeParametersStack = new ArrayDeque<>();
     Deque<EntityScope> entityScopeStack = new ArrayDeque<>();
     for (EntityScope currentScope = baseScope;

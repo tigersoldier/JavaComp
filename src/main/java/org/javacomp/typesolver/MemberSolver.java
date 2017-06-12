@@ -8,6 +8,7 @@ import java.util.Set;
 import org.javacomp.logging.JLogger;
 import org.javacomp.model.ClassEntity;
 import org.javacomp.model.Entity;
+import org.javacomp.model.EntityWithContext;
 import org.javacomp.model.MethodEntity;
 import org.javacomp.model.Module;
 import org.javacomp.model.PrimitiveEntity;
@@ -38,30 +39,32 @@ public class MemberSolver {
     this.overloadSolver = overloadSolver;
   }
 
-  public Optional<Entity> findNonMethodMember(
+  public Optional<EntityWithContext> findNonMethodMember(
       String identifier, SolvedType baseType, Module module) {
     return findNonMethodMember(identifier, baseType, module, ALLOWED_KINDS_NON_METHOD);
   }
 
-  public Optional<Entity> findNonMethodMember(
+  public Optional<EntityWithContext> findNonMethodMember(
       String identifier, SolvedType baseType, Module module, Set<Entity.Kind> allowedKinds) {
     ///////
     // OuterClass.this
     if (baseType instanceof SolvedReferenceType && IDENT_THIS.equals(identifier)) {
-      return Optional.of(((SolvedReferenceType) baseType).getEntity());
+      return Optional.of(EntityWithContext.from(baseType).build());
     }
 
     ////////
     //  someArray.length
     if (baseType instanceof SolvedArrayType && IDENT_LENGTH.equals(identifier)) {
-      return Optional.of(PrimitiveEntity.INT);
+      return Optional.of(EntityWithContext.simpleBuilder().setEntity(PrimitiveEntity.INT).build());
     }
 
     ////////
     //  foo.bar
     if (baseType instanceof SolvedEntityType) {
-      return typeSolver.findEntityMember(
-          identifier, ((SolvedEntityType) baseType).getEntity(), module, allowedKinds);
+      return typeSolver
+          .findEntityMember(
+              identifier, ((SolvedEntityType) baseType).getEntity(), module, allowedKinds)
+          .map(entity -> EntityWithContext.from(baseType).setEntity(entity).build());
     }
     return Optional.empty();
   }
@@ -70,7 +73,7 @@ public class MemberSolver {
    * @return a list of {@link MethodEntity} instances. The best match is the first element if not
    *     empty.
    */
-  public List<Entity> findMethodMembers(
+  public List<EntityWithContext> findMethodMembers(
       String identifier, List<Optional<SolvedType>> arguments, SolvedType baseType, Module module) {
     // Methods must be defined in classes.
     if (!(baseType instanceof SolvedReferenceType)) {
@@ -85,6 +88,10 @@ public class MemberSolver {
       return ImmutableList.of();
     }
 
-    return overloadSolver.prioritizeMatchedMethod(methodEntities, arguments, module);
+    return overloadSolver
+        .prioritizeMatchedMethod(methodEntities, arguments, module)
+        .stream()
+        .map(entity -> EntityWithContext.from(baseType).setEntity(entity).build())
+        .collect(ImmutableList.toImmutableList());
   }
 }

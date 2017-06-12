@@ -195,6 +195,20 @@ public class CompletorTest {
         .contains("aboveField");
   }
 
+  @Test
+  public void completeWithTypeParameter() throws Exception {
+    List<String> testcases =
+        ImmutableList.of(
+            // TODO: fix TypeSolver and enable the test case below
+            // "boundParameterized.getTypeParameterT()./** @complete */",
+            "parameterizedOfNonParameterized.getTypeParameterT()./** @complete */");
+    for (String testcase : testcases) {
+      assertThat(getCandidateNames(completeWithContent("Parameterized.java", testcase)))
+          .named(testcase)
+          .contains("nonParameterizedField");
+    }
+  }
+
   private void assertCompletion(String filename, String toComplete, String... expectedCandidates) {
     assertCompletion(filename, ImmutableList.of(toComplete), expectedCandidates);
   }
