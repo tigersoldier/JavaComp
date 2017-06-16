@@ -303,6 +303,11 @@ public class ExpressionSolverTest {
   }
 
   @Test
+  public void solveTypeCast() {
+    assertThat(solveDefinition("(InnerC) baseInnerB", topLevelClass)).isSameAs(innerCClass);
+  }
+
+  @Test
   public void solveJavaLangClass() {
     assertThat(solveDefinition("String", methodScope)).isSameAs(fakeStringClass);
   }

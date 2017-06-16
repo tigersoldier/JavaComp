@@ -11,6 +11,7 @@ import com.sun.source.tree.MemberSelectTree;
 import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.NewClassTree;
 import com.sun.source.tree.Tree;
+import com.sun.source.tree.TypeCastTree;
 import com.sun.source.util.TreeScanner;
 import com.sun.tools.javac.tree.JCTree;
 import java.util.ArrayList;
@@ -37,7 +38,9 @@ import org.javacomp.model.SolvedReferenceType;
 import org.javacomp.model.SolvedType;
 import org.javacomp.model.SolvedTypeParameters;
 import org.javacomp.model.TypeArgument;
+import org.javacomp.model.TypeReference;
 import org.javacomp.model.VariableEntity;
+import org.javacomp.parser.TypeReferenceScanner;
 
 /** Logic for solving the result type of an expression. */
 public class ExpressionSolver {
@@ -123,7 +126,7 @@ public class ExpressionSolver {
     if (entity instanceof MethodEntity) {
       MethodEntity methodEntity = (MethodEntity) entity;
       return typeSolver
-          .solve(methodEntity.getReturnType(), solvedTypeParameters, module, methodEntity)
+          .solve(methodEntity.getReturnType(), solvedTypeParameters, methodEntity, module)
           .orElse(null);
     }
     if (entity instanceof VariableEntity) {
@@ -132,8 +135,8 @@ public class ExpressionSolver {
           .solve(
               variableEntity.getType(),
               solvedTypeParameters,
-              module,
-              variableEntity.getParentScope())
+              variableEntity.getParentScope(),
+              module)
           .orElse(null);
     }
     if (entity instanceof ClassEntity) {
@@ -260,8 +263,8 @@ public class ExpressionSolver {
                   .solve(
                       enclosingClass.getSuperClass().get(),
                       contextTypeParameters,
-                      module,
-                      enclosingClass.getParentScope().get())
+                      enclosingClass.getParentScope().get(),
+                      module)
                   .filter(solvedType -> solvedType instanceof SolvedReferenceType)
                   .map(
                       solvedType -> {
@@ -331,6 +334,15 @@ public class ExpressionSolver {
     public List<EntityWithContext> visitLambdaExpression(LambdaExpressionTree node, Void unused) {
       // TODO: implement this.
       return ImmutableList.of();
+    }
+
+    @Override
+    public List<EntityWithContext> visitTypeCast(TypeCastTree node, Void unused) {
+      TypeReference typeReference = new TypeReferenceScanner().getTypeReference(node.getType());
+      Optional<SolvedType> solvedType =
+          typeSolver.solve(typeReference, contextTypeParameters, baseScope, module);
+      logger.severe("[DEBUG] typeReference: %s, solvedType: %s", typeReference, solvedType);
+      return toList(solvedType.map(t -> EntityWithContext.from(t).build()));
     }
 
     private List<EntityWithContext> applyTypeArguments(

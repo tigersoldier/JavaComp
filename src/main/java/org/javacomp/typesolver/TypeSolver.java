@@ -62,14 +62,14 @@ public class TypeSolver {
   public Optional<SolvedType> solve(
       TypeReference typeReference, EntityScope parentScope, Module module) {
     return solve(
-        typeReference, solveTypeParametersInScope(parentScope, module), module, parentScope);
+        typeReference, solveTypeParametersInScope(parentScope, module), parentScope, module);
   }
 
   public Optional<SolvedType> solve(
       TypeReference typeReference,
       SolvedTypeParameters contextTypeParameters,
-      Module module,
-      EntityScope parentScope) {
+      EntityScope parentScope,
+      Module module) {
     if (typeReference.isPrimitive()) {
       return Optional.of(
           createSolvedType(
@@ -681,12 +681,12 @@ public class TypeSolver {
       EntityScope baseScope,
       Module module) {
     if (typeArgument instanceof TypeReference) {
-      return solve((TypeReference) typeArgument, contextTypeParameters, module, baseScope);
+      return solve((TypeReference) typeArgument, contextTypeParameters, baseScope, module);
     } else if (typeArgument instanceof WildcardTypeArgument) {
       WildcardTypeArgument wildCardTypeArgument = (WildcardTypeArgument) typeArgument;
       Optional<WildcardTypeArgument.Bound> bound = wildCardTypeArgument.getBound();
       if (bound.isPresent() && bound.get().getKind() == WildcardTypeArgument.Bound.Kind.EXTENDS) {
-        return solve(bound.get().getTypeReference(), contextTypeParameters, module, baseScope);
+        return solve(bound.get().getTypeReference(), contextTypeParameters, baseScope, module);
       } else {
         return solveJavaLangObject(module);
       }
@@ -711,7 +711,7 @@ public class TypeSolver {
     } else {
       // TODO: support multiple bounds.
       TypeReference bound = bounds.get(0);
-      return solve(bound, contextTypeParameters, module, baseScope);
+      return solve(bound, contextTypeParameters, baseScope, module);
     }
   }
 
@@ -889,13 +889,13 @@ public class TypeSolver {
               solve(
                       classReference.classType,
                       classReference.subclassWithContext.getSolvedTypeParameters(),
-                      module,
                       classReference
                           .subclassWithContext
                           .getEntity()
                           .getChildScope()
                           .getParentScope()
-                          .get())
+                          .get(),
+                      module)
                   .filter(t -> t instanceof SolvedReferenceType)
                   .map(t -> EntityWithContext.from(t).build());
         } else {

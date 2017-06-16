@@ -208,6 +208,15 @@ public class CompletorTest {
     }
   }
 
+  @Test
+  public void completeWithTypeCast() throws Exception {
+    assertThat(
+            getCandidateNames(
+                completeWithContent(
+                    "CompleteInMethod.java", "((BelowClass) above)./** @complete */")))
+        .contains("belowField");
+  }
+
   private void assertCompletion(String filename, String toComplete, String... expectedCandidates) {
     assertCompletion(filename, ImmutableList.of(toComplete), expectedCandidates);
   }
