@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.javacomp.model.ClassEntity;
-import org.javacomp.model.Entity;
+import org.javacomp.model.EntityWithContext;
 import org.javacomp.model.Module;
 import org.javacomp.model.SolvedType;
 import org.javacomp.model.TypeArgument;
@@ -122,10 +122,12 @@ public class OverloadSolverTest {
    */
   private String solveOverload(TypeReference... argumentTypes) {
     @SuppressWarnings("unchecked")
-    List<Entity> methods = typeSolver.findClassMethods(OVERLOAD_METHOD_NAME, topLevelClass, module);
+    List<EntityWithContext> methods =
+        typeSolver.findClassMethods(
+            OVERLOAD_METHOD_NAME, EntityWithContext.ofEntity(topLevelClass), module);
     List<Optional<SolvedType>> solvedArgumentTypes = new ArrayList<>();
     for (TypeReference argumentType : argumentTypes) {
-      solvedArgumentTypes.add(typeSolver.solve(argumentType, module, topLevelClass));
+      solvedArgumentTypes.add(typeSolver.solve(argumentType, topLevelClass, module));
     }
     return overloadSolver
         .solve(methods, solvedArgumentTypes, module)

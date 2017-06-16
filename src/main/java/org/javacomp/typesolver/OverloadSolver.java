@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import org.javacomp.logging.JLogger;
 import org.javacomp.model.ClassEntity;
-import org.javacomp.model.Entity;
+import org.javacomp.model.EntityWithContext;
 import org.javacomp.model.MethodEntity;
 import org.javacomp.model.Module;
 import org.javacomp.model.PrimitiveEntity;
@@ -125,10 +125,11 @@ public class OverloadSolver {
    * @return one of the methods in {@code methods}
    */
   public MethodEntity solve(
-      List<Entity> entities, List<Optional<SolvedType>> argumentTypes, Module module) {
+      List<EntityWithContext> entities, List<Optional<SolvedType>> argumentTypes, Module module) {
     List<MethodEntity> methods =
         entities
             .stream()
+            .map(entityWithContext -> entityWithContext.getEntity())
             .filter(entity -> entity instanceof MethodEntity)
             .map(entity -> (MethodEntity) entity)
             .collect(ImmutableList.toImmutableList());
@@ -194,7 +195,7 @@ public class OverloadSolver {
     for (int i = 0; i < parameterTypes.size() - 1; i++) {
       Optional<SolvedType> solvedParameterType =
           typeSolver.solve(
-              parameterTypes.get(i), module, method.getChildScope().getParentScope().get());
+              parameterTypes.get(i), method.getChildScope().getParentScope().get(), module);
       switch (matchArgumentType(argumentTypes.get(i), solvedParameterType, module)) {
         case NOT_MATCH:
           return SignatureMatchLevel.TYPE_NOT_MATCH;
@@ -216,8 +217,8 @@ public class OverloadSolver {
     Optional<SolvedType> lastParameterType =
         typeSolver.solve(
             parameterTypes.get(parameterTypes.size() - 1),
-            module,
-            method.getChildScope().getParentScope().get());
+            method.getChildScope().getParentScope().get(),
+            module);
     if (!lastParameterType.isPresent()) {
       return SignatureMatchLevel.TYPE_NOT_MATCH;
     }
@@ -345,9 +346,11 @@ public class OverloadSolver {
       return resultBuilder.setTypeMatchLevel(TypeMatchLevel.NOT_MATCH).build();
     }
 
-    for (ClassEntity argumentBaseClass :
-        typeSolver.classHierarchy(((SolvedReferenceType) argumentType).getEntity(), module)) {
+    for (EntityWithContext argumentBaseClass :
+        typeSolver.classHierarchy(
+            EntityWithContext.ofEntity(((SolvedReferenceType) argumentType).getEntity()), module)) {
       if (argumentBaseClass
+          .getEntity()
           .getQualifiedName()
           .equals(((SolvedReferenceType) parameterType).getEntity().getQualifiedName())) {
         // TODO: consider type parameters.
@@ -495,7 +498,7 @@ public class OverloadSolver {
             .map(
                 p ->
                     typeSolver.solve(
-                        p.getType(), module, lhs.getChildScope().getParentScope().get()))
+                        p.getType(), lhs.getChildScope().getParentScope().get(), module))
             .collect(Collectors.toList());
     List<Optional<SolvedType>> rhsParameterTypes =
         rhs.getParameters()
@@ -503,7 +506,7 @@ public class OverloadSolver {
             .map(
                 p ->
                     typeSolver.solve(
-                        p.getType(), module, rhs.getChildScope().getParentScope().get()))
+                        p.getType(), rhs.getChildScope().getParentScope().get(), module))
             .collect(Collectors.toList());
     if (methodMoreSpecific(
         lhs,
@@ -529,19 +532,34 @@ public class OverloadSolver {
   }
 
   /** Moves the best matched method to the first element. */
-  public List<Entity> prioritizeMatchedMethod(
-      List<Entity> entities, List<Optional<SolvedType>> argumentTypes, Module module) {
+  public List<EntityWithContext> prioritizeMatchedMethod(
+      List<EntityWithContext> entities, List<Optional<SolvedType>> argumentTypes, Module module) {
     if (entities.isEmpty()) {
       return entities;
     }
     MethodEntity matchedMethod = solve(entities, argumentTypes, module);
 
-    ImmutableList.Builder<Entity> builder = new ImmutableList.Builder<>();
-    builder.add(matchedMethod);
+    int matchedIndex = -1;
 
-    for (Entity entity : entities) {
-      if (entity != matchedMethod) {
-        builder.add(entity);
+    for (int i = 0; i < entities.size(); i++) {
+      if (entities.get(i).getEntity() == matchedMethod) {
+        matchedIndex = i;
+        break;
+      }
+    }
+
+    checkState(
+        matchedIndex >= 0,
+        "The matched method returned by solve() is not in the entity list: matched is %s, the list is %s",
+        matchedMethod,
+        entities);
+
+    ImmutableList.Builder<EntityWithContext> builder = new ImmutableList.Builder<>();
+    builder.add(entities.get(matchedIndex));
+
+    for (int i = 0; i < entities.size(); i++) {
+      if (i != matchedIndex) {
+        builder.add(entities.get(i));
       }
     }
     return builder.build();

@@ -61,10 +61,8 @@ public class MemberSolver {
     ////////
     //  foo.bar
     if (baseType instanceof SolvedEntityType) {
-      return typeSolver
-          .findEntityMember(
-              identifier, ((SolvedEntityType) baseType).getEntity(), module, allowedKinds)
-          .map(entity -> EntityWithContext.from(baseType).setEntity(entity).build());
+      return typeSolver.findEntityMember(
+          identifier, EntityWithContext.from(baseType).build(), module, allowedKinds);
     }
     return Optional.empty();
   }
@@ -81,17 +79,9 @@ public class MemberSolver {
       return ImmutableList.of();
     }
 
-    List<Entity> methodEntities =
-        typeSolver.findClassMethods(
-            identifier, ((SolvedReferenceType) baseType).getEntity(), module);
-    if (methodEntities.isEmpty()) {
-      return ImmutableList.of();
-    }
+    List<EntityWithContext> methodEntities =
+        typeSolver.findClassMethods(identifier, EntityWithContext.from(baseType).build(), module);
 
-    return overloadSolver
-        .prioritizeMatchedMethod(methodEntities, arguments, module)
-        .stream()
-        .map(entity -> EntityWithContext.from(baseType).setEntity(entity).build())
-        .collect(ImmutableList.toImmutableList());
+    return overloadSolver.prioritizeMatchedMethod(methodEntities, arguments, module);
   }
 }

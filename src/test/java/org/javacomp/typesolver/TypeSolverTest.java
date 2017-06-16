@@ -77,7 +77,7 @@ public class TypeSolverTest {
     TypeReference baseInterfaceReference = testClass.getInterfaces().get(0);
     Optional<SolvedEntityType> solvedType =
         solveEntityType(baseInterfaceReference, testModule, testClass);
-    Truth8.assertThat(solvedType).isPresent();
+    Truth8.assertThat(solvedType).named("Base interface of " + TEST_CLASS_FULL_NAME).isPresent();
     assertThat(solvedType.get().getEntity())
         .isSameAs(TestUtil.lookupEntity(BASE_INTERFACE_FULL_NAME, testModule));
   }
@@ -201,7 +201,7 @@ public class TypeSolverTest {
   private Optional<SolvedEntityType> solveEntityType(
       TypeReference typeReference, Module module, EntityScope parentScope) {
     return typeSolver
-        .solve(typeReference, module, parentScope)
+        .solve(typeReference, parentScope, module)
         .map(t -> (t instanceof SolvedEntityType) ? (SolvedEntityType) t : null);
   }
 

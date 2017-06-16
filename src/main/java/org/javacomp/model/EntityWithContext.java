@@ -25,6 +25,10 @@ public abstract class EntityWithContext {
     return builder().setArrayLevel(0).setSolvedTypeParameters(SolvedTypeParameters.EMPTY);
   }
 
+  public static EntityWithContext ofEntity(Entity entity) {
+    return simpleBuilder().setEntity(entity).build();
+  }
+
   public static Builder from(SolvedType solvedType) {
     if (solvedType instanceof SolvedArrayType) {
       return from(((SolvedArrayType) solvedType).getBaseType()).incrementArrayLevel();

@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Optional;
 import org.javacomp.logging.JLogger;
 import org.javacomp.model.Entity;
+import org.javacomp.model.EntityWithContext;
 import org.javacomp.model.SolvedEntityType;
 import org.javacomp.model.SolvedReferenceType;
 import org.javacomp.model.SolvedType;
@@ -54,7 +55,7 @@ class CompleteMemberAction implements CompletionAction {
       Collection<Entity> classMembers =
           new ClassMemberCompletor(typeSolver, expressionSolver)
               .getClassMembers(
-                  ((SolvedReferenceType) solvedType.get()).getEntity(), positionContext.getModule())
+                  EntityWithContext.from(solvedType.get()).build(), positionContext.getModule())
               .values();
       return createCompletionCandidates(classMembers);
     }

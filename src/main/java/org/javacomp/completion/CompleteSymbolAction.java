@@ -10,6 +10,7 @@ import org.javacomp.logging.JLogger;
 import org.javacomp.model.ClassEntity;
 import org.javacomp.model.Entity;
 import org.javacomp.model.EntityScope;
+import org.javacomp.model.EntityWithContext;
 import org.javacomp.model.FileScope;
 import org.javacomp.model.Module;
 import org.javacomp.model.PackageScope;
@@ -43,7 +44,8 @@ class CompleteEntityAction implements CompletionAction {
         addEntries(
             candidateMap,
             classMemberCompletor.getClassMembers(
-                (ClassEntity) currentScope, positionContext.getModule()));
+                EntityWithContext.ofEntity((ClassEntity) currentScope),
+                positionContext.getModule()));
       } else if (currentScope instanceof FileScope) {
         FileScope fileScope = (FileScope) currentScope;
         addEntries(candidateMap, getPackageMembers(fileScope, positionContext.getModule()));
@@ -57,7 +59,7 @@ class CompleteEntityAction implements CompletionAction {
         typeSolver.getAggregateRootPackageScope(positionContext.getModule()).getMemberEntities());
 
     Optional<PackageScope> javaLangPackage =
-        typeSolver.findPackage(JAVA_LANG_QUALIFIERS, positionContext.getModule());
+        typeSolver.findPackageInModule(JAVA_LANG_QUALIFIERS, positionContext.getModule());
     if (javaLangPackage.isPresent()) {
       addEntries(candidateMap, javaLangPackage.get().getMemberEntities());
     }

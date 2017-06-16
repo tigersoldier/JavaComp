@@ -329,7 +329,7 @@ public class IndexStore {
     SerializedType ret = new SerializedType();
     Optional<SolvedType> optionalSolvedType;
     try {
-      optionalSolvedType = typeSolver.solve(type, module, baseScope);
+      optionalSolvedType = typeSolver.solve(type, baseScope, module);
     } catch (Throwable t) {
       logger.warning(t, "Error on solving type %s in %s", type, baseScope);
       optionalSolvedType = Optional.empty();

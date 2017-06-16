@@ -199,8 +199,7 @@ public class CompletorTest {
   public void completeWithTypeParameter() throws Exception {
     List<String> testcases =
         ImmutableList.of(
-            // TODO: fix TypeSolver and enable the test case below
-            // "boundParameterized.getTypeParameterT()./** @complete */",
+            "boundParameterized.getTypeParameterT()./** @complete */",
             "parameterizedOfNonParameterized.getTypeParameterT()./** @complete */");
     for (String testcase : testcases) {
       assertThat(getCandidateNames(completeWithContent("Parameterized.java", testcase)))

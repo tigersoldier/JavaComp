@@ -214,8 +214,7 @@ public class ExpressionSolverTest {
         .isEqualTo(innerBClass);
   }
 
-  // TODO: enable this test once TypeSolver is fixed.
-  // @Test
+  @Test
   public void solveSuperClassMethodReturnTypeWithTypeParameters() {
     assertThat(solveEntityExpression("getT()", innerAClass).getEntity()).isEqualTo(innerBClass);
   }

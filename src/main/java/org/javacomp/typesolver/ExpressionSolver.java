@@ -281,23 +281,15 @@ public class ExpressionSolver {
                 .build());
       }
 
-      List<Entity> entities =
-          typeSolver.findEntitiesInScope(
-              node.getName().toString(), module, baseScope, position, getAllowedEntityKinds());
+      List<EntityWithContext> entities =
+          typeSolver.findEntitiesFromScope(
+              node.getName().toString(), baseScope, module, position, getAllowedEntityKinds());
 
       if (!entities.isEmpty()) {
         if (isMethodInvocation()) {
           entities = overloadSolver.prioritizeMatchedMethod(entities, methodArgs, module);
         }
-        return entities
-            .stream()
-            .map(
-                entity ->
-                    EntityWithContext.simpleBuilder()
-                        .setEntity(entity)
-                        .setSolvedTypeParameters(contextTypeParameters)
-                        .build())
-            .collect(ImmutableList.toImmutableList());
+        return entities;
       }
 
       if (isMethodInvocation()) {
@@ -306,7 +298,8 @@ public class ExpressionSolver {
       }
 
       return toList(
-          typeSolver.findClassOrPackage(ImmutableList.of(node.getName().toString()), module),
+          typeSolver.findClassOrPackageInModule(
+              ImmutableList.of(node.getName().toString()), module),
           contextTypeParameters);
     }
 
