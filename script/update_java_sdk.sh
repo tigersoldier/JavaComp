@@ -11,7 +11,10 @@ function clone {
 
 function index {
     echo Indexing $JDK_CLASSES_DIR
-    bazel run src/main/java/org/javacomp/tool:Indexer -- $JDK_CLASSES_DIR $ROOT_DIR/resources/jdk/index.json
+    bazel run src/main/java/org/javacomp/tool:Indexer -- \
+          $JDK_CLASSES_DIR \
+          $ROOT_DIR/resources/jdk/index.json \
+          --no-jdk
 }
 
 parse_args() {
