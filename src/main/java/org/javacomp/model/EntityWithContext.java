@@ -48,7 +48,7 @@ public abstract class EntityWithContext {
           builder()
               .setArrayLevel(0)
               .setEntity(solvedEntityType.getEntity())
-              .setInstanceContext(!solvedEntityType.getEntity().isStatic());
+              .setInstanceContext(false);
       if (solvedType instanceof SolvedReferenceType) {
         builder.setSolvedTypeParameters(((SolvedReferenceType) solvedType).getTypeParameters());
       } else {

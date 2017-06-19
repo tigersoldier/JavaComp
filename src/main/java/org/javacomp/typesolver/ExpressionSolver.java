@@ -336,7 +336,12 @@ public class ExpressionSolver {
       TypeReference typeReference = new TypeReferenceScanner().getTypeReference(node.getType());
       Optional<SolvedType> solvedType =
           typeSolver.solve(typeReference, contextTypeParameters, baseScope, module);
-      return toList(solvedType.map(t -> EntityWithContext.from(t).build()));
+      return toList(
+          solvedType.map(
+              t ->
+                  EntityWithContext.from(t)
+                      .setInstanceContext(t instanceof PrimitiveEntity ? false : true)
+                      .build()));
     }
 
     private List<EntityWithContext> applyTypeArguments(

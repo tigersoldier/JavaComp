@@ -43,7 +43,9 @@ public class TestExpression<T> {
     public final InnerC innerC = null;
   }
 
-  public class InnerC extends InnerB {}
+  public class InnerC extends InnerB {
+    public final int innerCField;
+  }
 
   public static interface LambdaStub {
     void lambdaMethod(String arg);

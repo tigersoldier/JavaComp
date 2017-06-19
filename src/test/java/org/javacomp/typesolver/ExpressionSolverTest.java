@@ -307,7 +307,12 @@ public class ExpressionSolverTest {
 
   @Test
   public void solveTypeCast() {
-    assertThat(solveDefinition("(InnerC) baseInnerB", topLevelClass)).isSameAs(innerCClass);
+    assertThat(solveEntityExpression("(InnerC) baseInnerB", topLevelClass).getEntity())
+        .isSameAs(innerCClass);
+    assertThat(solveDefinition("((InnerC) baseInnerB).innerCField", topLevelClass))
+        .isSameAs(TestUtil.lookupEntity(TOP_LEVEL_CLASS_FULL_NAME + ".InnerC.innerCField", module));
+    assertThat(solveEntityExpression("(byte) 1", topLevelClass).getEntity())
+        .isSameAs(PrimitiveEntity.BYTE);
   }
 
   @Test
