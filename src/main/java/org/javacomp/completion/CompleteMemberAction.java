@@ -10,11 +10,9 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import org.javacomp.logging.JLogger;
+import org.javacomp.model.ClassEntity;
 import org.javacomp.model.Entity;
 import org.javacomp.model.EntityWithContext;
-import org.javacomp.model.SolvedEntityType;
-import org.javacomp.model.SolvedReferenceType;
-import org.javacomp.model.SolvedType;
 import org.javacomp.parser.PositionContext;
 import org.javacomp.typesolver.ExpressionSolver;
 import org.javacomp.typesolver.TypeSolver;
@@ -40,37 +38,32 @@ class CompleteMemberAction implements CompletionAction {
 
   @Override
   public List<CompletionCandidate> getCompletionCandidates(PositionContext positionContext) {
-    Optional<SolvedType> solvedType =
+    Optional<EntityWithContext> solvedEntityWithContext =
         expressionSolver.solve(
             memberExpression,
             positionContext.getModule(),
             positionContext.getScopeAtPosition(),
             positionContext.getPosition());
-    logger.fine("Solved member expression: %s", solvedType);
-    if (!solvedType.isPresent()) {
+    logger.fine("Solved member expression: %s", solvedEntityWithContext);
+    if (!solvedEntityWithContext.isPresent()) {
       return ImmutableList.of();
     }
 
-    if (solvedType.get() instanceof SolvedReferenceType) {
+    // TODO: handle array type
+    if (solvedEntityWithContext.get().getArrayLevel() > 0) {
+      return ImmutableList.of();
+    }
+
+    if (solvedEntityWithContext.get().getEntity() instanceof ClassEntity) {
       Collection<Entity> classMembers =
           new ClassMemberCompletor(typeSolver, expressionSolver)
-              .getClassMembers(
-                  EntityWithContext.from(solvedType.get()).build(), positionContext.getModule())
+              .getClassMembers(solvedEntityWithContext.get(), positionContext.getModule())
               .values();
       return createCompletionCandidates(classMembers);
     }
 
-    if (solvedType.get() instanceof SolvedEntityType)
-      return createCompletionCandidates(
-          ((SolvedEntityType) solvedType.get())
-              .getEntity()
-              .getChildScope()
-              .getMemberEntities()
-              .values());
-
-    // TODO: handle array type
-    logger.warning("Unsupported member completion of type %s", solvedType.get());
-    return ImmutableList.of();
+    return createCompletionCandidates(
+        solvedEntityWithContext.get().getEntity().getChildScope().getMemberEntities().values());
   }
 
   private static List<CompletionCandidate> createCompletionCandidates(Collection<Entity> entities) {

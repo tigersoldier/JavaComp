@@ -5,8 +5,10 @@ public class CompleteInMethod {
   public FakeString fakeString;
 
   public class AboveClass {
+    public static final int STATIC_ABOVE_FIELD;
     public final int aboveField;
 
+    public static void staticAboveMethod() {}
     public void aboveMethod() {}
   }
 
@@ -17,8 +19,10 @@ public class CompleteInMethod {
   }
 
   public class BelowClass {
+    public static final int STATIC_BELOW_FIELD;
     public final int belowField;
 
+    public static void staticBelowMethod() {}
     public void belowMethod() {}
   }
 }

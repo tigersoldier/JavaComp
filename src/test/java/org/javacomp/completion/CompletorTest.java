@@ -128,7 +128,14 @@ public class CompletorTest {
     String baseAboveCompletion = "above./** @complete */";
     List<String> aboveCases =
         ImmutableList.of(baseAboveCompletion, baseAboveCompletion + "\nabove.aboveMethod();");
-    assertCompletion("CompleteInMethod.java", aboveCases, "aboveField", "aboveMethod", "toString");
+    assertCompletion(
+        "CompleteInMethod.java",
+        aboveCases,
+        "aboveField",
+        "aboveMethod",
+        "STATIC_ABOVE_FIELD",
+        "staticAboveMethod",
+        "toString");
 
     String baseBelowCompletion = "below./** @complete */";
     List<String> belowCases =
@@ -137,7 +144,28 @@ public class CompletorTest {
             baseBelowCompletion + "\nbelow.belowMethod();",
             "above.;" + baseBelowCompletion,
             "self.new BelowClass()./** @complete */");
-    assertCompletion("CompleteInMethod.java", belowCases, "belowField", "belowMethod", "toString");
+    assertCompletion(
+        "CompleteInMethod.java",
+        belowCases,
+        "belowField",
+        "belowMethod",
+        "STATIC_BELOW_FIELD",
+        "staticBelowMethod",
+        "toString");
+  }
+
+  @Test
+  public void completeStaticMemberSelection() throws Exception {
+    assertCompletion(
+        "CompleteInMethod.java",
+        ImmutableList.of("BelowClass./** @complete */"),
+        "STATIC_BELOW_FIELD",
+        "staticBelowMethod");
+    assertCompletion(
+        "CompleteInMethod.java",
+        ImmutableList.of("CompleteInMethod./** @complete */"),
+        "AboveClass",
+        "BelowClass");
   }
 
   @Test
@@ -169,7 +197,14 @@ public class CompletorTest {
             + "  AboveClass innerAboveClass;\n"
             + "  innerAboveClass./** @complete */\n"
             + "}";
-    assertCompletion("CompleteInMethod.java", content, "aboveField", "aboveMethod", "toString");
+    assertCompletion(
+        "CompleteInMethod.java",
+        content,
+        "aboveField",
+        "aboveMethod",
+        "STATIC_ABOVE_FIELD",
+        "staticAboveMethod",
+        "toString");
   }
 
   @Test

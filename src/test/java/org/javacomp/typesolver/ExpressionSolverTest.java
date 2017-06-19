@@ -15,10 +15,9 @@ import org.javacomp.model.EntityScope;
 import org.javacomp.model.EntityWithContext;
 import org.javacomp.model.MethodEntity;
 import org.javacomp.model.Module;
+import org.javacomp.model.NullEntity;
 import org.javacomp.model.PrimitiveEntity;
-import org.javacomp.model.SolvedArrayType;
 import org.javacomp.model.SolvedEntityType;
-import org.javacomp.model.SolvedNullType;
 import org.javacomp.model.SolvedReferenceType;
 import org.javacomp.model.SolvedType;
 import org.javacomp.testing.TestUtil;
@@ -103,50 +102,46 @@ public class ExpressionSolverTest {
 
   @Test
   public void solveMemberSelection() {
-    assertThat(solveEntityExpression("innerA", topLevelClass).getEntity()).isEqualTo(innerAClass);
-    assertThat(solveEntityExpression("innerA.innerB", topLevelClass).getEntity())
-        .isEqualTo(innerBClass);
-    assertThat(solveEntityExpression("innerA.innerB.innerC", topLevelClass).getEntity())
+    assertThat(solveExpression("innerA", topLevelClass).getEntity()).isEqualTo(innerAClass);
+    assertThat(solveExpression("innerA.innerB", topLevelClass).getEntity()).isEqualTo(innerBClass);
+    assertThat(solveExpression("innerA.innerB.innerC", topLevelClass).getEntity())
         .isEqualTo(innerCClass);
   }
 
   @Test
   public void solveMemberSelectionWithTypeParameter() {
-    assertThat(solveEntityExpression("typeParameterA", innerAClass).getEntity())
-        .isEqualTo(innerBClass);
-    assertThat(solveEntityExpression("innerA.typeParameterA", innerAClass).getEntity())
+    assertThat(solveExpression("typeParameterA", innerAClass).getEntity()).isEqualTo(innerBClass);
+    assertThat(solveExpression("innerA.typeParameterA", innerAClass).getEntity())
         .isEqualTo(innerBClass);
   }
 
   @Test
   public void solveOtherClassMemberSelection() {
-    assertThat(solveEntityExpression("testClass", methodScope).getEntity())
-        .isEqualTo(testClassClass);
-    assertThat(solveEntityExpression("testClass.shadow", methodScope).getEntity())
-        .isEqualTo(shadowClass);
-    assertThat(solveEntityExpression("testClass.FACTORY", methodScope).getEntity())
+    assertThat(solveExpression("testClass", methodScope).getEntity()).isEqualTo(testClassClass);
+    assertThat(solveExpression("testClass.shadow", methodScope).getEntity()).isEqualTo(shadowClass);
+    assertThat(solveExpression("testClass.FACTORY", methodScope).getEntity())
         .isEqualTo(testClassFactoryClass);
   }
 
   @Test
   public void solvedInheritedField() {
-    assertThat(solveEntityExpression("baseInnerB", innerAClass).getEntity()).isEqualTo(innerBClass);
-    assertThat(solveEntityExpression("innerA.baseInnerB", topLevelClass).getEntity())
+    assertThat(solveExpression("baseInnerB", innerAClass).getEntity()).isEqualTo(innerBClass);
+    assertThat(solveExpression("innerA.baseInnerB", topLevelClass).getEntity())
         .isEqualTo(innerBClass);
   }
 
   @Test
   public void solveQualifiedClass() {
     assertThat(
-            solveEntityExpression("org.javacomp.typesolver.testdata.TestExpression", topLevelClass)
+            solveExpression("org.javacomp.typesolver.testdata.TestExpression", topLevelClass)
                 .getEntity())
         .isEqualTo(topLevelClass);
     assertThat(
-            solveEntityExpression("org.javacomp.typesolver.testdata.other.Shadow", topLevelClass)
+            solveExpression("org.javacomp.typesolver.testdata.other.Shadow", topLevelClass)
                 .getEntity())
         .isEqualTo(shadowClass);
     assertThat(
-            solveEntityExpression(
+            solveExpression(
                     "org.javacomp.typesolver.testdata.other.BaseClass.BaseInnerClass",
                     topLevelClass)
                 .getEntity())
@@ -156,7 +151,7 @@ public class ExpressionSolverTest {
   @Test
   public void solveQualifiedStaticField() {
     assertThat(
-            solveEntityExpression(
+            solveExpression(
                     "org.javacomp.typesolver.testdata.TestExpression.staticInnerA", topLevelClass)
                 .getEntity())
         .isEqualTo(innerAClass);
@@ -164,15 +159,13 @@ public class ExpressionSolverTest {
 
   @Test
   public void solveThis() {
-    assertThat(solveEntityExpression("this", topLevelClass).getEntity()).isEqualTo(topLevelClass);
-    assertThat(solveEntityExpression("this.innerA", topLevelClass).getEntity())
-        .isEqualTo(innerAClass);
+    assertThat(solveExpression("this", topLevelClass).getEntity()).isEqualTo(topLevelClass);
+    assertThat(solveExpression("this.innerA", topLevelClass).getEntity()).isEqualTo(innerAClass);
 
-    SolvedEntityType innerAThis = solveEntityExpression("this", innerAClass);
+    EntityWithContext innerAThis = solveExpression("this", innerAClass);
     assertThat(innerAThis.getEntity()).isEqualTo(innerAClass);
-    assertThat(innerAThis).isInstanceOf(SolvedReferenceType.class);
     Optional<SolvedType> typeParameterA =
-        ((SolvedReferenceType) innerAThis).getTypeParameters().getTypeParameter("A");
+        innerAThis.getSolvedTypeParameters().getTypeParameter("A");
     Truth8.assertThat(typeParameterA).isPresent();
     assertThat(typeParameterA.get()).isInstanceOf(SolvedReferenceType.class);
     assertThat(((SolvedReferenceType) typeParameterA.get()).getEntity()).isEqualTo(innerBClass);
@@ -180,20 +173,17 @@ public class ExpressionSolverTest {
 
   @Test
   public void solveSuper() {
-    assertThat(solveEntityExpression("super.innerA", innerAClass).getEntity())
-        .isEqualTo(innerAClass);
+    assertThat(solveExpression("super.innerA", innerAClass).getEntity()).isEqualTo(innerAClass);
 
-    assertThat(solveEntityExpression("super.getT(null)", innerAClass).getEntity())
-        .isEqualTo(innerBClass);
+    assertThat(solveExpression("super.getT(null)", innerAClass).getEntity()).isEqualTo(innerBClass);
   }
 
   @Test
   public void solveQualifiedThis() {
-    SolvedEntityType qualifiedThis = solveEntityExpression("InnerA.this", innerInnerAClass);
+    EntityWithContext qualifiedThis = solveExpression("InnerA.this", innerInnerAClass);
     assertThat(qualifiedThis.getEntity()).isEqualTo(innerAClass);
-    assertThat(qualifiedThis).isInstanceOf(SolvedReferenceType.class);
     Optional<SolvedType> typeParameterA =
-        ((SolvedReferenceType) qualifiedThis).getTypeParameters().getTypeParameter("A");
+        qualifiedThis.getSolvedTypeParameters().getTypeParameter("A");
     Truth8.assertThat(typeParameterA).named("Type parameter A of InnerA.this").isPresent();
     assertThat(typeParameterA.get()).isInstanceOf(SolvedEntityType.class);
     assertThat(((SolvedEntityType) typeParameterA.get()).getEntity()).isEqualTo(innerBClass);
@@ -201,67 +191,60 @@ public class ExpressionSolverTest {
 
   @Test
   public void solveMethodInvocation() {
-    assertThat(solveEntityExpression("baseMethod()", topLevelClass).getEntity())
-        .isEqualTo(innerCClass);
-    assertThat(solveEntityExpression("baseMethod(42)", topLevelClass).getEntity())
-        .isEqualTo(innerBClass);
-    assertThat(solveEntityExpression("this.baseMethod()", topLevelClass).getEntity())
+    assertThat(solveExpression("baseMethod()", topLevelClass).getEntity()).isEqualTo(innerCClass);
+    assertThat(solveExpression("baseMethod(42)", topLevelClass).getEntity()).isEqualTo(innerBClass);
+    assertThat(solveExpression("this.baseMethod()", topLevelClass).getEntity())
         .isEqualTo(innerCClass);
   }
 
   @Test
   public void solveMethodReturnTypeWithTypeParameters() {
-    assertThat(solveEntityExpression("getTypeParameterA()", innerAClass).getEntity())
+    assertThat(solveExpression("getTypeParameterA()", innerAClass).getEntity())
         .isEqualTo(innerBClass);
-    assertThat(solveEntityExpression("innerA.getTypeParameterA()", innerAClass).getEntity())
+    assertThat(solveExpression("innerA.getTypeParameterA()", innerAClass).getEntity())
         .isEqualTo(innerBClass);
   }
 
   @Test
   public void solveSuperClassMethodReturnTypeWithTypeParameters() {
-    assertThat(solveEntityExpression("getT()", innerAClass).getEntity()).isEqualTo(innerBClass);
+    assertThat(solveExpression("getT()", innerAClass).getEntity()).isEqualTo(innerBClass);
   }
 
   @Test
   public void solveOtherClassMethodInvocation() {
-    assertThat(solveEntityExpression("getTestClass()", methodScope).getEntity())
+    assertThat(solveExpression("getTestClass()", methodScope).getEntity())
         .isEqualTo(testClassClass);
-    assertThat(solveEntityExpression("getTestClass().getShadow()", methodScope).getEntity())
+    assertThat(solveExpression("getTestClass().getShadow()", methodScope).getEntity())
         .isEqualTo(shadowClass);
   }
 
   @Test
   public void solveSuperClassMethodInvocation() {
-    assertThat(solveEntityExpression("innerA.baseMethod()", topLevelClass).getEntity())
+    assertThat(solveExpression("innerA.baseMethod()", topLevelClass).getEntity())
         .isEqualTo(innerCClass);
-    assertThat(solveEntityExpression("baseMethod()", innerAClass).getEntity())
-        .isEqualTo(innerCClass);
-    assertThat(solveEntityExpression("super.baseMethod()", innerAClass).getEntity())
+    assertThat(solveExpression("baseMethod()", innerAClass).getEntity()).isEqualTo(innerCClass);
+    assertThat(solveExpression("super.baseMethod()", innerAClass).getEntity())
         .isEqualTo(innerCClass);
   }
 
   @Test
   public void solveArray() {
-    SolvedType solvedInnerBArray =
+    EntityWithContext innerBArray =
         solveExpression("innerA.innerBArray", topLevelClass, -1 /* position */);
-    assertThat(solvedInnerBArray)
-        .named("innerBArray.isArray()")
-        .isInstanceOf(SolvedArrayType.class);
-    SolvedArrayType innerBArray = (SolvedArrayType) solvedInnerBArray;
-    assertThat(innerBArray.getBaseType()).isInstanceOf(SolvedEntityType.class);
-    assertThat(((SolvedEntityType) innerBArray.getBaseType()).getEntity()).isSameAs(innerBClass);
+    assertThat(innerBArray.getArrayLevel()).named("innerBArray.getArrayLevel()").isEqualTo(1);
+    assertThat(innerBArray.getEntity()).isSameAs(innerBClass);
   }
 
   @Test
   public void solveArrayAccess() {
-    SolvedEntityType innerBArrayAccess =
-        solveEntityExpression("innerA.innerBArray[0]", topLevelClass);
+    EntityWithContext innerBArrayAccess = solveExpression("innerA.innerBArray[0]", topLevelClass);
+    assertThat(innerBArrayAccess.getArrayLevel()).isEqualTo(0);
     assertThat(innerBArrayAccess.getEntity()).isSameAs(innerBClass);
   }
 
   @Test
   public void solveArrayLength() {
-    assertThat(solveEntityExpression("innerA.innerBArray.length", topLevelClass).getEntity())
+    assertThat(solveExpression("innerA.innerBArray.length", topLevelClass).getEntity())
         .isSameAs(PrimitiveEntity.INT);
   }
 
@@ -275,27 +258,26 @@ public class ExpressionSolverTest {
 
     assertExpressionNotSolved("varA", methodScope, posBeforeVarA);
     assertExpressionNotSolved("varB", methodScope, posBeforeVarB);
-    assertThat(solveEntityExpression("varA", methodScope, posAfterVarA).getEntity())
+    assertThat(solveExpression("varA", methodScope, posAfterVarA).getEntity())
         .isSameAs(innerAClass);
-    assertThat(solveEntityExpression("varB", methodScope, posAfterVarB).getEntity())
+    assertThat(solveExpression("varB", methodScope, posAfterVarB).getEntity())
         .isSameAs(innerBClass);
   }
 
   @Test
   public void solveClassMemberInMethod() {
-    assertThat(solveEntityExpression("innerA", methodScope).getEntity()).isSameAs(innerAClass);
-    assertThat(solveEntityExpression("this.innerA", methodScope).getEntity()).isSameAs(innerAClass);
+    assertThat(solveExpression("innerA", methodScope).getEntity()).isSameAs(innerAClass);
+    assertThat(solveExpression("this.innerA", methodScope).getEntity()).isSameAs(innerAClass);
   }
 
   @Test
   public void solveNewClass() {
-    assertThat(solveEntityExpression("new InnerA()", methodScope).getEntity())
-        .isSameAs(innerAClass);
-    assertThat(solveEntityExpression("new TestExpression()", methodScope).getEntity())
+    assertThat(solveExpression("new InnerA()", methodScope).getEntity()).isSameAs(innerAClass);
+    assertThat(solveExpression("new TestExpression()", methodScope).getEntity())
         .isSameAs(topLevelClass);
-    assertThat(solveEntityExpression("new TestClass()", methodScope).getEntity())
+    assertThat(solveExpression("new TestClass()", methodScope).getEntity())
         .isSameAs(testClassClass);
-    assertThat(solveEntityExpression("testClass.new TestClassFactory()", methodScope).getEntity())
+    assertThat(solveExpression("testClass.new TestClassFactory()", methodScope).getEntity())
         .isSameAs(testClassFactoryClass);
   }
 
@@ -307,11 +289,11 @@ public class ExpressionSolverTest {
 
   @Test
   public void solveTypeCast() {
-    assertThat(solveEntityExpression("(InnerC) baseInnerB", topLevelClass).getEntity())
+    assertThat(solveExpression("(InnerC) baseInnerB", topLevelClass).getEntity())
         .isSameAs(innerCClass);
     assertThat(solveDefinition("((InnerC) baseInnerB).innerCField", topLevelClass))
         .isSameAs(TestUtil.lookupEntity(TOP_LEVEL_CLASS_FULL_NAME + ".InnerC.innerCField", module));
-    assertThat(solveEntityExpression("(byte) 1", topLevelClass).getEntity())
+    assertThat(solveExpression("(byte) 1", topLevelClass).getEntity())
         .isSameAs(PrimitiveEntity.BYTE);
   }
 
@@ -322,31 +304,22 @@ public class ExpressionSolverTest {
 
   @Test
   public void solveLiterals() {
-    assertThat(solveEntityExpression("123", methodScope).getEntity()).isSameAs(PrimitiveEntity.INT);
-    assertThat(solveEntityExpression("123L", methodScope).getEntity())
-        .isSameAs(PrimitiveEntity.LONG);
-    assertThat(solveEntityExpression("12.3f", methodScope).getEntity())
-        .isSameAs(PrimitiveEntity.FLOAT);
-    assertThat(solveEntityExpression("12.3", methodScope).getEntity())
-        .isSameAs(PrimitiveEntity.DOUBLE);
-    assertThat(solveEntityExpression("false", methodScope).getEntity())
-        .isSameAs(PrimitiveEntity.BOOLEAN);
-    assertThat(solveEntityExpression("true", methodScope).getEntity())
-        .isSameAs(PrimitiveEntity.BOOLEAN);
-    assertThat(solveEntityExpression("'c'", methodScope).getEntity())
-        .isSameAs(PrimitiveEntity.CHAR);
-    assertThat(solveExpression("null", methodScope, -1 /* position */))
-        .isInstanceOf(SolvedNullType.class);
-    assertThat(solveEntityExpression("\"123\"", methodScope).getEntity()).isSameAs(fakeStringClass);
+    assertThat(solveExpression("123", methodScope).getEntity()).isSameAs(PrimitiveEntity.INT);
+    assertThat(solveExpression("123L", methodScope).getEntity()).isSameAs(PrimitiveEntity.LONG);
+    assertThat(solveExpression("12.3f", methodScope).getEntity()).isSameAs(PrimitiveEntity.FLOAT);
+    assertThat(solveExpression("12.3", methodScope).getEntity()).isSameAs(PrimitiveEntity.DOUBLE);
+    assertThat(solveExpression("false", methodScope).getEntity()).isSameAs(PrimitiveEntity.BOOLEAN);
+    assertThat(solveExpression("true", methodScope).getEntity()).isSameAs(PrimitiveEntity.BOOLEAN);
+    assertThat(solveExpression("'c'", methodScope).getEntity()).isSameAs(PrimitiveEntity.CHAR);
+    assertThat(solveExpression("null", methodScope).getEntity()).isSameAs(NullEntity.INSTANCE);
+    assertThat(solveExpression("\"123\"", methodScope).getEntity()).isSameAs(fakeStringClass);
   }
 
   @Test
   public void solveEnumFields() {
-    assertThat(solveEntityExpression("InnerEnum", topLevelClass).getEntity()).isSameAs(innerEnum);
-    assertThat(solveEntityExpression("InnerEnum.ENUM1", topLevelClass).getEntity())
-        .isSameAs(innerEnum);
-    assertThat(
-            solveEntityExpression("InnerEnum.ENUM1.enumInstanceField", topLevelClass).getEntity())
+    assertThat(solveExpression("InnerEnum", topLevelClass).getEntity()).isSameAs(innerEnum);
+    assertThat(solveExpression("InnerEnum.ENUM1", topLevelClass).getEntity()).isSameAs(innerEnum);
+    assertThat(solveExpression("InnerEnum.ENUM1.enumInstanceField", topLevelClass).getEntity())
         .isSameAs(PrimitiveEntity.INT);
   }
 
@@ -359,28 +332,22 @@ public class ExpressionSolverTest {
     return solvedExpression.get(0).getEntity();
   }
 
-  private SolvedType solveExpression(String expression, EntityScope baseScope, int position) {
+  private EntityWithContext solveExpression(
+      String expression, EntityScope baseScope, int position) {
     ExpressionTree expressionTree = TestUtil.parseExpression(expression);
-    Optional<SolvedType> solvedExpression =
+    Optional<EntityWithContext> solvedExpression =
         expressionSolver.solve(expressionTree, module, baseScope, position);
     Truth8.assertThat(solvedExpression).named(expression).isPresent();
     return solvedExpression.get();
   }
 
-  private SolvedEntityType solveEntityExpression(String expression, EntityScope baseScope) {
-    return solveEntityExpression(expression, baseScope, -1 /* position */);
-  }
-
-  private SolvedEntityType solveEntityExpression(
-      String expression, EntityScope baseScope, int position) {
-    SolvedType solvedType = solveExpression(expression, baseScope, position);
-    assertThat(solvedType).named(expression).isInstanceOf(SolvedEntityType.class);
-    return (SolvedEntityType) solvedType;
+  private EntityWithContext solveExpression(String expression, EntityScope baseScope) {
+    return solveExpression(expression, baseScope, -1 /* position */);
   }
 
   private void assertExpressionNotSolved(String expression, EntityScope baseScope, int position) {
     ExpressionTree expressionTree = TestUtil.parseExpression(expression);
-    Optional<SolvedType> solvedExpression =
+    Optional<EntityWithContext> solvedExpression =
         expressionSolver.solve(expressionTree, module, baseScope, position);
     Truth8.assertThat(solvedExpression).named(expression).isEmpty();
   }

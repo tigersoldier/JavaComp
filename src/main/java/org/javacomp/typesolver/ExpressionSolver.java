@@ -70,12 +70,11 @@ public class ExpressionSolver {
    * @param position the position in the file that the expression is being solved. It's useful for
    *     filtering out variables defined after the position. It's ignored if set to negative value.
    */
-  public Optional<SolvedType> solve(
+  public Optional<EntityWithContext> solve(
       ExpressionTree expression, Module module, EntityScope baseScope, int position) {
     List<EntityWithContext> definitions =
         solveDefinitions(expression, module, baseScope, position, ALL_ENTITY_KINDS);
-    return Optional.ofNullable(solveEntityType(definitions, module))
-        .map(entityWityContext -> entityWityContext.toSolvedType());
+    return Optional.ofNullable(solveEntityType(definitions, module));
   }
 
   /**
@@ -164,7 +163,9 @@ public class ExpressionSolver {
     public List<EntityWithContext> visitMethodInvocation(MethodInvocationTree node, Void unused) {
       methodArgs = new ArrayList<>(node.getArguments().size());
       for (ExpressionTree arg : node.getArguments()) {
-        methodArgs.add(solve(arg, module, baseScope, ((JCTree) arg).getStartPosition()));
+        methodArgs.add(
+            solve(arg, module, baseScope, ((JCTree) arg).getStartPosition())
+                .map(entityWithContext -> entityWithContext.toSolvedType()));
       }
       List<EntityWithContext> methods = scan(node.getMethodSelect(), null);
       methodArgs = null;

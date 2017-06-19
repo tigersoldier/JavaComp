@@ -28,7 +28,17 @@ class ClassMemberCompletor {
           "classHierarchy() returns non class entity %s for %s",
           classInHierachy,
           actualClass);
-      builder.putAll(((ClassEntity) classInHierachy.getEntity()).getMemberEntities());
+      if (actualClass.isInstanceContext()) {
+        builder.putAll(((ClassEntity) classInHierachy.getEntity()).getMemberEntities());
+      } else {
+        // Non instance context only allows non instance members.
+        for (Entity member :
+            ((ClassEntity) classInHierachy.getEntity()).getMemberEntities().values()) {
+          if (!member.isInstanceMember()) {
+            builder.put(member.getSimpleName(), member);
+          }
+        }
+      }
     }
     return builder.build();
   }

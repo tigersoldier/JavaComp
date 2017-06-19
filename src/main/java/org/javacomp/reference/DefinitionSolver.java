@@ -133,8 +133,9 @@ public class DefinitionSolver {
     return args.stream()
         .map(
             expression ->
-                expressionSolver.solve(
-                    expression, module, baseScope, ((JCTree) expression).getStartPosition()))
+                expressionSolver
+                    .solve(expression, module, baseScope, ((JCTree) expression).getStartPosition())
+                    .map(entityWithContext -> entityWithContext.toSolvedType()))
         .collect(ImmutableList.toImmutableList());
   }
 
