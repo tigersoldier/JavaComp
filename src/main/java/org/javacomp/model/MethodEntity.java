@@ -21,12 +21,13 @@ public class MethodEntity extends Entity implements EntityScope {
   public MethodEntity(
       String simpleName,
       List<String> qualifiers,
+      boolean isStatic,
       TypeReference returnType,
       List<VariableEntity> parameters,
       List<TypeParameter> typeParameters,
       ClassEntity classEntity,
       Range<Integer> methodNamelRange) {
-    super(simpleName, Entity.Kind.METHOD, qualifiers, methodNamelRange);
+    super(simpleName, Entity.Kind.METHOD, qualifiers, isStatic, methodNamelRange);
     this.returnType = returnType;
     this.parameters = ImmutableList.copyOf(parameters);
     this.typeParameters = ImmutableList.copyOf(typeParameters);

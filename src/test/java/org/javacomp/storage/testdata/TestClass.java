@@ -7,10 +7,11 @@ public class TestClass {
     InnerClassB interfaceMethod();
   }
 
-  public class InnerClass {
+  public static class InnerClass {
     TestClass innerClassMethod();
   }
 
+  private static final int staticField;
   private final String memberField;
   public final ParameterizedType<String, ? extends List<? super List<?>>> parameterizedType;
 
@@ -27,6 +28,8 @@ public class TestClass {
     overloadMethod(getInnerA());
     overloadMethod();
   }
+
+  public static void staticMethod() {}
 
   public static class ParameterizedType<A, B extends A> {
     public A getA();

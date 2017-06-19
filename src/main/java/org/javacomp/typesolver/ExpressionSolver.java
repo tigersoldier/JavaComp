@@ -19,6 +19,7 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import org.javacomp.logging.JLogger;
 import org.javacomp.model.ClassEntity;
@@ -28,12 +29,7 @@ import org.javacomp.model.EntityWithContext;
 import org.javacomp.model.MethodEntity;
 import org.javacomp.model.Module;
 import org.javacomp.model.NullEntity;
-import org.javacomp.model.PackageEntity;
 import org.javacomp.model.PrimitiveEntity;
-import org.javacomp.model.SolvedArrayType;
-import org.javacomp.model.SolvedNullType;
-import org.javacomp.model.SolvedPackageType;
-import org.javacomp.model.SolvedPrimitiveType;
 import org.javacomp.model.SolvedReferenceType;
 import org.javacomp.model.SolvedType;
 import org.javacomp.model.SolvedTypeParameters;
@@ -78,7 +74,8 @@ public class ExpressionSolver {
       ExpressionTree expression, Module module, EntityScope baseScope, int position) {
     List<EntityWithContext> definitions =
         solveDefinitions(expression, module, baseScope, position, ALL_ENTITY_KINDS);
-    return Optional.ofNullable(solveEntityType(definitions, module));
+    return Optional.ofNullable(solveEntityType(definitions, module))
+        .map(entityWityContext -> entityWityContext.toSolvedType());
   }
 
   /**
@@ -115,7 +112,7 @@ public class ExpressionSolver {
   }
 
   @Nullable
-  private SolvedType solveEntityType(List<EntityWithContext> foundEntities, Module module) {
+  private EntityWithContext solveEntityType(List<EntityWithContext> foundEntities, Module module) {
     if (foundEntities.isEmpty()) {
       return null;
     }
@@ -127,6 +124,7 @@ public class ExpressionSolver {
       MethodEntity methodEntity = (MethodEntity) entity;
       return typeSolver
           .solve(methodEntity.getReturnType(), solvedTypeParameters, methodEntity, module)
+          .map(solvedType -> EntityWithContext.from(solvedType).setInstanceContext(true).build())
           .orElse(null);
     }
     if (entity instanceof VariableEntity) {
@@ -137,31 +135,10 @@ public class ExpressionSolver {
               solvedTypeParameters,
               variableEntity.getParentScope(),
               module)
+          .map(solvedType -> EntityWithContext.from(solvedType).setInstanceContext(true).build())
           .orElse(null);
     }
-    if (entity instanceof ClassEntity) {
-      ClassEntity classEntity = (ClassEntity) entity;
-      return SolvedReferenceType.create(
-          classEntity,
-          typeSolver.solveTypeParameters(
-              classEntity.getTypeParameters(),
-              ImmutableList.<TypeArgument>of(),
-              solvedTypeParameters,
-              classEntity,
-              module));
-    }
-    if (entity instanceof PackageEntity) {
-      return SolvedPackageType.create((PackageEntity) entity);
-    }
-    if (entity instanceof PrimitiveEntity) {
-      return SolvedPrimitiveType.create((PrimitiveEntity) entity);
-    }
-    if (entity instanceof NullEntity) {
-      return SolvedNullType.create((NullEntity) entity);
-    }
-
-    logger.warning("Cannot solve type for entity: %s", entity);
-    return null;
+    return entityWithContext;
   }
 
   private class ExpressionDefinitionScanner extends TreeScanner<List<EntityWithContext>, Void> {
@@ -196,24 +173,30 @@ public class ExpressionSolver {
 
     @Override
     public List<EntityWithContext> visitNewClass(NewClassTree node, Void unused) {
+      List<EntityWithContext> baseClassEntities;
       if (node.getEnclosingExpression() != null) {
         // <EnclosingExpression>.new <identifier>(...).
-        SolvedType enclosingClassType =
+        EntityWithContext enclosingClass =
             solveEntityType(scan(node.getEnclosingExpression(), null), module);
-        if (enclosingClassType == null || !(enclosingClassType instanceof SolvedReferenceType)) {
+        if (enclosingClass == null || !(enclosingClass.getEntity() instanceof ClassEntity)) {
           return ImmutableList.of();
         }
-        return applyTypeArguments(
+        baseClassEntities =
             new ExpressionDefinitionScanner(
                     module,
-                    ((SolvedReferenceType) enclosingClassType).getEntity().getChildScope(),
+                    ((ClassEntity) enclosingClass.getEntity()).getChildScope(),
                     -1 /* position is useless for solving classes. */,
                     allowedEntityKinds)
-                .scan(node.getIdentifier(), null),
-            node.getTypeArguments());
+                .scan(node.getIdentifier(), null);
       } else {
-        return applyTypeArguments(scan(node.getIdentifier(), null), node.getTypeArguments());
+        baseClassEntities = scan(node.getIdentifier(), null);
       }
+      return applyTypeArguments(
+          baseClassEntities
+              .stream()
+              .map(baseClass -> baseClass.toBuilder().setInstanceContext(true).build())
+              .collect(Collectors.toList()),
+          node.getTypeArguments());
     }
 
     @Override
@@ -221,7 +204,7 @@ public class ExpressionSolver {
       List<Optional<SolvedType>> savedMethodArgs = methodArgs;
       methodArgs = null;
       List<EntityWithContext> expressionEntities = scan(node.getExpression(), null);
-      SolvedType expressionType = solveEntityType(expressionEntities, module);
+      EntityWithContext expressionType = solveEntityType(expressionEntities, module);
       methodArgs = savedMethodArgs;
       if (expressionType == null) {
         return ImmutableList.of();
@@ -239,12 +222,12 @@ public class ExpressionSolver {
 
     @Override
     public List<EntityWithContext> visitArrayAccess(ArrayAccessTree node, Void unused) {
-      SolvedType expType = solveEntityType(scan(node.getExpression(), null), module);
-      if (expType == null || !(expType instanceof SolvedArrayType)) {
+      EntityWithContext expType = solveEntityType(scan(node.getExpression(), null), module);
+      if (expType == null || expType.getArrayLevel() == 0) {
         return ImmutableList.of();
       }
 
-      return ImmutableList.of(EntityWithContext.from(expType).build());
+      return ImmutableList.of(expType.toBuilder().decrementArrayLevel().build());
     }
 
     @Override
@@ -252,7 +235,16 @@ public class ExpressionSolver {
       String identifier = node.getName().toString();
 
       if (IDENT_THIS.equals(identifier)) {
-        return toList(findEnclosingClass(baseScope), contextTypeParameters);
+        ClassEntity enclosingClass = findEnclosingClass(baseScope);
+        return toList(
+            enclosingClass,
+            true /* isInstanceContext */,
+            typeSolver.solveTypeParameters(
+                enclosingClass.getTypeParameters(),
+                ImmutableList.<TypeArgument>of(),
+                contextTypeParameters,
+                enclosingClass,
+                module));
       }
 
       if (IDENT_SUPER.equals(identifier)) {
@@ -273,6 +265,7 @@ public class ExpressionSolver {
                             .setEntity(superClass.getEntity())
                             .setSolvedTypeParameters(superClass.getTypeParameters())
                             .setArrayLevel(0)
+                            .setInstanceContext(true)
                             .build();
                       }));
         }
@@ -303,6 +296,7 @@ public class ExpressionSolver {
       return toList(
           typeSolver.findClassOrPackageInModule(
               ImmutableList.of(node.getName().toString()), module),
+          false /* isInstanceContext */,
           contextTypeParameters);
     }
 
@@ -318,6 +312,7 @@ public class ExpressionSolver {
       if (value instanceof String) {
         return toList(
             typeSolver.findClassInModule(TypeSolver.JAVA_LANG_STRING_QUALIFIERS, module),
+            true /* isInstanceContext */,
             SolvedTypeParameters.EMPTY);
       }
 
@@ -341,7 +336,6 @@ public class ExpressionSolver {
       TypeReference typeReference = new TypeReferenceScanner().getTypeReference(node.getType());
       Optional<SolvedType> solvedType =
           typeSolver.solve(typeReference, contextTypeParameters, baseScope, module);
-      logger.severe("[DEBUG] typeReference: %s, solvedType: %s", typeReference, solvedType);
       return toList(solvedType.map(t -> EntityWithContext.from(t).build()));
     }
 
@@ -377,12 +371,16 @@ public class ExpressionSolver {
     }
 
     private List<EntityWithContext> toList(
-        Optional<Entity> optionalEntity, SolvedTypeParameters solvedTypeParameters) {
-      return toList(optionalEntity.orElse(null), solvedTypeParameters);
+        Optional<Entity> optionalEntity,
+        boolean isInstanceContext,
+        SolvedTypeParameters solvedTypeParameters) {
+      return toList(optionalEntity.orElse(null), isInstanceContext, solvedTypeParameters);
     }
 
     private List<EntityWithContext> toList(
-        @Nullable Entity entity, SolvedTypeParameters solvedTypeParameters) {
+        @Nullable Entity entity,
+        boolean isInstanceContext,
+        SolvedTypeParameters solvedTypeParameters) {
       if (entity == null) {
         return ImmutableList.of();
       }
@@ -390,6 +388,7 @@ public class ExpressionSolver {
           EntityWithContext.builder()
               .setArrayLevel(0)
               .setEntity(entity)
+              .setInstanceContext(isInstanceContext)
               .setSolvedTypeParameters(solvedTypeParameters)
               .build());
     }

@@ -11,6 +11,7 @@ import com.sun.source.tree.IdentifierTree;
 import com.sun.source.tree.ImportTree;
 import com.sun.source.tree.MemberSelectTree;
 import com.sun.source.tree.MethodTree;
+import com.sun.source.tree.ModifiersTree;
 import com.sun.source.tree.StatementTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.tree.TypeParameterTree;
@@ -149,11 +150,15 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
       interfaceBuilder.add(typeReferenceScanner.getTypeReference(implementClause));
     }
     Range<Integer> range = getClassNameRange((JCClassDecl) node);
+    boolean isStatic =
+        (currentScope instanceof FileScope) // Top-level class is considered static.
+            || isStatic(node.getModifiers());
     ClassEntity classEntity =
         new ClassEntity(
             node.getSimpleName().toString(),
             entityKind,
             this.currentQualifiers,
+            isStatic,
             currentScope,
             superClass,
             interfaceBuilder.build(),
@@ -220,6 +225,7 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
         new MethodEntity(
             node.getName().toString(),
             this.currentQualifiers,
+            isStatic(node.getModifiers()),
             returnType,
             parameterListBuilder.build(),
             typeParameters,
@@ -252,6 +258,7 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
             node.getName().toString(),
             variableKind,
             this.currentQualifiers,
+            isStatic(node.getModifiers()),
             typeReferenceScanner.getTypeReference(node.getType()),
             currentScope,
             range);
@@ -373,6 +380,10 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
     return getNodeRange(node);
   }
 
+  private boolean isStatic(ModifiersTree modifierTree) {
+    return modifierTree.getFlags().contains(Modifier.STATIC);
+  }
+
   private class ParameterScanner extends TreeScanner<Void, Void> {
     private final TypeReferenceScanner typeReferenceScanner;
     private String name = "";
@@ -392,6 +403,7 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
           name,
           Entity.Kind.VARIABLE,
           ImmutableList.of() /* qualifiers */,
+          false /* isStatic */,
           type,
           currentScope,
           range);

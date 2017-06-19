@@ -6,6 +6,7 @@ import static com.google.common.base.Preconditions.checkState;
 import com.google.common.collect.AbstractIterator;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Sets;
 import java.util.ArrayDeque;
@@ -257,7 +258,7 @@ public class TypeSolver {
         }
         if (allowedKinds.contains(classEntity.getKind())
             && Objects.equals(name, classEntity.getSimpleName())) {
-          return ImmutableList.of(classWithContext);
+          return ImmutableList.of(EntityWithContext.ofStaticEntity(classEntity));
         }
       } else if (currentScope.get() instanceof FileScope) {
         fileScope = (FileScope) currentScope.get();
@@ -265,7 +266,7 @@ public class TypeSolver {
         if (!foundEntities.isEmpty()) {
           return foundEntities
               .stream()
-              .map(entity -> EntityWithContext.ofEntity(entity))
+              .map(entity -> EntityWithContext.ofStaticEntity(entity))
               .collect(ImmutableList.toImmutableList());
         }
       } else {
@@ -295,7 +296,7 @@ public class TypeSolver {
     if (fileScope != null) {
       Optional<Entity> classInPackageOfFile = findClassInPackageOfFile(name, fileScope, module);
       if (classInPackageOfFile.isPresent()) {
-        return ImmutableList.of(EntityWithContext.ofEntity(classInPackageOfFile.get()));
+        return ImmutableList.of(EntityWithContext.ofStaticEntity(classInPackageOfFile.get()));
       }
     }
     return ImmutableList.of();
@@ -307,29 +308,12 @@ public class TypeSolver {
       Module module,
       Set<Entity.Kind> allowedKinds) {
     if (entityWithContext.getEntity() instanceof ClassEntity) {
-      return findClassMember(name, entityWithContext, module, allowedKinds);
+      return Optional.ofNullable(
+          Iterables.getFirst(
+              findClassMembers(name, entityWithContext, module, allowedKinds), null));
     } else {
       return findDirectMember(name, entityWithContext, allowedKinds);
     }
-  }
-
-  Optional<EntityWithContext> findClassMember(
-      String name,
-      EntityWithContext classWithContext,
-      Module module,
-      Set<Entity.Kind> allowedKinds) {
-    checkArgument(
-        classWithContext.getEntity() instanceof ClassEntity,
-        "Cannot find class member: entity of %s is not a class",
-        classWithContext);
-    for (EntityWithContext classInHierarchy : classHierarchy(classWithContext, module)) {
-      Optional<EntityWithContext> memberEntity =
-          findDirectMember(name, classInHierarchy, allowedKinds);
-      if (memberEntity.isPresent()) {
-        return memberEntity;
-      }
-    }
-    return Optional.empty();
   }
 
   List<EntityWithContext> findClassMembers(
@@ -337,29 +321,7 @@ public class TypeSolver {
       EntityWithContext classWithContext,
       Module module,
       Set<Entity.Kind> allowedKinds) {
-    // Non-method members can have only one entity.
-    if (!allowedKinds.contains(Entity.Kind.METHOD)) {
-      Optional<EntityWithContext> classMember =
-          findClassMember(name, classWithContext, module, allowedKinds);
-      if (classMember.isPresent()) {
-        return ImmutableList.of(classMember.get());
-      } else {
-        return ImmutableList.of();
-      }
-    }
-
     ImmutableList.Builder<EntityWithContext> builder = new ImmutableList.Builder<>();
-    if (allowedKinds.size() > 1) {
-      // Contains non-method members, don't look for all of them, just get the applicable one.
-      Set<Entity.Kind> nonMethodKinds =
-          Sets.filter(allowedKinds, kind -> kind != Entity.Kind.METHOD);
-      Optional<EntityWithContext> nonMemberEntity =
-          findClassMember(name, classWithContext, module, nonMethodKinds);
-      if (nonMemberEntity.isPresent()) {
-        builder.add(nonMemberEntity.get());
-      }
-    }
-
     for (EntityWithContext classInHierarchy : classHierarchy(classWithContext, module)) {
       checkState(
           classInHierarchy.getEntity() instanceof ClassEntity,
@@ -368,15 +330,30 @@ public class TypeSolver {
           classWithContext);
       builder.addAll(
           ((ClassEntity) classInHierarchy.getEntity())
-              .getMethodsWithName(name)
+              .getMemberEntities()
+              .get(name)
               .stream()
+              .filter(
+                  entity -> {
+                    if (!allowedKinds.contains(entity.getKind())) {
+                      return false;
+                    }
+                    if (classWithContext.isInstanceContext()) {
+                      // Both static and non-static memebers can be accessed in an instance context.
+                      return true;
+                    } else {
+                      // Instance members are not allowed to be accessed in a non-instance context.
+                      return !entity.isInstanceMember();
+                    }
+                  })
               .map(
-                  method ->
+                  entity ->
                       EntityWithContext.simpleBuilder()
-                          .setEntity(method)
+                          .setEntity(entity)
+                          .setInstanceContext(!(entity instanceof ClassEntity) && entity.isStatic())
                           .setSolvedTypeParameters(classInHierarchy.getSolvedTypeParameters())
                           .build())
-              .collect(ImmutableList.toImmutableList()));
+              .collect(ImmutableList.<EntityWithContext>toImmutableList()));
     }
 
     return builder.build();
@@ -396,11 +373,14 @@ public class TypeSolver {
       String name, EntityWithContext entityWithContext, Set<Entity.Kind> allowedKinds) {
     for (Entity member :
         entityWithContext.getEntity().getChildScope().getMemberEntities().get(name)) {
-      if (allowedKinds.contains(member.getKind())) {
+      // Inner classes are considered non-instance member, regardless whether they are static or not.
+      if (allowedKinds.contains(member.getKind())
+          && (entityWithContext.isInstanceContext() || !member.isInstanceMember())) {
         return Optional.of(
             EntityWithContext.simpleBuilder()
                 .setEntity(member)
                 .setSolvedTypeParameters(entityWithContext.getSolvedTypeParameters())
+                .setInstanceContext(member.isInstanceMember())
                 .build());
       }
     }
@@ -883,7 +863,12 @@ public class TypeSolver {
         if (classReference.subclassWithContext == null) {
           solvedEntity =
               findClassInModule(classReference.classType.getFullName(), module)
-                  .map(entity -> EntityWithContext.simpleBuilder().setEntity(entity).build());
+                  .map(
+                      entity ->
+                          EntityWithContext.simpleBuilder()
+                              .setEntity(entity)
+                              .setInstanceContext(classWithContext.isInstanceContext())
+                              .build());
         } else if (solveTypeParameters) {
           solvedEntity =
               solve(
@@ -897,7 +882,11 @@ public class TypeSolver {
                           .get(),
                       module)
                   .filter(t -> t instanceof SolvedReferenceType)
-                  .map(t -> EntityWithContext.from(t).build());
+                  .map(
+                      t ->
+                          EntityWithContext.from(t)
+                              .setInstanceContext(classWithContext.isInstanceContext())
+                              .build());
         } else {
           solvedEntity =
               findClassFromClassOrFile(
@@ -909,7 +898,12 @@ public class TypeSolver {
                           .getParentScope()
                           .get(),
                       module)
-                  .map(entity -> EntityWithContext.ofEntity(entity));
+                  .map(
+                      entity ->
+                          EntityWithContext.simpleBuilder()
+                              .setEntity(entity)
+                              .setInstanceContext(classWithContext.isInstanceContext())
+                              .build());
         }
         if (!solvedEntity.isPresent()) {
           continue;
@@ -936,7 +930,10 @@ public class TypeSolver {
         javaLangObjectAdded = true;
         Optional<Entity> javaLangObject = findClassInModule(JAVA_LANG_OBJECT_QUALIFIERS, module);
         if (javaLangObject.isPresent()) {
-          return EntityWithContext.simpleBuilder().setEntity(javaLangObject.get()).build();
+          return EntityWithContext.simpleBuilder()
+              .setEntity(javaLangObject.get())
+              .setInstanceContext(classWithContext.isInstanceContext())
+              .build();
         }
       }
       return endOfData();

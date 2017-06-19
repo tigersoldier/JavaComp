@@ -19,10 +19,11 @@ public class VariableEntity extends Entity {
       String simpleName,
       Entity.Kind kind,
       List<String> qualifiers,
+      boolean isStatic,
       TypeReference type,
       EntityScope parentScope,
       Range<Integer> variableNameRange) {
-    super(simpleName, kind, qualifiers, variableNameRange);
+    super(simpleName, kind, qualifiers, isStatic, variableNameRange);
     checkArgument(ALLOWED_KINDS.contains(kind), "Kind %s is not allowed for variables.", kind);
     this.type = type;
     this.parentScope = parentScope;

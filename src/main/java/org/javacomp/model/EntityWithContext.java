@@ -15,6 +15,8 @@ public abstract class EntityWithContext {
 
   public abstract int getArrayLevel();
 
+  public abstract boolean isInstanceContext();
+
   public abstract Builder toBuilder();
 
   public static Builder builder() {
@@ -22,11 +24,18 @@ public abstract class EntityWithContext {
   }
 
   public static Builder simpleBuilder() {
-    return builder().setArrayLevel(0).setSolvedTypeParameters(SolvedTypeParameters.EMPTY);
+    return builder()
+        .setArrayLevel(0)
+        .setSolvedTypeParameters(SolvedTypeParameters.EMPTY)
+        .setInstanceContext(true);
   }
 
   public static EntityWithContext ofEntity(Entity entity) {
     return simpleBuilder().setEntity(entity).build();
+  }
+
+  public static EntityWithContext ofStaticEntity(Entity entity) {
+    return simpleBuilder().setEntity(entity).setInstanceContext(false).build();
   }
 
   public static Builder from(SolvedType solvedType) {
@@ -34,8 +43,12 @@ public abstract class EntityWithContext {
       return from(((SolvedArrayType) solvedType).getBaseType()).incrementArrayLevel();
     }
     if (solvedType instanceof SolvedEntityType) {
+      SolvedEntityType solvedEntityType = (SolvedEntityType) solvedType;
       Builder builder =
-          builder().setArrayLevel(0).setEntity(((SolvedEntityType) solvedType).getEntity());
+          builder()
+              .setArrayLevel(0)
+              .setEntity(solvedEntityType.getEntity())
+              .setInstanceContext(!solvedEntityType.getEntity().isStatic());
       if (solvedType instanceof SolvedReferenceType) {
         builder.setSolvedTypeParameters(((SolvedReferenceType) solvedType).getTypeParameters());
       } else {
@@ -48,6 +61,29 @@ public abstract class EntityWithContext {
         "Cannot convert unsupported SolvedType to EntityWithContext: " + solvedType);
   }
 
+  public SolvedType toSolvedType() {
+    Entity entity = getEntity();
+    SolvedType solvedType = null;
+    if (entity instanceof PrimitiveEntity) {
+      solvedType = SolvedPrimitiveType.create((PrimitiveEntity) entity);
+    } else if (entity instanceof NullEntity) {
+      solvedType = SolvedNullType.INSTANCE;
+    } else if (entity instanceof ClassEntity) {
+      solvedType = SolvedReferenceType.create((ClassEntity) entity, getSolvedTypeParameters());
+    } else if (entity instanceof PackageEntity) {
+      solvedType = SolvedPackageType.create((PackageEntity) entity);
+    } else {
+      throw new RuntimeException(
+          "Unsupported entity type " + entity + " for converting to SolvedType");
+    }
+
+    for (int i = 0; i < getArrayLevel(); i++) {
+      solvedType = SolvedArrayType.create(solvedType);
+    }
+
+    return solvedType;
+  }
+
   @AutoValue.Builder
   public abstract static class Builder {
     public abstract Builder setEntity(Entity value);
@@ -55,6 +91,8 @@ public abstract class EntityWithContext {
     public abstract Builder setSolvedTypeParameters(SolvedTypeParameters value);
 
     public abstract Builder setArrayLevel(int value);
+
+    public abstract Builder setInstanceContext(boolean value);
 
     public abstract int getArrayLevel();
 

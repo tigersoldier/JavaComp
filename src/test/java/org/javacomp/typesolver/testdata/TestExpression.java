@@ -1,6 +1,8 @@
 package org.javacomp.typesolver.testdata;
 
 public class TestExpression<T> {
+  public static final InnerA staticInnerA = new InnerA();
+
   public final InnerA innerA = new InnerA();
   public final TestClass testClass = new TestClass();
 
@@ -45,5 +47,12 @@ public class TestExpression<T> {
 
   public static interface LambdaStub {
     void lambdaMethod(String arg);
+  }
+
+  public enum InnerEnum {
+    ENUM1,
+    ENUM2,
+    ;
+    public int enumInstanceField;
   }
 }

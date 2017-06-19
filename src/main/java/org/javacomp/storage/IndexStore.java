@@ -142,6 +142,7 @@ public class IndexStore {
     }
     ret.kind = entity.getKind().name();
     ret.simpleName = entity.getSimpleName();
+    ret.isStatic = entity.isStatic();
     return ret;
   }
 
@@ -259,6 +260,7 @@ public class IndexStore {
             serializedEntity.simpleName,
             entityKind,
             qualifiers,
+            serializedEntity.isStatic,
             parentScope,
             superClass,
             interfaces,
@@ -305,6 +307,7 @@ public class IndexStore {
     return new MethodEntity(
         serializedEntity.simpleName,
         qualifiers,
+        serializedEntity.isStatic,
         returnType,
         parameters,
         typeParameters,
@@ -322,7 +325,13 @@ public class IndexStore {
             ? TypeReference.EMPTY_TYPE
             : deserializeTypeReference(serializedEntity.type);
     return new VariableEntity(
-        serializedEntity.simpleName, entityKind, qualifiers, type, parentScope, EMPTY_RANGE);
+        serializedEntity.simpleName,
+        entityKind,
+        qualifiers,
+        serializedEntity.isStatic,
+        type,
+        parentScope,
+        EMPTY_RANGE);
   }
 
   private SerializedType serializeTypeReference(TypeReference type, EntityScope baseScope) {
@@ -508,6 +517,7 @@ public class IndexStore {
   private static class SerializedEntity {
     private String kind;
     private String simpleName;
+    private boolean isStatic;
     private List<SerializedEntity> members;
     private List<SerializedEntity> parameters;
     private SerializedType type;

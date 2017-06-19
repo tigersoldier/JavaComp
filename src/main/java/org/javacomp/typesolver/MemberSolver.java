@@ -12,10 +12,8 @@ import org.javacomp.model.EntityWithContext;
 import org.javacomp.model.MethodEntity;
 import org.javacomp.model.Module;
 import org.javacomp.model.PrimitiveEntity;
-import org.javacomp.model.SolvedArrayType;
-import org.javacomp.model.SolvedEntityType;
-import org.javacomp.model.SolvedReferenceType;
 import org.javacomp.model.SolvedType;
+import org.javacomp.model.TypeArgument;
 import org.javacomp.model.VariableEntity;
 
 /** Logic for finding the entity that defines the member of a class. */
@@ -40,31 +38,46 @@ public class MemberSolver {
   }
 
   public Optional<EntityWithContext> findNonMethodMember(
-      String identifier, SolvedType baseType, Module module) {
-    return findNonMethodMember(identifier, baseType, module, ALLOWED_KINDS_NON_METHOD);
+      String identifier, EntityWithContext baseEntity, Module module) {
+    return findNonMethodMember(identifier, baseEntity, module, ALLOWED_KINDS_NON_METHOD);
   }
 
   public Optional<EntityWithContext> findNonMethodMember(
-      String identifier, SolvedType baseType, Module module, Set<Entity.Kind> allowedKinds) {
-    ///////
-    // OuterClass.this
-    if (baseType instanceof SolvedReferenceType && IDENT_THIS.equals(identifier)) {
-      return Optional.of(EntityWithContext.from(baseType).build());
+      String identifier,
+      EntityWithContext baseEntity,
+      Module module,
+      Set<Entity.Kind> allowedKinds) {
+    ////////
+    // Array
+    if (baseEntity.getArrayLevel() > 0) {
+      if (IDENT_LENGTH.equals(identifier)) {
+        return Optional.of(EntityWithContext.ofStaticEntity(PrimitiveEntity.INT));
+      }
+      return Optional.empty();
     }
 
-    ////////
-    //  someArray.length
-    if (baseType instanceof SolvedArrayType && IDENT_LENGTH.equals(identifier)) {
-      return Optional.of(EntityWithContext.simpleBuilder().setEntity(PrimitiveEntity.INT).build());
+    ///////
+    // OuterClass.this
+    if (baseEntity.getEntity() instanceof ClassEntity
+        && !baseEntity.isInstanceContext()
+        && IDENT_THIS.equals(identifier)) {
+      return Optional.of(
+          baseEntity
+              .toBuilder()
+              .setInstanceContext(true)
+              .setSolvedTypeParameters(
+                  typeSolver.solveTypeParameters(
+                      ((ClassEntity) baseEntity.getEntity()).getTypeParameters(),
+                      ImmutableList.<TypeArgument>of(),
+                      baseEntity.getSolvedTypeParameters(),
+                      baseEntity.getEntity().getChildScope(),
+                      module))
+              .build());
     }
 
     ////////
     //  foo.bar
-    if (baseType instanceof SolvedEntityType) {
-      return typeSolver.findEntityMember(
-          identifier, EntityWithContext.from(baseType).build(), module, allowedKinds);
-    }
-    return Optional.empty();
+    return typeSolver.findEntityMember(identifier, baseEntity, module, allowedKinds);
   }
 
   /**
@@ -72,15 +85,18 @@ public class MemberSolver {
    *     empty.
    */
   public List<EntityWithContext> findMethodMembers(
-      String identifier, List<Optional<SolvedType>> arguments, SolvedType baseType, Module module) {
+      String identifier,
+      List<Optional<SolvedType>> arguments,
+      EntityWithContext baseEntity,
+      Module module) {
     // Methods must be defined in classes.
-    if (!(baseType instanceof SolvedReferenceType)) {
-      logger.warning(new Throwable(), "Cannot find method of non-class entities %s", baseType);
+    if (!(baseEntity.getEntity() instanceof ClassEntity)) {
+      logger.warning(new Throwable(), "Cannot find method of non-class entities %s", baseEntity);
       return ImmutableList.of();
     }
 
     List<EntityWithContext> methodEntities =
-        typeSolver.findClassMethods(identifier, EntityWithContext.from(baseType).build(), module);
+        typeSolver.findClassMethods(identifier, baseEntity, module);
 
     return overloadSolver.prioritizeMatchedMethod(methodEntities, arguments, module);
   }

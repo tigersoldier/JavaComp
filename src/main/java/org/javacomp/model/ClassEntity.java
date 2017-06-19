@@ -36,12 +36,13 @@ public class ClassEntity extends Entity implements EntityScope {
       String simpleName,
       Entity.Kind kind,
       List<String> qualifiers,
+      boolean isStatic,
       EntityScope parentScope,
       Optional<TypeReference> superClass,
       List<TypeReference> interfaces,
       List<TypeParameter> typeParameters,
       Range<Integer> classNameRage) {
-    super(simpleName, kind, qualifiers, classNameRage);
+    super(simpleName, kind, qualifiers, isStatic, classNameRage);
     checkArgument(
         ALLOWED_KINDS.contains(kind),
         "Invalid entity kind %s, allowed kinds are %s",
@@ -54,6 +55,13 @@ public class ClassEntity extends Entity implements EntityScope {
     this.interfaces = ImmutableList.copyOf(interfaces);
     this.typeParameters = ImmutableList.copyOf(typeParameters);
     this.innerClasses = new HashMap<>();
+  }
+
+  @Override
+  public boolean isInstanceMember() {
+    // Inner classes can be in non-instance context of enclosing classes, regardless wether
+    // it's static or not.
+    return false;
   }
 
   @Override

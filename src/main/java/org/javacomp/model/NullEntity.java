@@ -12,6 +12,7 @@ public class NullEntity extends Entity {
         "null",
         Entity.Kind.NULL,
         ImmutableList.<String>of() /* qualifiers */,
+        true /* isStatic */,
         Range.closedOpen(0, 0));
   }
 

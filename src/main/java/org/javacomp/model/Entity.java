@@ -35,13 +35,19 @@ public abstract class Entity {
   private final String simpleName;
   private final List<String> qualifiers;
   private final Kind kind;
+  private final boolean isStatic;
   private final Range<Integer> symbolRange;
 
   protected Entity(
-      String simpleName, Kind kind, List<String> qualifiers, Range<Integer> symbolRange) {
+      String simpleName,
+      Kind kind,
+      List<String> qualifiers,
+      boolean isStatic,
+      Range<Integer> symbolRange) {
     this.simpleName = simpleName;
     this.kind = kind;
     this.qualifiers = ImmutableList.copyOf(qualifiers);
+    this.isStatic = isStatic;
     this.symbolRange = symbolRange;
   }
 
@@ -69,6 +75,18 @@ public abstract class Entity {
 
   public Range<Integer> getSymbolRange() {
     return symbolRange;
+  }
+
+  public boolean isStatic() {
+    return isStatic;
+  }
+
+  /**
+   * @return {@code true} if the entity is a member of a class instance, which can only be access in
+   *     an instance context of that class.
+   */
+  public boolean isInstanceMember() {
+    return !isStatic();
   }
 
   /**

@@ -62,6 +62,7 @@ public class PrimitiveEntity extends Entity {
         simpleName,
         Entity.Kind.PRIMITIVE,
         ImmutableList.<String>of() /* qualifiers */,
+        true /* isStatic */,
         Range.closedOpen(0, 0));
   }
 

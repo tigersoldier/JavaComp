@@ -68,6 +68,7 @@ public class IndexStoreTest {
       ClassEntity deserialized, ClassEntity original, Deque<String> qualifiedName) {
     assertQualifiedName(deserialized, qualifiedName);
     assertThat(deserialized.getQualifiedName()).isEqualTo(original.getQualifiedName());
+    assertThat(deserialized.isStatic()).named("isStatic").isEqualTo(original.isStatic());
     assertSameMemberEntities(deserialized, original, qualifiedName);
     assertTypesEqual(deserialized.getSuperClass(), original.getSuperClass(), qualifiedName);
 
@@ -90,6 +91,7 @@ public class IndexStoreTest {
 
   private boolean methodsEqual(
       MethodEntity deserialized, MethodEntity original, Deque<String> qualifiedName) {
+    assertThat(deserialized.isStatic()).named("isStatic").isEqualTo(original.isStatic());
     List<VariableEntity> deserializedParameters = deserialized.getParameters();
     List<VariableEntity> originalParameters = original.getParameters();
     if (deserializedParameters.size() != originalParameters.size()) {
@@ -125,7 +127,7 @@ public class IndexStoreTest {
 
   private void assertVariablesEqual(
       VariableEntity deserialized, VariableEntity original, Deque<String> qualifiedName) {
-
+    assertThat(deserialized.isStatic()).named("isStatic").isEqualTo(original.isStatic());
     assertTypesEqual(deserialized.getType(), original.getType(), qualifiedName);
     assertQualifiedName(deserialized, qualifiedName);
     assertThat(deserialized.getSimpleName()).isEqualTo(original.getSimpleName());

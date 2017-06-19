@@ -61,6 +61,7 @@ public class ExpressionSolverTest {
   private ClassEntity innerInnerAClass;
   private ClassEntity innerBClass;
   private ClassEntity innerCClass;
+  private ClassEntity innerEnum;
   private ClassEntity baseInnerClass;
   private ClassEntity fakeStringClass;
   private MethodEntity lambdaCallMethod;
@@ -91,6 +92,8 @@ public class ExpressionSolverTest {
         (ClassEntity) TestUtil.lookupEntity(TOP_LEVEL_CLASS_FULL_NAME + ".InnerB", module);
     innerCClass =
         (ClassEntity) TestUtil.lookupEntity(TOP_LEVEL_CLASS_FULL_NAME + ".InnerC", module);
+    innerEnum =
+        (ClassEntity) TestUtil.lookupEntity(TOP_LEVEL_CLASS_FULL_NAME + ".InnerEnum", module);
     fakeStringClass = (ClassEntity) TestUtil.lookupEntity("java.lang.String", fakeJdkModule);
     lambdaCallMethod =
         (MethodEntity) TestUtil.lookupEntity(TOP_LEVEL_CLASS_FULL_NAME + ".lambdaCall", module);
@@ -151,10 +154,10 @@ public class ExpressionSolverTest {
   }
 
   @Test
-  public void solveQualifiedClassField() {
+  public void solveQualifiedStaticField() {
     assertThat(
             solveEntityExpression(
-                    "org.javacomp.typesolver.testdata.TestExpression.innerA", topLevelClass)
+                    "org.javacomp.typesolver.testdata.TestExpression.staticInnerA", topLevelClass)
                 .getEntity())
         .isEqualTo(innerAClass);
   }
@@ -191,7 +194,7 @@ public class ExpressionSolverTest {
     assertThat(qualifiedThis).isInstanceOf(SolvedReferenceType.class);
     Optional<SolvedType> typeParameterA =
         ((SolvedReferenceType) qualifiedThis).getTypeParameters().getTypeParameter("A");
-    Truth8.assertThat(typeParameterA).isPresent();
+    Truth8.assertThat(typeParameterA).named("Type parameter A of InnerA.this").isPresent();
     assertThat(typeParameterA.get()).isInstanceOf(SolvedEntityType.class);
     assertThat(((SolvedEntityType) typeParameterA.get()).getEntity()).isEqualTo(innerBClass);
   }
@@ -330,6 +333,16 @@ public class ExpressionSolverTest {
     assertThat(solveExpression("null", methodScope, -1 /* position */))
         .isInstanceOf(SolvedNullType.class);
     assertThat(solveEntityExpression("\"123\"", methodScope).getEntity()).isSameAs(fakeStringClass);
+  }
+
+  @Test
+  public void solveEnumFields() {
+    assertThat(solveEntityExpression("InnerEnum", topLevelClass).getEntity()).isSameAs(innerEnum);
+    assertThat(solveEntityExpression("InnerEnum.ENUM1", topLevelClass).getEntity())
+        .isSameAs(innerEnum);
+    assertThat(
+            solveEntityExpression("InnerEnum.ENUM1.enumInstanceField", topLevelClass).getEntity())
+        .isSameAs(PrimitiveEntity.INT);
   }
 
   private Entity solveDefinition(String expression, EntityScope baseScope) {
