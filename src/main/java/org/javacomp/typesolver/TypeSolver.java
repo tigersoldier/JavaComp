@@ -28,6 +28,7 @@ import org.javacomp.model.EntityWithContext;
 import org.javacomp.model.FileScope;
 import org.javacomp.model.MethodEntity;
 import org.javacomp.model.Module;
+import org.javacomp.model.MutableSolvedTypeParameters;
 import org.javacomp.model.PackageEntity;
 import org.javacomp.model.PackageScope;
 import org.javacomp.model.PrimitiveEntity;
@@ -244,7 +245,7 @@ public class TypeSolver {
       Set<Entity.Kind> allowedKinds) {
     // Search class from the narrowest scope to wider scope.
     FileScope fileScope = null;
-    SolvedTypeParameters typeParameterInScope = null;
+    SolvedTypeParameters typeParametersFromScope = null;
     for (Optional<EntityScope> currentScope = Optional.of(baseScope);
         currentScope.isPresent();
         currentScope = currentScope.get().getParentScope()) {
@@ -271,12 +272,12 @@ public class TypeSolver {
         }
       } else {
         // Block-like scopes (method, if, for, etc...)
-        if (typeParameterInScope == null) {
-          typeParameterInScope = solveTypeParametersFromScope(currentScope.get(), module);
+        if (typeParametersFromScope == null) {
+          typeParametersFromScope = solveTypeParametersFromScope(currentScope.get(), module);
         }
         List<EntityWithContext> foundEntities =
             findEntitiesInBlock(
-                name, typeParameterInScope, currentScope.get(), module, position, allowedKinds);
+                name, typeParametersFromScope, currentScope.get(), module, position, allowedKinds);
         if (!foundEntities.isEmpty()) {
           return foundEntities;
         }
@@ -285,9 +286,10 @@ public class TypeSolver {
 
       // Clear type parameter in scope if we are exiting a scope that defines type parameters,
       // because they are likely to change.
-      if ((typeParameterInScope != null && !getTypeParametersOfScope(currentScope.get()).isEmpty())
+      if ((typeParametersFromScope != null
+              && !getTypeParametersOfScope(currentScope.get()).isEmpty())
           || (currentScope.get() instanceof Entity && ((Entity) currentScope.get()).isStatic())) {
-        typeParameterInScope = null;
+        typeParametersFromScope = null;
       }
     }
 
@@ -715,24 +717,27 @@ public class TypeSolver {
       }
     }
 
-    SolvedTypeParameters solvedTypeParameters = SolvedTypeParameters.EMPTY;
+    MutableSolvedTypeParameters solvedTypeParameters = new MutableSolvedTypeParameters();
     // Solve type parameters from parent scopes to child scopes. Child scopes may reference type
     // parameters defined by parent scopes.
     while (!typeParametersStack.isEmpty()) {
-      SolvedTypeParameters.Builder builder = solvedTypeParameters.toBuilder();
       List<TypeParameter> typeParameters = typeParametersStack.pop();
       EntityScope typeParametersScope = entityScopeStack.pop();
       for (TypeParameter typeParameter : typeParameters) {
+        String name = typeParameter.getName();
+        if (solvedTypeParameters.getTypeParameter(name).isPresent()) {
+          // Remove conflicting type parameter from enclosing scopes.
+          solvedTypeParameters.removeTypeParameter(name);
+        }
         Optional<SolvedType> solvedBounds =
             solveTypeParameterBounds(
                 typeParameter, solvedTypeParameters, typeParametersScope, module);
         if (solvedBounds.isPresent()) {
-          builder.putTypeParameter(typeParameter.getName(), solvedBounds.get());
+          solvedTypeParameters.putTypeParameter(typeParameter.getName(), solvedBounds.get());
         }
       }
-      solvedTypeParameters = builder.build();
     }
-    return solvedTypeParameters;
+    return solvedTypeParameters.toImmutable();
   }
 
   private List<TypeParameter> getTypeParametersOfScope(EntityScope entityScope) {

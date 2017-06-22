@@ -2,6 +2,7 @@ package org.javacomp.model;
 
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableMap;
+import java.util.Map;
 import java.util.Optional;
 
 @AutoValue
@@ -26,6 +27,11 @@ public abstract class SolvedTypeParameters {
 
     public Builder putTypeParameter(String name, SolvedType solvedTypeParameter) {
       typeVariableMapBuilder().put(name, solvedTypeParameter);
+      return this;
+    }
+
+    public Builder putTypeParameters(Map<String, SolvedType> solvedTypeParameters) {
+      typeVariableMapBuilder().putAll(solvedTypeParameters);
       return this;
     }
 

@@ -18,6 +18,10 @@ public class TestExpression<T> {
 
   public T getT(T argument);
 
+  public T typeParameterT;
+
+  public <T extends InnerB> T redefineTMethod(T parameter);
+
   public void method() {
     InnerA varA = new InnerA();
     InnerB varB = new InnerB();

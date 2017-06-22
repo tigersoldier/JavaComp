@@ -33,7 +33,8 @@ public class ExpressionSolverTest {
       ImmutableList.of("TestExpression.java", "TestClass.java");
   private static final List<String> OTHER_FILES =
       ImmutableList.of("other/BaseClass.java", "other/Shadow.java");
-  private static final List<String> FAKE_JDK_FILES = ImmutableList.of("fakejdk/String.java");
+  private static final List<String> FAKE_JDK_FILES =
+      ImmutableList.of("fakejdk/String.java", "fakejdk/Object.java");
   private static final String TOP_LEVEL_CLASS_FULL_NAME =
       "org.javacomp.typesolver.testdata.TestExpression";
   private static final String TEST_CLASS_CLASS_FULL_NAME =
@@ -63,6 +64,7 @@ public class ExpressionSolverTest {
   private ClassEntity innerEnum;
   private ClassEntity baseInnerClass;
   private ClassEntity fakeStringClass;
+  private ClassEntity fakeObjectClass;
   private MethodEntity lambdaCallMethod;
   private EntityScope methodScope;
 
@@ -94,6 +96,7 @@ public class ExpressionSolverTest {
     innerEnum =
         (ClassEntity) TestUtil.lookupEntity(TOP_LEVEL_CLASS_FULL_NAME + ".InnerEnum", module);
     fakeStringClass = (ClassEntity) TestUtil.lookupEntity("java.lang.String", fakeJdkModule);
+    fakeObjectClass = (ClassEntity) TestUtil.lookupEntity("java.lang.Object", fakeJdkModule);
     lambdaCallMethod =
         (MethodEntity) TestUtil.lookupEntity(TOP_LEVEL_CLASS_FULL_NAME + ".lambdaCall", module);
     methodScope =
@@ -113,6 +116,16 @@ public class ExpressionSolverTest {
     assertThat(solveExpression("typeParameterA", innerAClass).getEntity()).isEqualTo(innerBClass);
     assertThat(solveExpression("innerA.typeParameterA", innerAClass).getEntity())
         .isEqualTo(innerBClass);
+  }
+
+  @Test
+  public void solveRedefinedTypeParameter() {
+    Entity redefineTMethod =
+        TestUtil.lookupEntity(TOP_LEVEL_CLASS_FULL_NAME + ".redefineTMethod", module);
+    assertThat(solveExpression("parameter", redefineTMethod.getChildScope()).getEntity())
+        .isSameAs(innerBClass);
+    assertThat(solveExpression("typeParameterT", redefineTMethod.getChildScope()).getEntity())
+        .isSameAs(fakeObjectClass);
   }
 
   @Test
