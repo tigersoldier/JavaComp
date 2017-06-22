@@ -63,7 +63,7 @@ public class TypeSolver {
   public Optional<SolvedType> solve(
       TypeReference typeReference, EntityScope parentScope, Module module) {
     return solve(
-        typeReference, solveTypeParametersInScope(parentScope, module), parentScope, module);
+        typeReference, solveTypeParametersFromScope(parentScope, module), parentScope, module);
   }
 
   public Optional<SolvedType> solve(
@@ -272,7 +272,7 @@ public class TypeSolver {
       } else {
         // Block-like scopes (method, if, for, etc...)
         if (typeParameterInScope == null) {
-          typeParameterInScope = solveTypeParametersInScope(currentScope.get(), module);
+          typeParameterInScope = solveTypeParametersFromScope(currentScope.get(), module);
         }
         List<EntityWithContext> foundEntities =
             findEntitiesInBlock(
@@ -285,9 +285,8 @@ public class TypeSolver {
 
       // Clear type parameter in scope if we are exiting a scope that defines type parameters,
       // because they are likely to change.
-      //
-      // TODO: also clear when exiting a static scope.
-      if (typeParameterInScope != null && !getTypeParametersOfScope(currentScope.get()).isEmpty()) {
+      if ((typeParameterInScope != null && !getTypeParametersOfScope(currentScope.get()).isEmpty())
+          || (currentScope.get() instanceof Entity && ((Entity) currentScope.get()).isStatic())) {
         typeParameterInScope = null;
       }
     }
@@ -699,7 +698,7 @@ public class TypeSolver {
    * Solve type parameter bindings based on the type parameters declared in the given scope and its
    * parent scopes.
    */
-  public SolvedTypeParameters solveTypeParametersInScope(EntityScope baseScope, Module module) {
+  public SolvedTypeParameters solveTypeParametersFromScope(EntityScope baseScope, Module module) {
     Deque<List<TypeParameter>> typeParametersStack = new ArrayDeque<>();
     Deque<EntityScope> entityScopeStack = new ArrayDeque<>();
     for (EntityScope currentScope = baseScope;
@@ -709,6 +708,10 @@ public class TypeSolver {
       if (!typeParameters.isEmpty()) {
         typeParametersStack.push(typeParameters);
         entityScopeStack.push(currentScope);
+      }
+      if (currentScope instanceof Entity && ((Entity) currentScope).isStatic()) {
+        // Reached a static scope. The enclosing type parameters don't apply.
+        break;
       }
     }
 
@@ -764,7 +767,7 @@ public class TypeSolver {
   private EntityWithContext solveClassWithContext(ClassEntity classEntity, Module module) {
     return EntityWithContext.simpleBuilder()
         .setEntity(classEntity)
-        .setSolvedTypeParameters(solveTypeParametersInScope(classEntity, module))
+        .setSolvedTypeParameters(solveTypeParametersFromScope(classEntity, module))
         .build();
   }
 

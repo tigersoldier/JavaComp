@@ -156,7 +156,7 @@ public class ExpressionSolver {
       this.allowedEntityKinds = ImmutableSet.copyOf(allowedEntityKinds);
       this.methodArgs = null;
       this.position = position;
-      this.contextTypeParameters = typeSolver.solveTypeParametersInScope(baseScope, module);
+      this.contextTypeParameters = typeSolver.solveTypeParametersFromScope(baseScope, module);
     }
 
     @Override

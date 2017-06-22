@@ -34,7 +34,7 @@ public class TypeSolverTest {
     "ondemand/OnDemand.java", "ondemand/Shadow.java",
   };
 
-  private static final String[] FAKE_JDK_FILES = {"fakejdk/String.java"};
+  private static final String[] FAKE_JDK_FILES = {"fakejdk/String.java", "fakejdk/Object.java"};
 
   private static final String TEST_DATA_PACKAGE = "org.javacomp.typesolver.testdata";
   private static final String TEST_DATA_OTHER_PACKAGE = TEST_DATA_PACKAGE + ".other";
@@ -166,7 +166,7 @@ public class TypeSolverTest {
   }
 
   @Test
-  public void solveTypeParametersInScope() {
+  public void solveTypeParametersFromScope() {
     SolvedEntityType typeParameterB = solveMethodReturnType(PARAMETERIZED_TYPE_FULL_NAME + ".getB");
     assertThat(typeParameterB.getEntity())
         .isSameAs(TestUtil.lookupEntity(BASE_CLASS_FULL_NAME + ".BaseInnerClass", otherModule));
@@ -174,6 +174,39 @@ public class TypeSolverTest {
     SolvedEntityType typeParameterC = solveMethodReturnType(PARAMETERIZED_TYPE_FULL_NAME + ".getC");
     assertThat(typeParameterC.getEntity())
         .isSameAs(TestUtil.lookupEntity(BASE_CLASS_FULL_NAME + ".BaseInnerClass", otherModule));
+
+    SolvedTypeParameters innerClassTypeParameters =
+        typeSolver.solveTypeParametersFromScope(
+            TestUtil.lookupEntity(PARAMETERIZED_TYPE_FULL_NAME + ".InnerClass", testModule)
+                .getChildScope(),
+            testModule);
+    assertThat(innerClassTypeParameters.getTypeVariableMap().keySet())
+        .containsExactly("A", "B", "E");
+  }
+
+  @Test
+  public void solveTypeParametersFromStaticScope() {
+    SolvedEntityType typeParameterB = solveMethodReturnType(PARAMETERIZED_TYPE_FULL_NAME + ".getB");
+    assertThat(typeParameterB.getEntity())
+        .isSameAs(TestUtil.lookupEntity(BASE_CLASS_FULL_NAME + ".BaseInnerClass", otherModule));
+
+    SolvedEntityType typeParameterC = solveMethodReturnType(PARAMETERIZED_TYPE_FULL_NAME + ".getC");
+    assertThat(typeParameterC.getEntity())
+        .isSameAs(TestUtil.lookupEntity(BASE_CLASS_FULL_NAME + ".BaseInnerClass", otherModule));
+
+    SolvedTypeParameters staticMethodTypeParameters =
+        typeSolver.solveTypeParametersFromScope(
+            TestUtil.lookupEntity(PARAMETERIZED_TYPE_FULL_NAME + ".staticMethod", testModule)
+                .getChildScope(),
+            testModule);
+    assertThat(staticMethodTypeParameters.getTypeVariableMap().keySet()).containsExactly("D");
+
+    SolvedTypeParameters staticInnerClassTypeParameters =
+        typeSolver.solveTypeParametersFromScope(
+            TestUtil.lookupEntity(PARAMETERIZED_TYPE_FULL_NAME + ".StaticInnerClass", testModule)
+                .getChildScope(),
+            testModule);
+    assertThat(staticInnerClassTypeParameters.getTypeVariableMap().keySet()).containsExactly("F");
   }
 
   @Test

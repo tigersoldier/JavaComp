@@ -56,5 +56,10 @@ public class TestClass extends BaseClass implements BaseInterface {
     public A getA();
     public B getB();
     public <C extends B & A> C getC() {}
+    public static <D> D staticMethod() {
+    }
+
+    public class InnerClass<E> {}
+    public static class StaticInnerClass<F> {}
   }
 }
