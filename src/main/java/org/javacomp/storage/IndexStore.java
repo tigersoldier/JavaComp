@@ -17,9 +17,11 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
@@ -88,6 +90,7 @@ public class IndexStore {
             .entrySet()
             .stream()
             .map(entry -> serializeFileScopes(entry.getKey(), entry.getValue()))
+            .sorted()
             .collect(Collectors.toList());
     this.module = null;
     return ret;
@@ -111,6 +114,7 @@ public class IndexStore {
             .stream()
             .flatMap(fileScope -> fileScope.getMemberEntities().values().stream())
             .map(entity -> serializeEntity(entity))
+            .sorted()
             .collect(Collectors.toList());
     return ret;
   }
@@ -168,6 +172,7 @@ public class IndexStore {
                   visitedEntities.put(childEntity, entity);
                   return serializeEntity(childEntity);
                 })
+            .sorted()
             .collect(Collectors.toList());
     if (entity.getSuperClass().isPresent()) {
       ret.superClass =
@@ -178,6 +183,7 @@ public class IndexStore {
             .getInterfaces()
             .stream()
             .map(t -> serializeTypeReference(t, entity.getParentScope().get()))
+            .sorted()
             .collect(Collectors.toList());
     if (!entity.getTypeParameters().isEmpty()) {
       ret.typeParameters =
@@ -504,17 +510,58 @@ public class IndexStore {
         typeParameter.name, deserializeTypeReferences(typeParameter.bounds));
   }
 
+  private static <E extends Comparable<E>> int compareLists(
+      @Nullable List<E> lhs, @Nullable List<E> rhs) {
+    if (lhs == rhs) {
+      return 0;
+    }
+    if (lhs == null && rhs != null) {
+      return -1;
+    }
+    if (rhs == null) {
+      return 1;
+    }
+
+    int ret = Integer.compare(lhs.size(), rhs.size());
+    if (ret != 0) {
+      return ret;
+    }
+
+    for (int i = 0; i < lhs.size(); i++) {
+      ret = Objects.compare(lhs.get(i), rhs.get(i), Comparator.naturalOrder());
+      if (ret != 0) {
+        return ret;
+      }
+    }
+
+    return 0;
+  }
+
   @VisibleForTesting
   static class SerializedModule {
     private List<SerializedFileScope> files;
   }
 
-  private static class SerializedFileScope {
+  private static class SerializedFileScope implements Comparable<SerializedFileScope> {
     private String packageName;
     private List<SerializedEntity> entities;
+
+    @Override
+    public int compareTo(SerializedFileScope other) {
+      if (this == other) {
+        return 0;
+      }
+
+      int ret = Objects.compare(this.packageName, other.packageName, Comparator.naturalOrder());
+      if (ret != 0) {
+        return ret;
+      }
+
+      return compareLists(this.entities, other.entities);
+    }
   }
 
-  private static class SerializedEntity {
+  private static class SerializedEntity implements Comparable<SerializedEntity> {
     private String kind;
     private String simpleName;
     private boolean isStatic;
@@ -524,15 +571,76 @@ public class IndexStore {
     private SerializedType superClass;
     private List<SerializedType> interfaces;
     private List<SerializedTypeParameter> typeParameters;
+
+    @Override
+    public int compareTo(SerializedEntity other) {
+      if (this == other) {
+        return 0;
+      }
+      int ret = Objects.compare(this.simpleName, other.simpleName, Comparator.naturalOrder());
+      if (ret != 0) {
+        return ret;
+      }
+
+      ret = Objects.compare(this.kind, other.kind, Comparator.naturalOrder());
+      if (ret != 0) {
+        return ret;
+      }
+
+      ret = compareLists(this.members, other.members);
+      if (ret != 0) {
+        return ret;
+      }
+
+      ret = compareLists(this.parameters, other.parameters);
+      if (ret != 0) {
+        return ret;
+      }
+
+      ret = Objects.compare(this.type, other.type, Comparator.naturalOrder());
+      if (ret != 0) {
+        return ret;
+      }
+
+      ret = Objects.compare(this.superClass, other.superClass, Comparator.naturalOrder());
+      if (ret != 0) {
+        return ret;
+      }
+
+      ret = compareLists(this.interfaces, other.interfaces);
+      if (ret != 0) {
+        return ret;
+      }
+
+      return compareLists(this.typeParameters, other.typeParameters);
+    }
   }
 
-  private static class SerializedType {
+  private static class SerializedType implements Comparable<SerializedType> {
     private String fullName;
     private boolean isArray;
     private List<SerializedTypeArgument> typeArguments;
+
+    @Override
+    public int compareTo(SerializedType other) {
+      if (this == other) {
+        return 0;
+      }
+      int ret = Objects.compare(this.fullName, other.fullName, Comparator.naturalOrder());
+      if (ret != 0) {
+        return ret;
+      }
+
+      ret = Boolean.compare(this.isArray, other.isArray);
+      if (ret != 0) {
+        return ret;
+      }
+
+      return compareLists(this.typeArguments, other.typeArguments);
+    }
   }
 
-  private static class SerializedTypeArgument {
+  private static class SerializedTypeArgument implements Comparable<SerializedTypeArgument> {
     private SerializedTypeArgumentKind kind;
     private SerializedType explicitType;
     private SerializedType bound;
@@ -540,6 +648,25 @@ public class IndexStore {
     @Override
     public String toString() {
       return "kind: " + kind + ", explicitType: " + explicitType + ", bound: " + bound;
+    }
+
+    @Override
+    public int compareTo(SerializedTypeArgument other) {
+      if (this == other) {
+        return 0;
+      }
+
+      int ret = Objects.compare(this.kind, other.kind, Comparator.naturalOrder());
+      if (ret != 0) {
+        return ret;
+      }
+
+      ret = Objects.compare(this.explicitType, other.explicitType, Comparator.naturalOrder());
+      if (ret != 0) {
+        return ret;
+      }
+
+      return Objects.compare(this.bound, other.bound, Comparator.naturalOrder());
     }
   }
 
@@ -550,8 +677,18 @@ public class IndexStore {
     WILDCARD_EXTENDS,
   }
 
-  private static class SerializedTypeParameter {
+  private static class SerializedTypeParameter implements Comparable<SerializedTypeParameter> {
     private String name;
     private List<SerializedType> bounds;
+
+    @Override
+    public int compareTo(SerializedTypeParameter other) {
+      int ret = Objects.compare(this.name, other.name, Comparator.naturalOrder());
+      if (ret == 0) {
+        return ret;
+      }
+
+      return compareLists(this.bounds, other.bounds);
+    }
   }
 }
