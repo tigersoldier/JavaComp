@@ -377,7 +377,7 @@ public class ExpressionSolver {
     }
 
     private List<EntityWithContext> toList(
-        Optional<Entity> optionalEntity,
+        Optional<? extends Entity> optionalEntity,
         boolean isInstanceContext,
         SolvedTypeParameters solvedTypeParameters) {
       return toList(optionalEntity.orElse(null), isInstanceContext, solvedTypeParameters);

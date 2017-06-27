@@ -31,6 +31,8 @@ public class ExpressionSolverTest {
   private static final String TEST_DIR = "src/test/java/org/javacomp/typesolver/testdata";
   private static final List<String> TEST_FILES =
       ImmutableList.of("TestExpression.java", "TestClass.java");
+  private static final List<String> ON_DEMAND_FILES =
+      ImmutableList.of("ondemand/OnDemand.java", "ondemand/Shadow.java");
   private static final List<String> OTHER_FILES =
       ImmutableList.of("other/BaseClass.java", "other/Shadow.java");
   private static final List<String> FAKE_JDK_FILES =
@@ -43,6 +45,8 @@ public class ExpressionSolverTest {
       "org.javacomp.typesolver.testdata.other.Shadow";
   private static final String BASE_CLASS_FULL_NAME =
       "org.javacomp.typesolver.testdata.other.BaseClass";
+  private static final String ON_DEMAND_CLASS_FULL_NAME =
+      "org.javacomp.typesolver.testdata.ondemand.OnDemand";
 
   private final TypeSolver typeSolver = new TypeSolver();
   private final OverloadSolver overloadSolver = new OverloadSolver(typeSolver);
@@ -51,6 +55,7 @@ public class ExpressionSolverTest {
       new ExpressionSolver(typeSolver, overloadSolver, memberSolver);
 
   private Module module;
+  private Module onDemandModule;
   private Module otherModule;
   private Module fakeJdkModule;
   private ClassEntity topLevelClass;
@@ -62,7 +67,10 @@ public class ExpressionSolverTest {
   private ClassEntity innerBClass;
   private ClassEntity innerCClass;
   private ClassEntity innerEnum;
+  private ClassEntity baseClass;
   private ClassEntity baseInnerClass;
+  private ClassEntity onDemandClass;
+  private ClassEntity innerOnDemandClass;
   private ClassEntity fakeStringClass;
   private ClassEntity fakeObjectClass;
   private MethodEntity lambdaCallMethod;
@@ -71,8 +79,10 @@ public class ExpressionSolverTest {
   @Before
   public void setUpTestScope() throws Exception {
     module = TestUtil.parseFiles(TEST_DIR, TEST_FILES);
+    onDemandModule = TestUtil.parseFiles(TEST_DIR, ON_DEMAND_FILES);
     otherModule = TestUtil.parseFiles(TEST_DIR, OTHER_FILES);
     fakeJdkModule = TestUtil.parseFiles(TEST_DIR, FAKE_JDK_FILES);
+    module.addDependingModule(onDemandModule);
     module.addDependingModule(otherModule);
     module.addDependingModule(fakeJdkModule);
 
@@ -82,6 +92,7 @@ public class ExpressionSolverTest {
         (ClassEntity)
             TestUtil.lookupEntity(TEST_CLASS_CLASS_FULL_NAME + ".TestClassFactory", module);
     shadowClass = (ClassEntity) TestUtil.lookupEntity(SHADOW_CLASS_FULL_NAME, otherModule);
+    baseClass = (ClassEntity) TestUtil.lookupEntity(BASE_CLASS_FULL_NAME, otherModule);
     baseInnerClass =
         (ClassEntity) TestUtil.lookupEntity(BASE_CLASS_FULL_NAME + ".BaseInnerClass", otherModule);
     innerAClass =
@@ -95,6 +106,10 @@ public class ExpressionSolverTest {
         (ClassEntity) TestUtil.lookupEntity(TOP_LEVEL_CLASS_FULL_NAME + ".InnerC", module);
     innerEnum =
         (ClassEntity) TestUtil.lookupEntity(TOP_LEVEL_CLASS_FULL_NAME + ".InnerEnum", module);
+    onDemandClass = (ClassEntity) TestUtil.lookupEntity(ON_DEMAND_CLASS_FULL_NAME, onDemandModule);
+    innerOnDemandClass =
+        (ClassEntity)
+            TestUtil.lookupEntity(ON_DEMAND_CLASS_FULL_NAME + ".InnerOnDemand", onDemandModule);
     fakeStringClass = (ClassEntity) TestUtil.lookupEntity("java.lang.String", fakeJdkModule);
     fakeObjectClass = (ClassEntity) TestUtil.lookupEntity("java.lang.Object", fakeJdkModule);
     lambdaCallMethod =
@@ -334,6 +349,32 @@ public class ExpressionSolverTest {
     assertThat(solveExpression("InnerEnum.ENUM1", topLevelClass).getEntity()).isSameAs(innerEnum);
     assertThat(solveExpression("InnerEnum.ENUM1.enumInstanceField", topLevelClass).getEntity())
         .isSameAs(PrimitiveEntity.INT);
+  }
+
+  @Test
+  public void solveStaticFieldImport() {
+    assertThat(solveExpression("STATIC_FIELD", topLevelClass).getEntity()).isSameAs(baseInnerClass);
+  }
+
+  @Test
+  public void solveStaticMethodImport() {
+    assertThat(solveExpression("staticMethod()", topLevelClass).getEntity())
+        .isSameAs(baseInnerClass);
+    assertThat(solveExpression("staticMethod(42)", topLevelClass).getEntity()).isSameAs(baseClass);
+  }
+
+  @Test
+  public void solveOnDemandStaticFieldImport() {
+    assertThat(solveExpression("STATIC_ON_DEMAND_FIELD", topLevelClass).getEntity())
+        .isSameAs(innerOnDemandClass);
+  }
+
+  @Test
+  public void solveOnDemandStaticMethodImport() {
+    assertThat(solveExpression("staticOnDemandMethod()", topLevelClass).getEntity())
+        .isSameAs(innerOnDemandClass);
+    assertThat(solveExpression("staticOnDemandMethod(42)", topLevelClass).getEntity())
+        .isSameAs(onDemandClass);
   }
 
   private Entity solveDefinition(String expression, EntityScope baseScope) {

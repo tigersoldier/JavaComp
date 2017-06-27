@@ -94,6 +94,10 @@ public class ClassEntity extends Entity implements EntityScope {
     return ImmutableList.copyOf(methods.get(simpleName));
   }
 
+  public Optional<VariableEntity> getFieldWithName(String simpleName) {
+    return Optional.ofNullable(fields.get(simpleName));
+  }
+
   public ImmutableList<TypeReference> getInterfaces() {
     return interfaces;
   }

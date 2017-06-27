@@ -1,5 +1,9 @@
 package org.javacomp.typesolver.testdata;
 
+import static org.javacomp.typesolver.testdata.other.BaseClass.STATIC_FIELD;
+import static org.javacomp.typesolver.testdata.other.BaseClass.staticMethod;
+import static org.javacomp.typesolver.testdata.ondemand.OnDemand.*;
+
 public class TestExpression<T> {
   public static final InnerA staticInnerA = new InnerA();
 

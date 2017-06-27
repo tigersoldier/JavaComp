@@ -204,15 +204,16 @@ public class TypeSolver {
                     module));
   }
 
-  public Optional<Entity> findClassInModule(List<String> qualifiers, Module module) {
+  public Optional<ClassEntity> findClassInModule(List<String> qualifiers, Module module) {
     return findClassInModule(qualifiers, module, false /* useCanonicalName */);
   }
 
-  private Optional<Entity> findClassInModule(
+  private Optional<ClassEntity> findClassInModule(
       List<String> qualifiers, Module module, boolean useCanonicalName) {
     Optional<Entity> classInModule =
         findClassOrPackageInModule(qualifiers, module, useCanonicalName);
-    return classInModule.filter(entity -> entity instanceof ClassEntity);
+    return classInModule.map(
+        entity -> (entity instanceof ClassEntity) ? (ClassEntity) entity : null);
   }
 
   /**
@@ -392,7 +393,7 @@ public class TypeSolver {
       String name, FileScope fileScope, Module module, Set<Entity.Kind> allowedKinds) {
     ImmutableList.Builder<Entity> builder = new ImmutableList.Builder<>();
     if (!Sets.intersection(allowedKinds, ClassEntity.ALLOWED_KINDS).isEmpty()) {
-      Optional<Entity> foundClass = findClassInFile(name, fileScope, module);
+      Optional<ClassEntity> foundClass = findClassInFile(name, fileScope, module);
       if (foundClass.isPresent()) {
         builder.add(foundClass.get());
       }
@@ -542,17 +543,17 @@ public class TypeSolver {
     return builder.build();
   }
 
-  private Optional<Entity> findClassInFile(String name, FileScope fileScope, Module module) {
+  private Optional<ClassEntity> findClassInFile(String name, FileScope fileScope, Module module) {
     Collection<Entity> entities = fileScope.getMemberEntities().get(name);
     for (Entity entity : entities) {
       if (entity instanceof ClassEntity) {
-        return Optional.of(entity);
+        return Optional.of((ClassEntity) entity);
       }
     }
     // Not declared in the file, try imported classes.
     Optional<List<String>> importedClass = fileScope.getImportedClass(name);
     if (importedClass.isPresent()) {
-      Optional<Entity> classInModule =
+      Optional<ClassEntity> classInModule =
           findClassInModule(importedClass.get(), module, true /* useCanonicalName */);
       if (classInModule.isPresent()) {
         return classInModule;
@@ -567,7 +568,7 @@ public class TypeSolver {
             findClassOrPackageInClassOrPackage(
                 name, classOrPackage.get().getChildScope(), module, true /* useCanonicalName */);
         if (foundClassOrPacakge.isPresent() && foundClassOrPacakge.get() instanceof ClassEntity) {
-          return foundClassOrPacakge;
+          return foundClassOrPacakge.map(entity -> (ClassEntity) entity);
         }
       }
     }
@@ -587,14 +588,68 @@ public class TypeSolver {
 
   private List<MethodEntity> findImportedMethodsInFile(
       String name, FileScope fileScope, Module module) {
-    // TODO: handle static import.
-    return ImmutableList.of();
+    Optional<ClassEntity> classOfStaticMember = solveClassOfStaticImport(name, fileScope, module);
+    if (classOfStaticMember.isPresent()) {
+      return classOfStaticMember
+          .get()
+          .getMethodsWithName(name)
+          .stream()
+          .filter(methodEntity -> methodEntity.isStatic())
+          .collect(ImmutableList.toImmutableList());
+    }
+
+    ImmutableList.Builder<MethodEntity> builder = new ImmutableList.Builder<>();
+
+    for (List<String> qualifiers : fileScope.getOnDemandStaticImportQualifiers()) {
+      ClassEntity classEntity =
+          findClassInModule(qualifiers, module, true /* useCanonicalName */).orElse(null);
+      if (classEntity == null) {
+        continue;
+      }
+
+      for (MethodEntity methodEntity : classEntity.getMethodsWithName(name)) {
+        if (methodEntity.isStatic()) {
+          builder.add(methodEntity);
+        }
+      }
+    }
+    return builder.build();
   }
 
   private Optional<VariableEntity> findImportedFieldInFile(
       String name, FileScope fileScope, Module module) {
-    // TODO: handle static import.
+
+    Optional<ClassEntity> classOfStaticMember = solveClassOfStaticImport(name, fileScope, module);
+    if (classOfStaticMember.isPresent()) {
+      return classOfStaticMember.get().getFieldWithName(name).filter(field -> field.isStatic());
+    }
+
+    for (List<String> qualifiers : fileScope.getOnDemandStaticImportQualifiers()) {
+      ClassEntity classEntity =
+          findClassInModule(qualifiers, module, true /* useCanonicalName */).orElse(null);
+      if (classEntity == null) {
+        continue;
+      }
+
+      Optional<VariableEntity> field = classEntity.getFieldWithName(name);
+      if (field.isPresent() && field.get().isStatic()) {
+        return field;
+      }
+    }
     return Optional.empty();
+  }
+
+  private Optional<ClassEntity> solveClassOfStaticImport(
+      String name, FileScope fileScope, Module module) {
+    Optional<List<String>> explicitImport = fileScope.getImportedStaticMember(name);
+    if (!(explicitImport.isPresent())) {
+      return Optional.empty();
+    }
+
+    return findClassInModule(
+        explicitImport.get().subList(0, explicitImport.get().size() - 1),
+        module,
+        true /* useCanonicalName */);
   }
 
   private Optional<Entity> findClassInPackage(String name, PackageScope packageScope) {
@@ -936,7 +991,8 @@ public class TypeSolver {
 
       if (!javaLangObjectAdded) {
         javaLangObjectAdded = true;
-        Optional<Entity> javaLangObject = findClassInModule(JAVA_LANG_OBJECT_QUALIFIERS, module);
+        Optional<ClassEntity> javaLangObject =
+            findClassInModule(JAVA_LANG_OBJECT_QUALIFIERS, module);
         if (javaLangObject.isPresent()) {
           return EntityWithContext.simpleBuilder()
               .setEntity(javaLangObject.get())

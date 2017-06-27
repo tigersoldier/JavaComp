@@ -19,7 +19,8 @@ public class FileContentFixer {
           TokenKind.NEW,
           TokenKind.THIS,
           TokenKind.SUPER,
-          TokenKind.CLASS);
+          TokenKind.CLASS,
+          TokenKind.STAR);
   private final ParserContext parserContext;
 
   public FileContentFixer(ParserContext parserContext) {
