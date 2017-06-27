@@ -52,7 +52,7 @@ public class CompletorTest {
     FileContentFixer fileContentFixer = new FileContentFixer(parserContext);
 
     int completionPoint = testDataContent.indexOf(COMPLETION_POINT_MARK);
-    assertThat(completionPoint).isGreaterThan(-1);
+    assertThat(completionPoint).named("Index of " + COMPLETION_POINT_MARK).isGreaterThan(-1);
 
     LineMap lineMap = parserContext.tokenize(testDataContent, false).getLineMap();
     // Completion line and column numbers are 0-based, while LineMap values are 1-based.
@@ -250,6 +250,18 @@ public class CompletorTest {
                 completeWithContent(
                     "CompleteInMethod.java", "((BelowClass) above)./** @complete */")))
         .contains("belowField");
+  }
+
+  @Test
+  public void completeImportedClassAndMembers() {
+    assertThat(getCandidateNames(completeTestFile("CompleteImported.java")))
+        .containsAllOf(
+            "staticField",
+            "staticMethid",
+            "ExplicitInnerClass",
+            "onDemandStaticField",
+            "onDemandStaticMethod",
+            "OnDemandInnerClass");
   }
 
   private void assertCompletion(String filename, String toComplete, String... expectedCandidates) {

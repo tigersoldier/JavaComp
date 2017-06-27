@@ -645,9 +645,13 @@ public class TypeSolver {
     if (!(explicitImport.isPresent())) {
       return Optional.empty();
     }
+    return solveClassOfStaticImport(explicitImport.get(), fileScope, module);
+  }
 
+  public Optional<ClassEntity> solveClassOfStaticImport(
+      List<String> qualifiersOfStaticField, FileScope fileScope, Module module) {
     return findClassInModule(
-        explicitImport.get().subList(0, explicitImport.get().size() - 1),
+        qualifiersOfStaticField.subList(0, qualifiersOfStaticField.size() - 1),
         module,
         true /* useCanonicalName */);
   }
