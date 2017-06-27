@@ -398,9 +398,21 @@ public class AstScannerTest {
   }
 
   @Test
-  public void testOnDemandClassImport() {
+  public void explicitStaticImport() {
+    Truth8.assertThat(fileScope.getImportedStaticMember("baa"))
+        .hasValue(ImmutableList.of("foo", "Bar", "baa"));
+  }
+
+  @Test
+  public void onDemandClassImport() {
     assertThat(fileScope.getOnDemandClassImportQualifiers())
         .containsExactly(ImmutableList.of("foo", "bar"), ImmutableList.of("foo", "bar", "baz"));
+  }
+
+  @Test
+  public void onDemandStaticImport() {
+    assertThat(fileScope.getOnDemandStaticImportQualifiers())
+        .containsExactly(ImmutableList.of("foo", "Bar", "Baz"));
   }
 
   @Test

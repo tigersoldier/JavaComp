@@ -24,7 +24,9 @@ public class FileScope implements EntityScope {
   private final Multimap<String, Entity> globalEntities;
   private final ImmutableList<String> packageQualifiers;
   private final Map<String, List<String>> importedClasses;
+  private final Map<String, List<String>> importedStaticMembers;
   private final List<List<String>> onDemandClassImportQualifiers;
+  private final List<List<String>> onDemandStaticImportQualifiers;
   private final JCCompilationUnit compilationUnit;
   private RangeMap<Integer, EntityScope> scopeRangeMap = null;
   private LineMap adjustedLineMap = null;
@@ -36,7 +38,9 @@ public class FileScope implements EntityScope {
     this.packageQualifiers = ImmutableList.copyOf(packageQualifiers);
     this.globalEntities = HashMultimap.create();
     this.importedClasses = new HashMap<>();
+    this.importedStaticMembers = new HashMap<>();
     this.onDemandClassImportQualifiers = new ArrayList<>();
+    this.onDemandStaticImportQualifiers = new ArrayList<>();
     this.compilationUnit = compilationUnit;
   }
 
@@ -53,11 +57,26 @@ public class FileScope implements EntityScope {
     return ImmutableList.copyOf(importedClasses.values());
   }
 
+  public Optional<List<String>> getImportedStaticMember(String simpleName) {
+    return Optional.ofNullable(importedStaticMembers.get(simpleName));
+  }
+
+  public List<List<String>> getAllImportedStaticMembers() {
+    return ImmutableList.copyOf(importedStaticMembers.values());
+  }
+
   public void addImportedClass(List<String> qualifiers) {
     if (qualifiers.isEmpty()) {
       return;
     }
     importedClasses.put(qualifiers.get(qualifiers.size() - 1), qualifiers);
+  }
+
+  public void addImportedStaticMembers(List<String> qualifiers) {
+    if (qualifiers.isEmpty()) {
+      return;
+    }
+    importedStaticMembers.put(qualifiers.get(qualifiers.size() - 1), qualifiers);
   }
 
   /**
@@ -82,6 +101,30 @@ public class FileScope implements EntityScope {
       return;
     }
     onDemandClassImportQualifiers.add(ImmutableList.copyOf(qualifiers));
+  }
+
+  /**
+   * Returns a list of all on-demand imported qualifiers for static members added by {@link
+   * #addOnDemandStaticImport}.
+   *
+   * <p>Similar to {@link #addOnDemandStaticImport}, the returned qualifiers do not include the
+   * trailing *.
+   */
+  public List<List<String>> getOnDemandStaticImportQualifiers() {
+    return ImmutableList.copyOf(onDemandStaticImportQualifiers);
+  }
+
+  /**
+   * Adds an on-demand import for static members (e.g. {@code import static foo.Bar.*}).
+   *
+   * @param qualifiers the imported package qualifiers without *. For example, if the import
+   *     statment is {@code import static foo.Bar.*}, then the qualifiers are {@code ['foo', 'Bar']}
+   */
+  public void addOnDemandStaticImport(List<String> qualifiers) {
+    if (qualifiers.isEmpty()) {
+      return;
+    }
+    onDemandStaticImportQualifiers.add(ImmutableList.copyOf(qualifiers));
   }
 
   @Override

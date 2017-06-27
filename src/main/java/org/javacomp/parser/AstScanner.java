@@ -97,9 +97,17 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
         continue;
       }
       if (ON_DEMAND_IMPORT_WILDCARD.equals(qualifiers.get(qualifiers.size() - 1))) {
-        this.fileScope.addOnDemandClassImport(qualifiers.subList(0, qualifiers.size() - 1));
+        if (importTree.isStatic()) {
+          this.fileScope.addOnDemandStaticImport(qualifiers.subList(0, qualifiers.size() - 1));
+        } else {
+          this.fileScope.addOnDemandClassImport(qualifiers.subList(0, qualifiers.size() - 1));
+        }
       } else {
-        this.fileScope.addImportedClass(qualifiers);
+        if (importTree.isStatic()) {
+          this.fileScope.addImportedStaticMembers(qualifiers);
+        } else {
+          this.fileScope.addImportedClass(qualifiers);
+        }
       }
     }
 

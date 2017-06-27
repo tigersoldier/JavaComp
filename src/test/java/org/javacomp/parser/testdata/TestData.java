@@ -1,5 +1,8 @@
 package test.data;
 
+import static foo.Bar.baa;
+import static foo.Bar.Baz.*;
+
 import foo.Bar.Baz;
 import foo.bar.*;
 import foo.bar.baz.*;
