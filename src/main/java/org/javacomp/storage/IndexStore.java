@@ -29,13 +29,12 @@ import org.javacomp.logging.JLogger;
 import org.javacomp.model.ClassEntity;
 import org.javacomp.model.Entity;
 import org.javacomp.model.EntityScope;
+import org.javacomp.model.EntityWithContext;
 import org.javacomp.model.FileScope;
 import org.javacomp.model.MethodEntity;
 import org.javacomp.model.Module;
 import org.javacomp.model.PrimitiveEntity;
-import org.javacomp.model.SolvedArrayType;
-import org.javacomp.model.SolvedReferenceType;
-import org.javacomp.model.SolvedType;
+import org.javacomp.model.SolvedTypeParameters;
 import org.javacomp.model.TypeArgument;
 import org.javacomp.model.TypeParameter;
 import org.javacomp.model.TypeReference;
@@ -342,25 +341,38 @@ public class IndexStore {
 
   private SerializedType serializeTypeReference(TypeReference type, EntityScope baseScope) {
     SerializedType ret = new SerializedType();
-    Optional<SolvedType> optionalSolvedType;
+    Optional<EntityWithContext> optionalEntityWithContext;
+    TypeReference typeToSolve = type;
+    if (!type.getTypeArguments().isEmpty()) {
+      // Use raw type to solve the full name, since the type arguments will be
+      // solved by serializeTypeArgument().
+      typeToSolve = type.toBuilder().setTypeArguments(ImmutableList.of()).build();
+    }
     try {
-      optionalSolvedType = typeSolver.solve(type, baseScope, module);
+      SolvedTypeParameters typeParametersFromScope =
+          typeSolver.solveTypeParametersFromScope(baseScope, module);
+      if (type.getFullName().size() == 1
+          && typeParametersFromScope.getTypeParameter(type.getSimpleName()).isPresent()) {
+        // The type name is a type variable defined by a type parameter in the
+        // enclosing scopes. It should not be solved here.
+        optionalEntityWithContext = Optional.empty();
+      } else {
+        optionalEntityWithContext =
+            typeSolver
+                .solve(type, typeParametersFromScope, baseScope, module)
+                .map(solvedType -> EntityWithContext.from(solvedType).build());
+      }
     } catch (Throwable t) {
       logger.warning(t, "Error on solving type %s in %s", type, baseScope);
-      optionalSolvedType = Optional.empty();
+      optionalEntityWithContext = Optional.empty();
     }
-    if (optionalSolvedType.isPresent()) {
-      boolean isArray = false;
-      SolvedType solvedType = optionalSolvedType.get();
-      while (solvedType instanceof SolvedArrayType) {
-        isArray = true;
-        solvedType = ((SolvedArrayType) solvedType).getBaseType();
-      }
-      if (solvedType instanceof SolvedReferenceType) {
-        ret.fullName = ((SolvedReferenceType) solvedType).getEntity().getQualifiedName();
-      } else {
-        ret.fullName = QUALIFIER_JOINER.join(type.getFullName());
-      }
+    if (optionalEntityWithContext.isPresent()
+        && Objects.equals(
+            optionalEntityWithContext.get().getEntity().getSimpleName(),
+            typeToSolve.getSimpleName())) {
+      EntityWithContext entityWithContext = optionalEntityWithContext.get();
+      boolean isArray = entityWithContext.getArrayLevel() > 0;
+      ret.fullName = entityWithContext.getEntity().getQualifiedName();
     } else {
       ret.fullName = QUALIFIER_JOINER.join(type.getFullName());
     }

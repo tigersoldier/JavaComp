@@ -38,8 +38,10 @@ public class IndexStoreTest {
   private static final String TEST_CLASS_FILE = "TestClass.java";
   private static final String OTHER_CLASS_FILE = "OtherClass.java";
   private static final String OTHER_PACKAGE_CLASS_FILE = "other/OtherPackageClass.java";
+  private static final String FAKE_OBJECT_FILE = "Object.java";
   private static final List<String> ALL_FILES =
-      ImmutableList.of(TEST_CLASS_FILE, OTHER_CLASS_FILE, OTHER_PACKAGE_CLASS_FILE);
+      ImmutableList.of(
+          TEST_CLASS_FILE, OTHER_CLASS_FILE, OTHER_PACKAGE_CLASS_FILE, FAKE_OBJECT_FILE);
 
   private Module module = TestUtil.parseFiles(TEST_DATA_DIR, ALL_FILES);
   private IndexStore indexStore = new IndexStore();
@@ -153,7 +155,7 @@ public class IndexStoreTest {
       TypeReference deserialized, TypeReference original, Deque<String> qualifiedName) {
     assertThat(QUALIFIER_JOINER.join(deserialized.getFullName()))
         .named("Type of " + QUALIFIER_JOINER.join(qualifiedName))
-        .contains(QUALIFIER_JOINER.join(original.getFullName()));
+        .endsWith(QUALIFIER_JOINER.join(original.getFullName()));
     assertThat(deserialized.getTypeArguments()).hasSize(original.getTypeArguments().size());
     for (int i = 0; i < deserialized.getTypeArguments().size(); i++) {
       TypeArgument deserializedTypeVar = deserialized.getTypeArguments().get(i);

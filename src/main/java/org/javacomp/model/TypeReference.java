@@ -44,6 +44,8 @@ public abstract class TypeReference implements TypeArgument {
     return new AutoValue_TypeReference.Builder();
   }
 
+  public abstract Builder toBuilder();
+
   public String getSimpleName() {
     ImmutableList<String> fullName = getFullName();
     if (fullName.isEmpty()) {
