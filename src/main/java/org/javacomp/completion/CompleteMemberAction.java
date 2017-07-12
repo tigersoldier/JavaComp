@@ -55,11 +55,8 @@ class CompleteMemberAction implements CompletionAction {
     }
 
     if (solvedEntityWithContext.get().getEntity() instanceof ClassEntity) {
-      Collection<Entity> classMembers =
-          new ClassMemberCompletor(typeSolver, expressionSolver)
-              .getClassMembers(solvedEntityWithContext.get(), positionContext.getModule())
-              .values();
-      return createCompletionCandidates(classMembers);
+      return new ClassMemberCompletor(typeSolver, expressionSolver)
+          .getClassMembers(solvedEntityWithContext.get(), positionContext.getModule());
     }
 
     return createCompletionCandidates(

@@ -2,8 +2,7 @@ package org.javacomp.completion;
 
 import static com.google.common.base.Preconditions.checkState;
 
-import com.google.common.collect.ImmutableMultimap;
-import com.google.common.collect.Multimap;
+import java.util.List;
 import org.javacomp.model.ClassEntity;
 import org.javacomp.model.Entity;
 import org.javacomp.model.EntityWithContext;
@@ -20,8 +19,8 @@ class ClassMemberCompletor {
     this.expressionSolver = expressionSolver;
   }
 
-  Multimap<String, Entity> getClassMembers(EntityWithContext actualClass, Module module) {
-    ImmutableMultimap.Builder<String, Entity> builder = new ImmutableMultimap.Builder<>();
+  List<CompletionCandidate> getClassMembers(EntityWithContext actualClass, Module module) {
+    CompletionCandidateListBuilder builder = new CompletionCandidateListBuilder();
     for (EntityWithContext classInHierachy : typeSolver.classHierarchy(actualClass, module)) {
       checkState(
           classInHierachy.getEntity() instanceof ClassEntity,
@@ -29,13 +28,13 @@ class ClassMemberCompletor {
           classInHierachy,
           actualClass);
       if (actualClass.isInstanceContext()) {
-        builder.putAll(((ClassEntity) classInHierachy.getEntity()).getMemberEntities());
+        builder.addEntities(((ClassEntity) classInHierachy.getEntity()).getMemberEntities());
       } else {
         // Non instance context only allows non instance members.
         for (Entity member :
             ((ClassEntity) classInHierachy.getEntity()).getMemberEntities().values()) {
           if (!member.isInstanceMember()) {
-            builder.put(member.getSimpleName(), member);
+            builder.addEntity(member);
           }
         }
       }

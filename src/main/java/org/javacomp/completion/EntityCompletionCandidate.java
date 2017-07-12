@@ -115,6 +115,10 @@ class EntityCompletionCandidate implements CompletionCandidate {
     }
   }
 
+  public Entity getEntity() {
+    return entity;
+  }
+
   private static void appendTypeParameters(StringBuilder sb, List<TypeParameter> typeParameters) {
     sb.append("<");
     boolean firstParam = true;

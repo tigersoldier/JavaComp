@@ -39,3 +39,11 @@ java_test(
         ":tests",
     ],
 )
+
+java_test(
+    name = "EntityShadowingListBuilderTest",
+    size = "small",
+    runtime_deps = [
+        ":tests",
+    ],
+)

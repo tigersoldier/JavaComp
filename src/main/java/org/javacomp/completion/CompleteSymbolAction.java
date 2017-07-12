@@ -1,6 +1,5 @@
 package org.javacomp.completion;
 
-import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Multimap;
@@ -42,37 +41,35 @@ class CompleteSymbolAction implements CompletionAction {
 
   @Override
   public List<CompletionCandidate> getCompletionCandidates(PositionContext positionContext) {
-    Multimap<String, CompletionCandidate> candidateMap = HashMultimap.create();
-    addKeywords(candidateMap);
+    CompletionCandidateListBuilder builder = new CompletionCandidateListBuilder();
+    addKeywords(builder);
     for (EntityScope currentScope = positionContext.getScopeAtPosition();
         currentScope != null;
         currentScope = currentScope.getParentScope().orElse(null)) {
       logger.fine("Adding member entities in scope: %s", currentScope);
       if (currentScope instanceof ClassEntity) {
-        addEntries(
-            candidateMap,
+        builder.addEntities(
             classMemberCompletor.getClassMembers(
                 EntityWithContext.ofEntity((ClassEntity) currentScope),
                 positionContext.getModule()));
       } else if (currentScope instanceof FileScope) {
         FileScope fileScope = (FileScope) currentScope;
-        addEntries(candidateMap, getPackageMembers(fileScope, positionContext.getModule()));
-        addImportedEntities(candidateMap, fileScope, positionContext.getModule());
+        builder.addEntities(getPackageMembers(fileScope, positionContext.getModule()));
+        addImportedEntities(builder, fileScope, positionContext.getModule());
       } else {
-        addEntries(candidateMap, currentScope.getMemberEntities());
+        builder.addEntities(currentScope.getMemberEntities());
       }
     }
-    addEntries(
-        candidateMap,
+    builder.addEntities(
         typeSolver.getAggregateRootPackageScope(positionContext.getModule()).getMemberEntities());
 
     Optional<PackageScope> javaLangPackage =
         typeSolver.findPackageInModule(JAVA_LANG_QUALIFIERS, positionContext.getModule());
     if (javaLangPackage.isPresent()) {
-      addEntries(candidateMap, javaLangPackage.get().getMemberEntities());
+      builder.addEntities(javaLangPackage.get().getMemberEntities());
     }
 
-    return ImmutableList.copyOf(candidateMap.values());
+    return builder.build();
   }
 
   private Multimap<String, Entity> getPackageMembers(FileScope fileScope, Module module) {
@@ -81,13 +78,12 @@ class CompleteSymbolAction implements CompletionAction {
   }
 
   private void addImportedEntities(
-      Multimap<String, CompletionCandidate> candidateMap, FileScope fileScope, Module module) {
+      CompletionCandidateListBuilder builder, FileScope fileScope, Module module) {
     // import foo.Bar;
     for (List<String> fullClassName : fileScope.getAllImportedClasses()) {
       String simpleName = fullClassName.get(fullClassName.size() - 1);
-      if (!candidateMap.containsKey(simpleName)) {
-        candidateMap.put(
-            simpleName,
+      if (!builder.hasCandidateWithName(simpleName)) {
+        builder.addCandidate(
             SimpleCompletionCandidate.builder()
                 .setName(simpleName)
                 .setKind(CompletionCandidate.Kind.CLASS)
@@ -109,25 +105,22 @@ class CompleteSymbolAction implements CompletionAction {
         }
 
         if (member instanceof MethodEntity || member instanceof VariableEntity) {
-          addEntity(candidateMap, member);
+          builder.addEntity(member);
         }
       }
     }
 
     // import foo.Bar.*;
     addOnDemandImportedEntities(
-        candidateMap,
-        fileScope.getOnDemandClassImportQualifiers(),
-        module,
-        ClassEntity.ALLOWED_KINDS);
+        builder, fileScope.getOnDemandClassImportQualifiers(), module, ClassEntity.ALLOWED_KINDS);
 
     // import static foo.Bar.*;
     addOnDemandImportedEntities(
-        candidateMap, fileScope.getOnDemandStaticImportQualifiers(), module, METHOD_VARIABLE_KINDS);
+        builder, fileScope.getOnDemandStaticImportQualifiers(), module, METHOD_VARIABLE_KINDS);
   }
 
   private void addOnDemandImportedEntities(
-      Multimap<String, CompletionCandidate> candidateMap,
+      CompletionCandidateListBuilder builder,
       List<List<String>> importedQualifiers,
       Module module,
       Set<Entity.Kind> allowedKinds) {
@@ -140,51 +133,16 @@ class CompleteSymbolAction implements CompletionAction {
 
       for (Entity member : enclosingClassOrPackage.getChildScope().getMemberEntities().values()) {
         if (member.isStatic() && allowedKinds.contains(member.getKind())) {
-          addEntity(candidateMap, member);
+          builder.addEntity(member);
         }
       }
     }
   }
 
-  private void addKeywords(Multimap<String, CompletionCandidate> candidateMap) {
+  private void addKeywords(CompletionCandidateListBuilder builder) {
     // TODO: add only keywords that are available for the current context.
     for (KeywordCompletionCandidate keyword : KeywordCompletionCandidate.values()) {
-      candidateMap.put(keyword.getName(), keyword);
+      builder.addCandidate(keyword);
     }
-  }
-
-  private void addEntries(
-      Multimap<String, CompletionCandidate> target, Multimap<String, Entity> source) {
-    for (Entity entity : source.values()) {
-      addEntity(target, entity);
-    }
-  }
-
-  private void addEntity(Multimap<String, CompletionCandidate> target, Entity entity) {
-    if (entityExist(target, entity)) {
-      return;
-    }
-    target.put(entity.getSimpleName(), new EntityCompletionCandidate(entity));
-  }
-
-  private boolean entityExist(Multimap<String, CompletionCandidate> candidateMap, Entity entity) {
-    if (!candidateMap.containsKey(entity.getSimpleName())) {
-      return false;
-    }
-
-    if (entity.getKind() == Entity.Kind.METHOD) {
-      // Method overloads don't conflict with each other.
-      //
-      // TODO: Handler non overloading cases: shadowing static imports, overriding base class methods
-      return false;
-    }
-
-    for (CompletionCandidate candidate : candidateMap.get(entity.getSimpleName())) {
-      if (candidate.getKind() == EntityCompletionCandidate.toCandidateKind(entity.getKind())) {
-        return true;
-      }
-    }
-
-    return false;
   }
 }
