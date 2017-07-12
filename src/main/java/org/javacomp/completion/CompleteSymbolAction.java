@@ -22,7 +22,7 @@ import org.javacomp.typesolver.ExpressionSolver;
 import org.javacomp.typesolver.TypeSolver;
 
 /** An action that returns any visible entities as completion candidates. */
-class CompleteEntityAction implements CompletionAction {
+class CompleteSymbolAction implements CompletionAction {
   private static final JLogger logger = JLogger.createForEnclosingClass();
 
   private static final List<String> JAVA_LANG_QUALIFIERS = ImmutableList.of("java", "lang");
@@ -35,7 +35,7 @@ class CompleteEntityAction implements CompletionAction {
   private final TypeSolver typeSolver;
   private final ClassMemberCompletor classMemberCompletor;
 
-  CompleteEntityAction(TypeSolver typeSolver, ExpressionSolver expressionSolver) {
+  CompleteSymbolAction(TypeSolver typeSolver, ExpressionSolver expressionSolver) {
     this.typeSolver = typeSolver;
     this.classMemberCompletor = new ClassMemberCompletor(typeSolver, expressionSolver);
   }

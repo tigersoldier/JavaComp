@@ -57,7 +57,7 @@ public class Completor {
     if (treePath.getLeaf() instanceof MemberSelectTree) {
       action = new CompleteMemberAction(treePath, typeSolver, expressionSolver);
     } else {
-      action = new CompleteEntityAction(typeSolver, expressionSolver);
+      action = new CompleteSymbolAction(typeSolver, expressionSolver);
     }
 
     // TODO: filter and sort candidates by query.
