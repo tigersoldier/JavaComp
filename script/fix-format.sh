@@ -81,17 +81,27 @@ run_google_java_format() {
     return 0
   else
     local _ret=0
+    local _srcdir=$(pwd)
+    local _tmpdir=$(mktemp -d)
+    pushd "$_tmpdir" > /dev/null
     for file in $@; do
-      if [[ -f $file ]]; then
-          google-java-format $file | cmp -s $file -
-          if [[ $? -ne 0 ]]; then
-              if [[ $verbose = true ]];then
-                  echo $file
-              fi
-              local _ret=1
-          fi
+      if [[ -f "$_srcdir/$file" ]]; then
+          local _dirname=$(dirname "$file")
+          mkdir -p "$_dirname"
+          cp "$_srcdir/$file" "$_dirname"
       fi
     done
+    google-java-format --replace "$@"
+    for file in $@; do
+        cmp -s "$file" "$_srcdir/$file"
+        if [[ $? -ne 0 ]]; then
+            if [[ $verbose = true ]];then
+                echo $file
+            fi
+            local _ret=1
+        fi
+    done
+    popd > /dev/null
   fi
   return $_ret
 }
