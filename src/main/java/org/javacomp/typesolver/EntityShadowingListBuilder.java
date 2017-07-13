@@ -3,8 +3,8 @@ package org.javacomp.typesolver;
 import com.google.common.collect.ImmutableList;
 import java.util.ArrayList;
 import java.util.function.Function;
-import org.javacomp.model.Entity;
 import javax.annotation.Nullable;
+import org.javacomp.model.Entity;
 
 /**
  * A build of {@link List} that ignores a new element the list if any {@link Entity} from existing
@@ -22,9 +22,9 @@ public class EntityShadowingListBuilder<E> {
   private final Function<E, Entity> getEntityFunction;
 
   /**
-   * @param getEntityFunction a function to get an {@link Entity} from an
-   *     element for shadowing check. If the function returns {@code null}, the
-   *     element won't shadow any other element and won't be shadowed
+   * @param getEntityFunction a function to get an {@link Entity} from an element for shadowing
+   *     check. If the function returns {@code null}, the element won't shadow any other element and
+   *     won't be shadowed
    */
   public EntityShadowingListBuilder(Function<E, Entity> getEntityFunction) {
     this.elements = new ArrayList<>();

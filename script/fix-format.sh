@@ -109,7 +109,7 @@ run_formatters() {
     local java_files=$(git diff --name-only HEAD | grep -E '\.java$' | grep -v "testdata")
   else
     local bazel_files=$(find . | grep -E '(\bBUILD$|\bWORKSPACE$)')
-    local java_files=$(find . -name "*.java" | grep -v "testdata")
+    local java_files=$(find . -name "*.java" | grep -v -E "testdata|typeindeces|openjdk_src")
   fi
 
   run_buildifier $bazel_files
