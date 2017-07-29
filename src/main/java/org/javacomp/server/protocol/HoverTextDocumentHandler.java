@@ -101,8 +101,12 @@ public class HoverTextDocumentHandler extends RequestHandler<TextDocumentPositio
       sb.append(" ");
     }
 
-    sb.append(getSimpleQualifier(method.getQualifiers()));
-    sb.append(method.getSimpleName());
+    appendSimpleQualifiers(sb, method.getQualifiers());
+    // Constructor name is always <init>, which should not be shown.
+    if (!method.isConstructor()) {
+      sb.append(".");
+      sb.append(method.getSimpleName());
+    }
     sb.append("(");
     boolean firstParameter = true;
     for (VariableEntity parameter : method.getParameters()) {
@@ -125,35 +129,47 @@ public class HoverTextDocumentHandler extends RequestHandler<TextDocumentPositio
       sb.append(" ");
     }
 
-    sb.append(getSimpleQualifier(variable.getQualifiers()));
+    if (appendSimpleQualifiers(sb, variable.getQualifiers())) {
+      sb.append(".");
+    }
     sb.append(variable.getSimpleName());
     return sb.toString();
   }
 
-  private String getSimpleQualifier(List<String> qualifiers) {
+  /**
+   * Append simple qualifiers to a string builder.
+   *
+   * <p>If any element of {@code qualifiers} starts with a uppercase letter, the first element with
+   * uppercase letter and all elements follwing it will be appended to {@code sb}, separated by
+   * dots. Otherwise, only the last element of {@code qualifiers} is appended, if it's not empty.
+   *
+   * @return {@code true} if there is at least one element appended to {@code sb}, e.g. {@code
+   *     qualifiers} is not empty
+   */
+  private boolean appendSimpleQualifiers(StringBuilder sb, List<String> qualifiers) {
     if (qualifiers.isEmpty()) {
-      return "";
+      return false;
     }
 
-    StringBuilder sb = new StringBuilder();
     boolean shouldAppend = false;
     for (String qualifier : qualifiers) {
       if (!shouldAppend && qualifier.length() > 0 && Character.isUpperCase(qualifier.charAt(0))) {
         shouldAppend = true;
+        sb.append(qualifier);
+        continue;
       }
       if (shouldAppend) {
-        sb.append(qualifier);
         sb.append(".");
+        sb.append(qualifier);
       }
     }
 
     if (!shouldAppend) {
       // We got lower case class name :( At least append the last qualifier.
       sb.append(qualifiers.get(qualifiers.size() - 1));
-      sb.append(".");
     }
 
-    return sb.toString();
+    return true;
   }
 
   private String formatClass(ClassEntity classEntity) {

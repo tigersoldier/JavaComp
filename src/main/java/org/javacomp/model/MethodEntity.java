@@ -11,6 +11,8 @@ import org.javacomp.model.util.QualifiedNames;
 
 /** Represents a method. */
 public class MethodEntity extends Entity implements EntityScope {
+  private static final String CONSTRUCTOR_NAME = "<init>";
+
   private final TypeReference returnType;
   private final ImmutableList<VariableEntity> parameters;
   private final ImmutableList<TypeParameter> typeParameters;
@@ -80,6 +82,10 @@ public class MethodEntity extends Entity implements EntityScope {
 
   public ClassEntity getParentClass() {
     return classEntity;
+  }
+
+  public boolean isConstructor() {
+    return CONSTRUCTOR_NAME.equals(getSimpleName());
   }
 
   @Override

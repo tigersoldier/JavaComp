@@ -4,6 +4,8 @@ import org.javacomp.reference.testdata.other.OtherPackageClass;
 
 public class TestClass {
   public class InnerClassA {
+    public InnerClassA() {}
+
     public InnerClassB getTestBInA() {}
 
     public InnerClassB testBInA;
@@ -53,5 +55,9 @@ public class TestClass {
     overloadMethod(innerA, innerAParam.testClassInA);
     overloadMethod(getInnerA());
     overloadMethod();
+    InnerClassA newA = new InnerClassA();
+    TestClass newTestClass = new TestClass();
+    InnerClassB newB = newTestClass.new InnerClassB();
+    InnerClassB newB = newTestClass.innerA.testClassInA.new InnerClassA();
   }
 }

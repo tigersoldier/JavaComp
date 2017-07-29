@@ -37,6 +37,8 @@ public class TestExpression<T> {
 
     public InnerA() {}
 
+    public InnerA(int arg) {}
+
     public A typeParameterA;
     public A getTypeParameterA();
 

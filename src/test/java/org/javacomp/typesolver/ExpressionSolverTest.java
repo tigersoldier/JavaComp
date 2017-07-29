@@ -310,6 +310,16 @@ public class ExpressionSolverTest {
   }
 
   @Test
+  public void solveNewClassConstructorDefinition() {
+    MethodEntity emptyConstructor = (MethodEntity) solveDefinition("new InnerA()", methodScope);
+    assertThat(emptyConstructor.isConstructor()).named("is constructor").isTrue();
+    assertThat(emptyConstructor.getParameters()).named("constructor parameter").isEmpty();
+    MethodEntity intConstructor = (MethodEntity) solveDefinition("new InnerA(42)", methodScope);
+    assertThat(intConstructor.isConstructor()).named("is constructor").isTrue();
+    assertThat(intConstructor.getParameters()).named("constructor parameter").hasSize(1);
+  }
+
+  @Test
   public void solveMethodWithLambdaAsParameter() {
     assertThat(solveDefinition("lambdaCall((arg) -> {return;})", methodScope))
         .isSameAs(lambdaCallMethod);

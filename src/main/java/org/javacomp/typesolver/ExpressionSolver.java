@@ -121,10 +121,18 @@ public class ExpressionSolver {
     Entity entity = entityWithContext.getEntity();
     if (entity instanceof MethodEntity) {
       MethodEntity methodEntity = (MethodEntity) entity;
-      return typeSolver
-          .solve(methodEntity.getReturnType(), solvedTypeParameters, methodEntity, module)
-          .map(solvedType -> EntityWithContext.from(solvedType).setInstanceContext(true).build())
-          .orElse(null);
+      if (methodEntity.isConstructor()) {
+        return entityWithContext
+            .toBuilder()
+            .setEntity(methodEntity.getParentClass())
+            .setInstanceContext(true)
+            .build();
+      } else {
+        return typeSolver
+            .solve(methodEntity.getReturnType(), solvedTypeParameters, methodEntity, module)
+            .map(solvedType -> EntityWithContext.from(solvedType).setInstanceContext(true).build())
+            .orElse(null);
+      }
     }
     if (entity instanceof VariableEntity) {
       VariableEntity variableEntity = (VariableEntity) entity;
@@ -192,12 +200,46 @@ public class ExpressionSolver {
       } else {
         baseClassEntities = scan(node.getIdentifier(), null);
       }
-      return applyTypeArguments(
-          baseClassEntities
+
+      if (baseClassEntities.isEmpty()) {
+        return ImmutableList.of();
+      }
+      EntityWithContext entityWithContext = baseClassEntities.get(0);
+      if (!(entityWithContext.getEntity() instanceof ClassEntity)) {
+        logger.warning(
+            "Resolved entity for new class %s is not an entity: %s.",
+            node, entityWithContext.getEntity());
+        return ImmutableList.of();
+      }
+
+      // Get constructors from the class entity and sort them based on the parameters.
+
+      List<EntityWithContext> constructors =
+          ((ClassEntity) entityWithContext.getEntity())
+              .getConstructors()
               .stream()
-              .map(baseClass -> baseClass.toBuilder().setInstanceContext(true).build())
-              .collect(Collectors.toList()),
-          node.getTypeArguments());
+              .map(methodEntity -> EntityWithContext.ofEntity(methodEntity))
+              .collect(Collectors.toList());
+      if (constructors.isEmpty()) {
+        // No constructors defined. Fallback to the class.
+        return applyTypeArguments(
+            baseClassEntities
+                .stream()
+                .map(baseClass -> baseClass.toBuilder().setInstanceContext(true).build())
+                .collect(Collectors.toList()),
+            node.getTypeArguments());
+      }
+      List<Optional<SolvedType>> arguments =
+          node.getArguments()
+              .stream()
+              .map(
+                  arg ->
+                      solve(arg, module, baseScope, ((JCTree) arg).getStartPosition())
+                          .map(argumentWithContext -> argumentWithContext.toSolvedType()))
+              .collect(Collectors.toList());
+
+      constructors = overloadSolver.prioritizeMatchedMethod(constructors, arguments, module);
+      return applyTypeArguments(constructors, node.getTypeArguments());
     }
 
     @Override

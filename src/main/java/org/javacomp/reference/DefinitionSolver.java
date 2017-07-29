@@ -3,9 +3,11 @@ package org.javacomp.reference;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.sun.source.tree.ExpressionTree;
+import com.sun.source.tree.IdentifierTree;
 import com.sun.source.tree.MemberSelectTree;
 import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.MethodTree;
+import com.sun.source.tree.NewClassTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.tree.VariableTree;
 import com.sun.source.util.TreePath;
@@ -80,6 +82,9 @@ public class DefinitionSolver {
       if (treeIsMethodName(leafTree, parentTree)) {
         // parentTree is the method we need to solve.
         leafTree = parentTree;
+      } else if (treeIsNewClassIdent(leafTree, parentTree)) {
+        // parentTree is the new class expression we need to solve.
+        leafTree = parentTree;
       } else if (treeIsTypeReference(treePath)) {
         allowedKinds = ALLOWED_ENTITY_KINDS_FOR_TYPE_REFERENCE;
       }
@@ -100,6 +105,19 @@ public class DefinitionSolver {
   private boolean treeIsMethodName(Tree tree, Tree parentTree) {
     return parentTree instanceof MethodInvocationTree
         && ((MethodInvocationTree) parentTree).getMethodSelect() == tree;
+  }
+
+  private boolean treeIsNewClassIdent(Tree tree, Tree parentTree) {
+    if (!(tree instanceof IdentifierTree)) {
+      return false;
+    }
+    if (!(parentTree instanceof NewClassTree)) {
+      return false;
+    }
+    if (((NewClassTree) parentTree).getIdentifier() != tree) {
+      return false;
+    }
+    return true;
   }
 
   /** Determines whether the leaf of {@code treePath} is referencing to a type or not. */

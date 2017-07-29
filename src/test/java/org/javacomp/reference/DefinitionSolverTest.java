@@ -4,6 +4,7 @@ import static com.google.common.truth.Truth.assertThat;
 
 import java.nio.file.Paths;
 import org.javacomp.file.TextPosition;
+import org.javacomp.model.ClassEntity;
 import org.javacomp.model.Entity;
 import org.javacomp.testing.TestUtil;
 import org.junit.Test;
@@ -169,6 +170,50 @@ public class DefinitionSolverTest extends BaseTest {
         "OtherPackageClass getOtherPackageClass()",
         "OtherPackageClass",
         OTHER_PACKAGE_CLASS_FULL_NAME);
+  }
+
+  @Test
+  public void testClassConstructor() {
+    assertDefinition(
+        TEST_CLASS_FILE,
+        "new InnerClassA()",
+        "InnerClassA()",
+        ((ClassEntity) TestUtil.lookupEntity(TEST_CLASS_FULL_NAME + ".InnerClassA", module))
+            .getConstructors()
+            .get(0));
+
+    // TestClass doesn't have constructor defined, found definition of the class itself.
+    assertDefinition(TEST_CLASS_FILE, "new TestClass()", "TestClass()", TEST_CLASS_FULL_NAME);
+  }
+
+  @Test
+  public void testQualifierOfQualifiedNewClass() {
+    assertDefinition(
+        TEST_CLASS_FILE,
+        "newTestClass.new InnerClassB()",
+        "newTestClass",
+        TEST_CLASS_FULL_NAME + ".testMethod.newTestClass");
+    assertDefinition(
+        TEST_CLASS_FILE,
+        "newTestClass.innerA.testClassInA.new InnerClassA()",
+        "testClassInA",
+        TEST_CLASS_FULL_NAME + ".InnerClassA.testClassInA");
+  }
+
+  @Test
+  public void testQualifiedNewClass() {
+    assertDefinition(
+        TEST_CLASS_FILE,
+        "newTestClass.new InnerClassB()",
+        "InnerClassB()",
+        TEST_CLASS_FULL_NAME + ".InnerClassB");
+    assertDefinition(
+        TEST_CLASS_FILE,
+        "newTestClass.innerA.testClassInA.new InnerClassA()",
+        "InnerClassA()",
+        ((ClassEntity) TestUtil.lookupEntity(TEST_CLASS_FULL_NAME + ".InnerClassA", module))
+            .getConstructors()
+            .get(0));
   }
 
   private void assertDefinition(

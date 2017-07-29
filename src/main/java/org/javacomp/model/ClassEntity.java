@@ -8,6 +8,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Range;
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
@@ -26,6 +27,7 @@ public class ClassEntity extends Entity implements EntityScope {
   private final Map<String, VariableEntity> fields;
   // Map of simple names -> methods.
   private final Multimap<String, MethodEntity> methods;
+  private final List<MethodEntity> constructors;
   private final EntityScope parentScope;
   private final Optional<TypeReference> superClass;
   private final ImmutableList<TypeReference> interfaces;
@@ -50,6 +52,7 @@ public class ClassEntity extends Entity implements EntityScope {
         ALLOWED_KINDS);
     this.fields = new HashMap<>();
     this.methods = HashMultimap.create();
+    this.constructors = new ArrayList<>();
     this.parentScope = parentScope;
     this.superClass = superClass;
     this.interfaces = ImmutableList.copyOf(interfaces);
@@ -84,7 +87,12 @@ public class ClassEntity extends Entity implements EntityScope {
     if (entity instanceof ClassEntity) {
       innerClasses.put(entity.getSimpleName(), (ClassEntity) entity);
     } else if (entity instanceof MethodEntity) {
-      methods.put(entity.getSimpleName(), (MethodEntity) entity);
+      MethodEntity methodEntity = (MethodEntity) entity;
+      if (methodEntity.isConstructor()) {
+        constructors.add(methodEntity);
+      } else {
+        methods.put(entity.getSimpleName(), methodEntity);
+      }
     } else {
       fields.put(entity.getSimpleName(), (VariableEntity) entity);
     }
@@ -96,6 +104,10 @@ public class ClassEntity extends Entity implements EntityScope {
 
   public Optional<VariableEntity> getFieldWithName(String simpleName) {
     return Optional.ofNullable(fields.get(simpleName));
+  }
+
+  public List<MethodEntity> getConstructors() {
+    return ImmutableList.copyOf(constructors);
   }
 
   public ImmutableList<TypeReference> getInterfaces() {
