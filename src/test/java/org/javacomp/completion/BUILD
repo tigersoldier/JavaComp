@@ -7,6 +7,7 @@ java_library(
         "//external:javac",
         "//external:jsr305",
         "//src/main/java/org/javacomp/completion",
+        "//src/main/java/org/javacomp/file:simplefilemanager",
         "//src/main/java/org/javacomp/model",
         "//src/main/java/org/javacomp/options",
         "//src/main/java/org/javacomp/parser",

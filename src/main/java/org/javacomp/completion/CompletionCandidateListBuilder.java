@@ -18,9 +18,11 @@ public class CompletionCandidateListBuilder {
   private static final GetElementFunction GET_ELEMENT_FUNCTION = new GetElementFunction();
 
   private final Map<String, EntityShadowingListBuilder<CompletionCandidate>> candidateMap;
+  private final String completionPrefix;
 
-  public CompletionCandidateListBuilder() {
+  public CompletionCandidateListBuilder(String completionPrefix) {
     candidateMap = new HashMap<>();
+    this.completionPrefix = completionPrefix;
   }
 
   public boolean hasCandidateWithName(String name) {
@@ -47,6 +49,12 @@ public class CompletionCandidateListBuilder {
 
   public CompletionCandidateListBuilder addCandidate(CompletionCandidate candidate) {
     String name = candidate.getName();
+    CompletionPrefixMatcher.MatchLevel matchLevel =
+        CompletionPrefixMatcher.computeMatchLevel(name, completionPrefix);
+    if (matchLevel == CompletionPrefixMatcher.MatchLevel.NOT_MATCH) {
+      return this;
+    }
+
     if (!candidateMap.containsKey(name)) {
       candidateMap.put(name, new EntityShadowingListBuilder<>(GET_ELEMENT_FUNCTION));
     }

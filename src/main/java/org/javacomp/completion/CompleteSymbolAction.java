@@ -40,8 +40,9 @@ class CompleteSymbolAction implements CompletionAction {
   }
 
   @Override
-  public List<CompletionCandidate> getCompletionCandidates(PositionContext positionContext) {
-    CompletionCandidateListBuilder builder = new CompletionCandidateListBuilder();
+  public List<CompletionCandidate> getCompletionCandidates(
+      PositionContext positionContext, String completionPrefix) {
+    CompletionCandidateListBuilder builder = new CompletionCandidateListBuilder(completionPrefix);
     addKeywords(builder);
     for (EntityScope currentScope = positionContext.getScopeAtPosition();
         currentScope != null;
@@ -51,7 +52,8 @@ class CompleteSymbolAction implements CompletionAction {
         builder.addEntities(
             classMemberCompletor.getClassMembers(
                 EntityWithContext.ofEntity((ClassEntity) currentScope),
-                positionContext.getModule()));
+                positionContext.getModule(),
+                completionPrefix));
       } else if (currentScope instanceof FileScope) {
         FileScope fileScope = (FileScope) currentScope;
         builder.addEntities(getPackageMembers(fileScope, positionContext.getModule()));

@@ -19,8 +19,9 @@ class ClassMemberCompletor {
     this.expressionSolver = expressionSolver;
   }
 
-  List<CompletionCandidate> getClassMembers(EntityWithContext actualClass, Module module) {
-    CompletionCandidateListBuilder builder = new CompletionCandidateListBuilder();
+  List<CompletionCandidate> getClassMembers(
+      EntityWithContext actualClass, Module module, String prefix) {
+    CompletionCandidateListBuilder builder = new CompletionCandidateListBuilder(prefix);
     for (EntityWithContext classInHierachy : typeSolver.classHierarchy(actualClass, module)) {
       checkState(
           classInHierachy.getEntity() instanceof ClassEntity,

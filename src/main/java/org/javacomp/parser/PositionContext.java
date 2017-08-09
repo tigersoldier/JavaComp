@@ -25,8 +25,17 @@ public abstract class PositionContext {
 
   public abstract Module getModule();
 
+  public abstract FileScope getFileScope();
+
   public abstract TreePath getTreePath();
 
+  /**
+   * Gets position of the parsed content of the file.
+   *
+   * <p>Because the content of a file may be modified by {@link FileContentFixer}, the parsed
+   * content may be different from the original content of the file. So this position can not be
+   * used in the context of the original position.
+   */
   public abstract int getPosition();
 
   public abstract EndPosTable getEndPosTable();
@@ -48,8 +57,7 @@ public abstract class PositionContext {
 
     JCCompilationUnit compilationUnit = inputFileScope.get().getCompilationUnit();
     LineMap lineMap = inputFileScope.get().getLineMap();
-    // LineMap accepts 1-based line and column numbers.
-    int position = (int) lineMap.getPosition(line + 1, column + 1);
+    int position = LineMapUtil.getPositionFromZeroBasedLineAndColumn(lineMap, line, column);
     EntityScope scopeAtPosition = inputFileScope.get().getEntityScopeAt(position - 1);
     PositionAstScanner scanner = new PositionAstScanner(compilationUnit.endPositions, position);
     logger.fine("Starting PositionAstScanner, position: %s", position);
@@ -58,7 +66,12 @@ public abstract class PositionContext {
 
     return Optional.of(
         new AutoValue_PositionContext(
-            scopeAtPosition, module, treePath, position, compilationUnit.endPositions));
+            scopeAtPosition,
+            module,
+            inputFileScope.get(),
+            treePath,
+            position,
+            compilationUnit.endPositions));
   }
 
   /** A {@link TreePathScanner} that returns the tree path enclosing the given position. */

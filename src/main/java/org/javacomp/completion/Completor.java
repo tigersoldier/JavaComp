@@ -1,12 +1,19 @@
 package org.javacomp.completion;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
+import com.sun.source.tree.LineMap;
 import com.sun.source.tree.MemberSelectTree;
 import com.sun.source.util.TreePath;
+import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
+import org.javacomp.file.FileManager;
+import org.javacomp.logging.JLogger;
+import org.javacomp.model.FileScope;
 import org.javacomp.model.Module;
+import org.javacomp.parser.LineMapUtil;
 import org.javacomp.parser.PositionContext;
 import org.javacomp.typesolver.ExpressionSolver;
 import org.javacomp.typesolver.MemberSolver;
@@ -15,13 +22,16 @@ import org.javacomp.typesolver.TypeSolver;
 
 /** Entry point of completion logic. */
 public class Completor {
+  private static final JLogger logger = JLogger.createForEnclosingClass();
 
   private static final String CONSTRUCTOR_NAME = "<init>";
 
+  private final FileManager fileManager;
   private final TypeSolver typeSolver;
   private final ExpressionSolver expressionSolver;
 
-  public Completor() {
+  public Completor(FileManager fileManager) {
+    this.fileManager = fileManager;
     this.typeSolver = new TypeSolver();
     OverloadSolver overloadSolver = new OverloadSolver(typeSolver);
     this.expressionSolver =
@@ -37,16 +47,14 @@ public class Completor {
    */
   public List<CompletionCandidate> getCompletionCandidates(
       Module module, Path filePath, int line, int column) {
-    if (column > 0) {
-      // PositionContext gets the tree path whose leaf node includes the position
-      // (position < node's endPosition). However, for completions, we want the leaf node either
-      // includes the position, or just before the position (position == node's endPosition).
-      // Decresing column by 1 will decrease position by 1, which makes
-      // adjustedPosition == node's endPosition - 1 if the node is just before the actual position.
-      column--;
-    }
+    // PositionContext gets the tree path whose leaf node includes the position
+    // (position < node's endPosition). However, for completions, we want the leaf node either
+    // includes the position, or just before the position (position == node's endPosition).
+    // Decresing column by 1 will decrease position by 1, which makes
+    // adjustedPosition == node's endPosition - 1 if the node is just before the actual position.
+    int contextColumn = column > 0 ? column - 1 : 0;
     Optional<PositionContext> positionContext =
-        PositionContext.createForPosition(module, filePath, line, column);
+        PositionContext.createForPosition(module, filePath, line, contextColumn);
 
     if (!positionContext.isPresent()) {
       return ImmutableList.of();
@@ -60,11 +68,44 @@ public class Completor {
       action = new CompleteSymbolAction(typeSolver, expressionSolver);
     }
 
+    String prefix =
+        extractCompletionPrefix(positionContext.get().getFileScope(), filePath, line, column);
     // TODO: filter and sort candidates by query.
     return action
-        .getCompletionCandidates(positionContext.get())
+        .getCompletionCandidates(positionContext.get(), prefix)
         .stream()
         .filter(candidate -> !CONSTRUCTOR_NAME.equals(candidate.getName()))
         .collect(ImmutableList.toImmutableList());
+  }
+
+  @VisibleForTesting
+  String extractCompletionPrefix(FileScope fileScope, Path filePath, int line, int column) {
+    CharSequence fileContent = fileManager.getFileContent(filePath).orElse(null);
+    if (fileContent == null) {
+      logger.warning("Cannot get file content of %s for completion prefix", filePath);
+      return "";
+    }
+    // Get position of line, column. Note that we cannot use the position from PositionContext because
+    // it's the position of the possibly modified content, not the original content.
+    JCCompilationUnit compilationUnit = fileScope.getCompilationUnit();
+    LineMap lineMap = compilationUnit.getLineMap();
+    int position = LineMapUtil.getPositionFromZeroBasedLineAndColumn(lineMap, line, column);
+    if (position < 0) {
+      logger.warning(
+          "Position of (%s, %s): %s is negative when getting completion prefix for file %s",
+          line, column, position, filePath);
+    }
+    if (position >= fileContent.length()) {
+      logger.warning(
+          "Position of (%s, %s): %s is greater than the length of the content %s when "
+              + "getting completion prefix for file %s",
+          line, column, position, fileContent.length(), filePath);
+    }
+
+    int start = position - 1;
+    while (start >= 0 && Character.isJavaIdentifierPart(fileContent.charAt(start))) {
+      start--;
+    }
+    return fileContent.subSequence(start + 1, position).toString();
   }
 }

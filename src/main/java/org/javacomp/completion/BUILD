@@ -8,6 +8,7 @@ java_library(
     deps = [
         "//external:guava",
         "//external:javac",
+        "//src/main/java/org/javacomp/file",
         "//src/main/java/org/javacomp/logging",
         "//src/main/java/org/javacomp/model",
         "//src/main/java/org/javacomp/parser",

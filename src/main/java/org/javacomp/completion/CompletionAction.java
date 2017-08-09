@@ -5,5 +5,6 @@ import org.javacomp.parser.PositionContext;
 
 /** Action to perform the requested completion. */
 interface CompletionAction {
-  public List<CompletionCandidate> getCompletionCandidates(PositionContext positionContext);
+  public List<CompletionCandidate> getCompletionCandidates(
+      PositionContext positionContext, String prefix);
 }

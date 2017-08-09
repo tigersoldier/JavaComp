@@ -58,7 +58,7 @@ public class Project {
 
   public Project(FileManager fileManager, URI rootUri, IndexOptions indexOptions) {
     projectModule = new Module();
-    completor = new Completor();
+    completor = new Completor(fileManager);
     parserContext = new ParserContext();
     fileContentFixer = new FileContentFixer(parserContext);
     this.indexOptions = indexOptions;

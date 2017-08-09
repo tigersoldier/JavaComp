@@ -24,11 +24,20 @@ java_library(
     name = "impl",
     srcs = glob(
         ["*.java"],
-        exclude = PUBLIC_INTERFACES,
+        exclude = PUBLIC_INTERFACES + ["SimpleFileManager.java"],
     ),
     deps = [
         ":file",
         "//external:guava",
         "//src/main/java/org/javacomp/logging",
+    ],
+)
+
+java_library(
+    name = "simplefilemanager",
+    srcs = ["SimpleFileManager.java"],
+    deps = [
+        ":file",
+        "//external:guava",
     ],
 )

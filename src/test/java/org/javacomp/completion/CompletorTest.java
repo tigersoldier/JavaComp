@@ -12,9 +12,11 @@ import com.sun.source.tree.LineMap;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
+import org.javacomp.file.SimpleFileManager;
 import org.javacomp.model.FileScope;
 import org.javacomp.model.Module;
 import org.javacomp.options.IndexOptions;
@@ -22,6 +24,7 @@ import org.javacomp.parser.AstScanner;
 import org.javacomp.parser.FileContentFixer;
 import org.javacomp.parser.FileContentFixer.FixedContent;
 import org.javacomp.parser.ParserContext;
+import org.javacomp.parser.PositionContext;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -32,10 +35,15 @@ public class CompletorTest {
   private static final String COMPLETION_POINT_MARK = "/** @complete */";
   private static final String INSERTION_POINT_MARK = "/** @insert */";
 
+  private final SimpleFileManager fileManager = new SimpleFileManager();
+
+  private Path getInputFilePath(String filename) {
+    return Paths.get(TEST_DATA_DIR + filename).toAbsolutePath();
+  }
+
   private String getFileContent(String filename) {
-    String inputFilePath = TEST_DATA_DIR + filename;
     try {
-      return new String(Files.readAllBytes(Paths.get(inputFilePath)), UTF_8);
+      return new String(Files.readAllBytes(getInputFilePath(filename)), UTF_8);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -46,8 +54,11 @@ public class CompletorTest {
     return completeContent(filename, testDataContent);
   }
 
-  private List<CompletionCandidate> completeContent(
-      String inputFilePath, String testDataContent, String... otherFiles) {
+  private CompletionParams createCompletionParams(
+      String inputFilename, String testDataContent, String... otherFiles) {
+
+    Path inputFilePath = getInputFilePath(inputFilename);
+    fileManager.openFileForSnapshot(inputFilePath.toUri(), testDataContent);
     ParserContext parserContext = new ParserContext();
     FileContentFixer fileContentFixer = new FileContentFixer(parserContext);
 
@@ -62,10 +73,10 @@ public class CompletorTest {
     FixedContent fixedContent = fileContentFixer.fixFileContent(testDataContent);
 
     JCCompilationUnit compilationUnit =
-        parserContext.parse(inputFilePath, fixedContent.getContent());
+        parserContext.parse(inputFilePath.toString(), fixedContent.getContent());
     FileScope inputFileScope =
         new AstScanner(IndexOptions.FULL_INDEX_BUILDER.build())
-            .startScan(compilationUnit, inputFilePath, fixedContent.getContent());
+            .startScan(compilationUnit, inputFilePath.toString(), fixedContent.getContent());
     inputFileScope.setAdjustedLineMap(fixedContent.getAdjustedLineMap());
     Module module = new Module();
     module.addOrReplaceFileScope(inputFileScope);
@@ -86,7 +97,15 @@ public class CompletorTest {
       otherModule.addOrReplaceFileScope(fileScope);
     }
 
-    return new Completor().getCompletionCandidates(module, Paths.get(inputFilePath), line, column);
+    return new CompletionParams(module, line, column);
+  }
+
+  private List<CompletionCandidate> completeContent(
+      String inputFilename, String testDataContent, String... otherFiles) {
+    CompletionParams params = createCompletionParams(inputFilename, testDataContent, otherFiles);
+    return new Completor(fileManager)
+        .getCompletionCandidates(
+            params.module, getInputFilePath(inputFilename), params.line, params.column);
   }
 
   private static List<String> getCandidateNames(List<CompletionCandidate> candidates) {
@@ -272,6 +291,9 @@ public class CompletorTest {
       String filename, List<String> toCompleteCases, String... expectedCandidates) {
     for (String toComplete : toCompleteCases) {
       List<CompletionCandidate> candidates = completeWithContent(filename, toComplete);
+      assertThat(extractCompletionPrefixWithContent(filename, toComplete))
+          .named("Prefix of " + toComplete)
+          .isEqualTo("");
       assertThat(getCandidateNames(candidates))
           .named("Candidates of '" + toComplete + "'")
           .containsExactly((Object[]) expectedCandidates);
@@ -280,7 +302,10 @@ public class CompletorTest {
     Multimap<Character, String> candidatePrefixMap = HashMultimap.create();
     for (String candidate : expectedCandidates) {
       char prefix = candidate.charAt(0);
-      candidatePrefixMap.put(prefix, candidate);
+      char lowerPrefix = Character.toLowerCase(prefix);
+      char upperPrefix = Character.toUpperCase(prefix);
+      candidatePrefixMap.put(lowerPrefix, candidate);
+      candidatePrefixMap.put(upperPrefix, candidate);
     }
 
     for (String toComplete : toCompleteCases) {
@@ -293,11 +318,12 @@ public class CompletorTest {
         String toCompleteWithMember =
             toComplete.substring(0, dotPos + 1) + prefix + toComplete.substring(dotPos + 1);
         List<CompletionCandidate> candidates = completeWithContent(filename, toCompleteWithMember);
+        assertThat(extractCompletionPrefixWithContent(filename, toCompleteWithMember))
+            .named("prefix of " + toCompleteWithMember)
+            .isEqualTo("" + prefix);
         assertThat(getCandidateNames(candidates))
             .named("candidates of '" + toCompleteWithMember + "'")
-            .containsExactly((Object[]) expectedCandidates);
-        // TODO: implement query prefix
-        // .containsExactlyElementsIn(candidatePrefixMap.get(prefix));
+            .containsExactlyElementsIn(candidatePrefixMap.get(prefix));
       }
     }
   }
@@ -307,5 +333,30 @@ public class CompletorTest {
     String testDataContent = getFileContent(filename);
     String newContent = testDataContent.replace(INSERTION_POINT_MARK, toInsert);
     return completeContent(filename, newContent, otherFiles);
+  }
+
+  private String extractCompletionPrefixWithContent(String filename, String toInsert) {
+    String testDataContent = getFileContent(filename);
+    String newContent = testDataContent.replace(INSERTION_POINT_MARK, toInsert);
+    CompletionParams params = createCompletionParams(filename, newContent);
+    Path filePath = getInputFilePath(filename);
+    PositionContext positionContext =
+        PositionContext.createForPosition(params.module, filePath, params.line, params.column)
+            .get();
+    return new Completor(fileManager)
+        .extractCompletionPrefix(
+            positionContext.getFileScope(), filePath, params.line, params.column);
+  }
+
+  private static class CompletionParams {
+    private final Module module;
+    private final int line;
+    private final int column;
+
+    private CompletionParams(Module module, int line, int column) {
+      this.module = module;
+      this.line = line;
+      this.column = column;
+    }
   }
 }

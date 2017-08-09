@@ -37,7 +37,8 @@ class CompleteMemberAction implements CompletionAction {
   }
 
   @Override
-  public List<CompletionCandidate> getCompletionCandidates(PositionContext positionContext) {
+  public List<CompletionCandidate> getCompletionCandidates(
+      PositionContext positionContext, String completionPrefix) {
     Optional<EntityWithContext> solvedEntityWithContext =
         expressionSolver.solve(
             memberExpression,
@@ -56,16 +57,21 @@ class CompleteMemberAction implements CompletionAction {
 
     if (solvedEntityWithContext.get().getEntity() instanceof ClassEntity) {
       return new ClassMemberCompletor(typeSolver, expressionSolver)
-          .getClassMembers(solvedEntityWithContext.get(), positionContext.getModule());
+          .getClassMembers(
+              solvedEntityWithContext.get(), positionContext.getModule(), completionPrefix);
     }
 
     return createCompletionCandidates(
-        solvedEntityWithContext.get().getEntity().getChildScope().getMemberEntities().values());
+        solvedEntityWithContext.get().getEntity().getChildScope().getMemberEntities().values(),
+        completionPrefix);
   }
 
-  private static List<CompletionCandidate> createCompletionCandidates(Collection<Entity> entities) {
+  private static List<CompletionCandidate> createCompletionCandidates(
+      Collection<Entity> entities, String completionPrefix) {
     return entities
         .stream()
+        .filter(
+            (entity -> CompletionPrefixMatcher.matches(entity.getSimpleName(), completionPrefix)))
         .map((entity) -> new EntityCompletionCandidate(entity))
         .collect(ImmutableList.toImmutableList());
   }

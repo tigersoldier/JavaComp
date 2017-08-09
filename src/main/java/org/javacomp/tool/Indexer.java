@@ -1,23 +1,10 @@
 package org.javacomp.tool;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
-import com.google.common.collect.ImmutableList;
-import java.io.IOException;
-import java.net.URI;
-import java.nio.file.FileSystem;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.PathMatcher;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
-import org.javacomp.file.FileChangeListener;
-import org.javacomp.file.FileManager;
-import org.javacomp.file.PathUtils;
-import org.javacomp.file.TextRange;
+import org.javacomp.file.SimpleFileManager;
 import org.javacomp.options.IndexOptions;
 import org.javacomp.project.Project;
 import org.javacomp.storage.IndexStore;
@@ -30,7 +17,7 @@ import org.javacomp.storage.IndexStore;
 public class Indexer {
 
   private final Path rootPath;
-  private final FileManager fileManager;
+  private final SimpleFileManager fileManager;
   private final Project project;
 
   public Indexer(String rootPath, List<String> ignoredPaths) {
@@ -82,77 +69,5 @@ public class Indexer {
     }
 
     new Indexer(args[0], ignorePaths).run(args[1], dependIndexPaths, withJdk);
-  }
-
-  public static class SimpleFileManager implements FileManager {
-
-    private final Path rootPath;
-    private final List<PathMatcher> ignorePathMatchers;
-
-    public SimpleFileManager(Path rootPath, List<String> ignorePaths) {
-      this.rootPath = rootPath;
-      FileSystem fs = FileSystems.getDefault();
-      this.ignorePathMatchers =
-          ignorePaths
-              .stream()
-              .map(p -> fs.getPathMatcher(p))
-              .collect(ImmutableList.toImmutableList());
-    }
-
-    @Override
-    public void openFileForSnapshot(URI fileUri, String content) throws IOException {
-      // No-op;
-    }
-
-    @Override
-    public void applyEditToSnapshot(
-        URI fileUri, TextRange editRange, Optional<Integer> rangeLength, String newText) {
-      // No-op
-    }
-
-    @Override
-    public void setSnaphotContent(URI fileUri, String newText) {
-      // No-op
-    }
-
-    @Override
-    public void closeFileForSnapshot(URI fileUri) {
-      // No-op
-    }
-
-    @Override
-    public void watchSubDirectories(Path rootDirectory) {
-      // No-op
-    }
-
-    @Override
-    public void setFileChangeListener(FileChangeListener listener) {
-      // No-op
-    }
-
-    @Override
-    public Optional<CharSequence> getFileContent(Path filePath) {
-      try {
-        return Optional.of(new String(Files.readAllBytes(filePath), UTF_8));
-      } catch (IOException e) {
-        // fall through.
-      }
-      return Optional.ofNullable(null);
-    }
-
-    @Override
-    public void shutdown() {
-      // No-op
-    }
-
-    @Override
-    public boolean shouldIgnorePath(Path path) {
-      return PathUtils.shouldIgnorePath(path, rootPath, ignorePathMatchers);
-    }
-
-    @Override
-    public Path getProjectRootPath() {
-      return rootPath;
-    }
   }
 }
