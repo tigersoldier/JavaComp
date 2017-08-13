@@ -13,8 +13,8 @@ public class CompletionPrefixMatcher {
   public enum MatchLevel {
     NOT_MATCH,
     CASE_INSENSITIVE_PREFIX,
-    CASE_INSENSITIVE_EQUAL,
     CASE_SENSITIVE_PREFIX,
+    CASE_INSENSITIVE_EQUAL,
     CASE_SENSITIVE_EQUAL,
   }
 

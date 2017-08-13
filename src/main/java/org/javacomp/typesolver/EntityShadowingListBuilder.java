@@ -3,6 +3,7 @@ package org.javacomp.typesolver;
 import com.google.common.collect.ImmutableList;
 import java.util.ArrayList;
 import java.util.function.Function;
+import java.util.stream.Stream;
 import javax.annotation.Nullable;
 import org.javacomp.model.Entity;
 
@@ -44,6 +45,10 @@ public class EntityShadowingListBuilder<E> {
 
   public ImmutableList<E> build() {
     return ImmutableList.copyOf(elements);
+  }
+
+  public Stream<E> stream() {
+    return elements.stream();
   }
 
   private boolean entityShadows(@Nullable Entity existingEntity, @Nullable Entity newEntity) {

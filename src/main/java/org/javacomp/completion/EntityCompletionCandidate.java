@@ -132,4 +132,9 @@ class EntityCompletionCandidate implements CompletionCandidate {
     }
     sb.append(">");
   }
+
+  @Override
+  public String toString() {
+    return getKind().name() + " " + getName();
+  }
 }

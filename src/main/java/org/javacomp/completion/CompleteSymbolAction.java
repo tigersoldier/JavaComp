@@ -40,7 +40,7 @@ class CompleteSymbolAction implements CompletionAction {
   }
 
   @Override
-  public List<CompletionCandidate> getCompletionCandidates(
+  public ImmutableList<CompletionCandidate> getCompletionCandidates(
       PositionContext positionContext, String completionPrefix) {
     CompletionCandidateListBuilder builder = new CompletionCandidateListBuilder(completionPrefix);
     addKeywords(builder);
@@ -49,7 +49,7 @@ class CompleteSymbolAction implements CompletionAction {
         currentScope = currentScope.getParentScope().orElse(null)) {
       logger.fine("Adding member entities in scope: %s", currentScope);
       if (currentScope instanceof ClassEntity) {
-        builder.addEntities(
+        builder.addCandidates(
             classMemberCompletor.getClassMembers(
                 EntityWithContext.ofEntity((ClassEntity) currentScope),
                 positionContext.getModule(),

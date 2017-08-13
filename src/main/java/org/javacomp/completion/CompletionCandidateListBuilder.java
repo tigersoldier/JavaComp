@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import javax.annotation.Nullable;
 import org.javacomp.model.Entity;
 import org.javacomp.typesolver.EntityShadowingListBuilder;
 
@@ -17,7 +18,8 @@ import org.javacomp.typesolver.EntityShadowingListBuilder;
 public class CompletionCandidateListBuilder {
   private static final GetElementFunction GET_ELEMENT_FUNCTION = new GetElementFunction();
 
-  private final Map<String, EntityShadowingListBuilder<CompletionCandidate>> candidateMap;
+  private final Map<String, EntityShadowingListBuilder<CompletionCandidateWithMatchLevel>>
+      candidateMap;
   private final String completionPrefix;
 
   public CompletionCandidateListBuilder(String completionPrefix) {
@@ -36,9 +38,9 @@ public class CompletionCandidateListBuilder {
     return this;
   }
 
-  public CompletionCandidateListBuilder addEntities(Collection<CompletionCandidate> entities) {
-    for (CompletionCandidate entity : entities) {
-      addCandidate(entity);
+  public CompletionCandidateListBuilder addCandidates(Collection<CompletionCandidate> candidates) {
+    for (CompletionCandidate candidate : candidates) {
+      addCandidate(candidate);
     }
     return this;
   }
@@ -58,22 +60,26 @@ public class CompletionCandidateListBuilder {
     if (!candidateMap.containsKey(name)) {
       candidateMap.put(name, new EntityShadowingListBuilder<>(GET_ELEMENT_FUNCTION));
     }
-    candidateMap.get(name).add(candidate);
+    candidateMap.get(name).add(CompletionCandidateWithMatchLevel.create(candidate, matchLevel));
     return this;
   }
 
   public ImmutableList<CompletionCandidate> build() {
-    ImmutableList.Builder<CompletionCandidate> builder = new ImmutableList.Builder<>();
-    for (EntityShadowingListBuilder<CompletionCandidate> candidatesBuilder :
-        candidateMap.values()) {
-      builder.addAll(candidatesBuilder.build());
-    }
-    return builder.build();
+    return candidateMap
+        .values()
+        .stream()
+        .flatMap(entityShadowingListBuilder -> entityShadowingListBuilder.stream())
+        .sorted()
+        .map(candidateWithLevel -> candidateWithLevel.getCompletionCandidate())
+        .collect(ImmutableList.toImmutableList());
   }
 
-  private static class GetElementFunction implements Function<CompletionCandidate, Entity> {
+  private static class GetElementFunction
+      implements Function<CompletionCandidateWithMatchLevel, Entity> {
     @Override
-    public Entity apply(CompletionCandidate candidate) {
+    @Nullable
+    public Entity apply(CompletionCandidateWithMatchLevel candidateWithMatchLevel) {
+      CompletionCandidate candidate = candidateWithMatchLevel.getCompletionCandidate();
       if (candidate instanceof EntityCompletionCandidate) {
         return ((EntityCompletionCandidate) candidate).getEntity();
       } else {

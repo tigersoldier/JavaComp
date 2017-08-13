@@ -23,3 +23,11 @@ java_test(
         ":tests",
     ],
 )
+
+java_test(
+    name = "CompletionCandidateListBuilderTest",
+    size = "small",
+    runtime_deps = [
+        ":tests",
+    ],
+)

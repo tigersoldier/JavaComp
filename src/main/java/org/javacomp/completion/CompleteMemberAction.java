@@ -7,7 +7,6 @@ import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.MemberSelectTree;
 import com.sun.source.util.TreePath;
 import java.util.Collection;
-import java.util.List;
 import java.util.Optional;
 import org.javacomp.logging.JLogger;
 import org.javacomp.model.ClassEntity;
@@ -37,7 +36,7 @@ class CompleteMemberAction implements CompletionAction {
   }
 
   @Override
-  public List<CompletionCandidate> getCompletionCandidates(
+  public ImmutableList<CompletionCandidate> getCompletionCandidates(
       PositionContext positionContext, String completionPrefix) {
     Optional<EntityWithContext> solvedEntityWithContext =
         expressionSolver.solve(
@@ -66,7 +65,7 @@ class CompleteMemberAction implements CompletionAction {
         completionPrefix);
   }
 
-  private static List<CompletionCandidate> createCompletionCandidates(
+  private static ImmutableList<CompletionCandidate> createCompletionCandidates(
       Collection<Entity> entities, String completionPrefix) {
     return entities
         .stream()

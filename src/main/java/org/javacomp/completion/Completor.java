@@ -24,11 +24,11 @@ import org.javacomp.typesolver.TypeSolver;
 public class Completor {
   private static final JLogger logger = JLogger.createForEnclosingClass();
 
-  private static final String CONSTRUCTOR_NAME = "<init>";
-
   private final FileManager fileManager;
   private final TypeSolver typeSolver;
   private final ExpressionSolver expressionSolver;
+
+  private CachedCompletion cachedCompletion = CachedCompletion.NONE;
 
   public Completor(FileManager fileManager) {
     this.fileManager = fileManager;
@@ -60,22 +60,42 @@ public class Completor {
       return ImmutableList.of();
     }
 
-    TreePath treePath = positionContext.get().getTreePath();
+    String prefix =
+        extractCompletionPrefix(positionContext.get().getFileScope(), filePath, line, column);
+    ImmutableList<CompletionCandidate> candidates;
+    if (cachedCompletion.isIncrementalCompletion(filePath, line, column, prefix)) {
+      candidates = getCompletionCandidatesFromCache(prefix);
+    } else {
+          candidates = computeCompletionCandidates(positionContext.get(), prefix);
+      cachedCompletion =
+          CachedCompletion.builder()
+              .setFilePath(filePath)
+              .setLine(line)
+              .setColumn(column)
+              .setPrefix(prefix)
+              .setCompletionCandidates(candidates)
+              .build();
+    }
+    // TODO: limit the number of the candidates.
+    return candidates;
+  }
+
+  private ImmutableList<CompletionCandidate> computeCompletionCandidates(
+      PositionContext positionContext, String prefix) {
+    TreePath treePath = positionContext.getTreePath();
     CompletionAction action;
     if (treePath.getLeaf() instanceof MemberSelectTree) {
       action = new CompleteMemberAction(treePath, typeSolver, expressionSolver);
     } else {
       action = new CompleteSymbolAction(typeSolver, expressionSolver);
     }
+    return action.getCompletionCandidates(positionContext, prefix);
+  }
 
-    String prefix =
-        extractCompletionPrefix(positionContext.get().getFileScope(), filePath, line, column);
-    // TODO: filter and sort candidates by query.
-    return action
-        .getCompletionCandidates(positionContext.get(), prefix)
-        .stream()
-        .filter(candidate -> !CONSTRUCTOR_NAME.equals(candidate.getName()))
-        .collect(ImmutableList.toImmutableList());
+  private ImmutableList<CompletionCandidate> getCompletionCandidatesFromCache(String prefix) {
+    return new CompletionCandidateListBuilder(prefix)
+        .addCandidates(cachedCompletion.getCompletionCandidates())
+        .build();
   }
 
   @VisibleForTesting

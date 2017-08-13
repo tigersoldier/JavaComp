@@ -2,7 +2,7 @@ package org.javacomp.completion;
 
 import static com.google.common.base.Preconditions.checkState;
 
-import java.util.List;
+import com.google.common.collect.ImmutableList;
 import org.javacomp.model.ClassEntity;
 import org.javacomp.model.Entity;
 import org.javacomp.model.EntityWithContext;
@@ -19,7 +19,7 @@ class ClassMemberCompletor {
     this.expressionSolver = expressionSolver;
   }
 
-  List<CompletionCandidate> getClassMembers(
+  ImmutableList<CompletionCandidate> getClassMembers(
       EntityWithContext actualClass, Module module, String prefix) {
     CompletionCandidateListBuilder builder = new CompletionCandidateListBuilder(prefix);
     for (EntityWithContext classInHierachy : typeSolver.classHierarchy(actualClass, module)) {
