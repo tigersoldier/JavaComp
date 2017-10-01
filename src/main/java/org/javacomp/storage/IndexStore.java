@@ -121,10 +121,9 @@ public class IndexStore {
   private FileScope deserializeFileScope(SerializedFileScope serializedFileScope) {
     checkNotNull(serializedFileScope.packageName, "serializedFileScope.packageName");
     checkNotNull(serializedFileScope.entities, "serializedFileScope.entities");
-    String filename = "//" + serializedFileScope.packageName.replace('.', '/') + ".javacomp";
     List<String> packageQualifiers =
         ImmutableList.copyOf(serializedFileScope.packageName.split(QUALIFIER_SEPARATOR));
-    FileScope fileScope = new FileScope(filename, packageQualifiers, null /* compilationUnit */);
+    FileScope fileScope = FileScope.createFromTypeIndex(packageQualifiers);
     for (SerializedEntity childEntity : serializedFileScope.entities) {
       fileScope.addEntity(deserializeEntity(childEntity, packageQualifiers, fileScope));
     }

@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableList;
 import com.sun.source.tree.LineMap;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Objects;
 import org.javacomp.model.Entity;
 import org.javacomp.model.EntityScope;
 import org.javacomp.model.FileScope;
@@ -51,6 +52,12 @@ public class DefinitionTextDocumentHandler extends RequestHandler<TextDocumentPo
               }
 
               FileScope fileScope = (FileScope) scope;
+              if (fileScope.getFileType() != FileScope.FileType.SOURCE_CODE) {
+                // If the file scope is not created from a source code (e.g. it's created from
+                // a type index JSON file or class file), there is no souce code that defines the
+                // symbol.
+                return null;
+              }
               LineMap lineMap = fileScope.getLineMap();
 
               Location location = new Location();
@@ -67,6 +74,7 @@ public class DefinitionTextDocumentHandler extends RequestHandler<TextDocumentPo
 
               return location;
             })
+        .filter(Objects::nonNull)
         .collect(ImmutableList.toImmutableList());
   }
 }

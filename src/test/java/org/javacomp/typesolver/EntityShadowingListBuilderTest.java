@@ -32,7 +32,7 @@ public class EntityShadowingListBuilderTest {
 
   @Before
   public void setUpEntities() {
-    fileScope = new FileScope("filename", ImmutableList.of(), null /* compilationUnit */);
+    fileScope = FileScope.createForTesting(ImmutableList.of());
     classEntity =
         new ClassEntity(
             "foo",

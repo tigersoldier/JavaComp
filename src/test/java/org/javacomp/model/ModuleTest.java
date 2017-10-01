@@ -39,12 +39,14 @@ public class ModuleTest {
   @Test
   public void addFilesShouldCreatePackages() {
     FileScope fileScope1 =
-        new FileScope("filename1", ImmutableList.of("foo", "bar"), compilationUnit);
+        FileScope.createFromSource("filename1", ImmutableList.of("foo", "bar"), compilationUnit);
     FileScope fileScope2 =
-        new FileScope("filename2", ImmutableList.of("foo", "bar", "baz"), compilationUnit);
+        FileScope.createFromSource(
+            "filename2", ImmutableList.of("foo", "bar", "baz"), compilationUnit);
     FileScope fileScope3 =
-        new FileScope("filename3", ImmutableList.of("foo", "baz"), compilationUnit);
-    FileScope fileScope4 = new FileScope("filename4", ImmutableList.of("fxx"), compilationUnit);
+        FileScope.createFromSource("filename3", ImmutableList.of("foo", "baz"), compilationUnit);
+    FileScope fileScope4 =
+        FileScope.createFromSource("filename4", ImmutableList.of("fxx"), compilationUnit);
     fileScope1.addEntity(entity1);
     fileScope2.addEntity(entity2);
     fileScope3.addEntity(entity3);
@@ -72,8 +74,10 @@ public class ModuleTest {
 
   @Test
   public void replaceFileWithSamePackageShouldNotRemovePackage() {
-    FileScope fileScope1 = new FileScope("foobar", ImmutableList.of("foo", "bar"), compilationUnit);
-    FileScope fileScope2 = new FileScope("foobar", ImmutableList.of("foo", "bar"), compilationUnit);
+    FileScope fileScope1 =
+        FileScope.createFromSource("foobar", ImmutableList.of("foo", "bar"), compilationUnit);
+    FileScope fileScope2 =
+        FileScope.createFromSource("foobar", ImmutableList.of("foo", "bar"), compilationUnit);
 
     fileScope1.addEntity(entity1);
     fileScope2.addEntity(entity2);
@@ -89,9 +93,12 @@ public class ModuleTest {
   @Test
   public void replaceFileWithDifferentPackageShouldNotRemovePackage() {
     FileScope fileScope1 =
-        new FileScope("foobar", ImmutableList.of("foo", "bar", "baz"), compilationUnit);
-    FileScope fileScope2 = new FileScope("foobar", ImmutableList.of("foo", "bar"), compilationUnit);
-    FileScope fileScope3 = new FileScope("foobar", ImmutableList.of("fxx"), compilationUnit);
+        FileScope.createFromSource(
+            "foobar", ImmutableList.of("foo", "bar", "baz"), compilationUnit);
+    FileScope fileScope2 =
+        FileScope.createFromSource("foobar", ImmutableList.of("foo", "bar"), compilationUnit);
+    FileScope fileScope3 =
+        FileScope.createFromSource("foobar", ImmutableList.of("fxx"), compilationUnit);
 
     fileScope1.addEntity(entity1);
     fileScope2.addEntity(entity2);
