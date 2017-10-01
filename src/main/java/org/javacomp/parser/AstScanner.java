@@ -85,7 +85,7 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
     }
 
     JCCompilationUnit compilationUnit = (JCCompilationUnit) node;
-    this.fileScope = new FileScope(filename, this.currentQualifiers, compilationUnit);
+    this.fileScope = FileScope.createFromSource(filename, this.currentQualifiers, compilationUnit);
     this.scopeRangeBuilder = new NestedRangeMapBuilder<>();
     this.endPosTable = compilationUnit.endPositions;
     addScopeRange(compilationUnit, this.fileScope);
