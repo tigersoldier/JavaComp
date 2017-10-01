@@ -114,7 +114,7 @@ public class JavaComp implements Server {
       project.loadTypeIndexFile(indexFilePath);
     }
 
-    //TODO: Someday we should implement monitoring client process for all major platforms.
+    // TODO: Someday we should implement monitoring client process for all major platforms.
   }
 
   @Override
@@ -159,6 +159,11 @@ public class JavaComp implements Server {
   }
 
   public static final void main(String[] args) {
+    if (args.length > 0 && "-v".equals(args[0])) {
+      System.out.println(
+          Constants.MAJOR_VERSION + "." + Constants.MINOR_VERSION + "." + Constants.PATCH_VERSION);
+      System.exit(0);
+    }
     int exitCode = new JavaComp(System.in, System.out).run();
     System.exit(exitCode);
   }
