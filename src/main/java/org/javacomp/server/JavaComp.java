@@ -3,10 +3,12 @@ package org.javacomp.server;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
+import com.google.common.collect.ImmutableList;
 import com.google.gson.Gson;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -96,6 +98,7 @@ public class JavaComp implements Server {
     checkState(!initialized, "Cannot initialize the server twice in a row.");
     initialized = true;
 
+    List<String> ignorePaths;
     if (options != null) {
       Level logLevel = options.getLogLevel();
       String logPath = options.getLogPath();
@@ -105,13 +108,18 @@ public class JavaComp implements Server {
       if (logLevel != null) {
         JLogger.setLogLevel(logLevel);
       }
+      ignorePaths = options.getIgnorePaths();
+    } else {
+      ignorePaths = ImmutableList.of();
     }
-    fileManager = new FileManagerImpl(projectRootUri, options.getIgnorePaths(), executor);
+    fileManager = new FileManagerImpl(projectRootUri, ignorePaths, executor);
     project = new Project(fileManager, projectRootUri, IndexOptions.FULL_INDEX_BUILDER.build());
     project.initialize();
     project.loadJdkModule();
-    for (String indexFilePath : options.getTypeIndexFiles()) {
-      project.loadTypeIndexFile(indexFilePath);
+    if (options != null) {
+      for (String indexFilePath : options.getTypeIndexFiles()) {
+        project.loadTypeIndexFile(indexFilePath);
+      }
     }
 
     // TODO: Someday we should implement monitoring client process for all major platforms.
