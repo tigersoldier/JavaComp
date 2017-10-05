@@ -114,13 +114,20 @@ public class JavaComp implements Server {
     }
     fileManager = new FileManagerImpl(projectRootUri, ignorePaths, executor);
     project = new Project(fileManager, projectRootUri, IndexOptions.FULL_INDEX_BUILDER.build());
-    project.initialize();
-    project.loadJdkModule();
-    if (options != null) {
-      for (String indexFilePath : options.getTypeIndexFiles()) {
-        project.loadTypeIndexFile(indexFilePath);
-      }
-    }
+
+    // Project initialization can take a while. Run it in a separate thread.
+    executor.submit(
+        () -> {
+          synchronized (JavaComp.this) {
+            project.initialize();
+            project.loadJdkModule();
+            if (options != null) {
+              for (String indexFilePath : options.getTypeIndexFiles()) {
+                project.loadTypeIndexFile(indexFilePath);
+              }
+            }
+          }
+        });
 
     // TODO: Someday we should implement monitoring client process for all major platforms.
   }
