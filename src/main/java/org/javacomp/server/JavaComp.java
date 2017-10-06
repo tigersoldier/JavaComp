@@ -5,14 +5,18 @@ import static com.google.common.base.Preconditions.checkState;
 
 import com.google.common.collect.ImmutableList;
 import com.google.gson.Gson;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Level;
 import javax.annotation.Nullable;
 import org.javacomp.file.FileManager;
 import org.javacomp.file.FileManagerImpl;
@@ -30,6 +34,7 @@ import org.javacomp.server.protocol.DidOpenTextDocumentHandler;
 import org.javacomp.server.protocol.ExitHandler;
 import org.javacomp.server.protocol.HoverTextDocumentHandler;
 import org.javacomp.server.protocol.InitializeHandler;
+import org.javacomp.server.protocol.InitializeParams;
 import org.javacomp.server.protocol.ShutdownHandler;
 import org.javacomp.server.protocol.SignatureHelpTextDocumentHandler;
 
@@ -94,20 +99,27 @@ public class JavaComp implements Server {
 
   @Override
   public synchronized void initialize(
-      int clientProcessId, URI projectRootUri, @Nullable JavaCompOptions options) {
+      int clientProcessId, URI projectRootUri, @Nullable JavaCompOptions initializeOptions) {
     checkState(!initialized, "Cannot initialize the server twice in a row.");
     initialized = true;
 
     List<String> ignorePaths;
-    if (options != null) {
-      Level logLevel = options.getLogLevel();
-      String logPath = options.getLogPath();
-      if (logPath != null) {
-        JLogger.setLogFile(logPath);
-      }
-      if (logLevel != null) {
-        JLogger.setLogLevel(logLevel);
-      }
+    InitializeParams.InitializationOptions options = loadProjectOptions(projectRootUri);
+    if (initializeOptions != null) {
+      mergeOptions(options, initializeOptions);
+    }
+
+    logger.info("Initializing project: %s", projectRootUri);
+    logger.info(
+        "Options:\n  logPath: %s\n  logLevel: %s\n" + "  ignorePaths: %s\n  typeIndexFiles: %s",
+        options.logPath, options.logLevel, options.ignorePaths, options.typeIndexFiles);
+    if (options.logPath != null) {
+      JLogger.setLogFile(options.logPath);
+    }
+    if (options.logLevel != null) {
+      JLogger.setLogLevel(options.getLogLevel());
+    }
+    if (options.ignorePaths != null) {
       ignorePaths = options.getIgnorePaths();
     } else {
       ignorePaths = ImmutableList.of();
@@ -121,7 +133,7 @@ public class JavaComp implements Server {
           synchronized (JavaComp.this) {
             project.initialize();
             project.loadJdkModule();
-            if (options != null) {
+            if (options.getTypeIndexFiles() != null) {
               for (String indexFilePath : options.getTypeIndexFiles()) {
                 project.loadTypeIndexFile(indexFilePath);
               }
@@ -171,6 +183,34 @@ public class JavaComp implements Server {
   public synchronized Project getProject() {
     checkState(initialized, "Server not initialized.");
     return checkNotNull(project);
+  }
+
+  private InitializeParams.InitializationOptions loadProjectOptions(URI projectRootUri) {
+    Path projectRoot = Paths.get(projectRootUri);
+    Path optionsFile = projectRoot.resolve(Constants.PROJECT_OPTIONS_FILENAME);
+    try {
+      return gson.fromJson(
+          Files.newBufferedReader(optionsFile, StandardCharsets.UTF_8),
+          InitializeParams.InitializationOptions.class);
+    } catch (IOException e) {
+      // Return default instance below.
+    }
+    return new InitializeParams.InitializationOptions();
+  }
+
+  private void mergeOptions(InitializeParams.InitializationOptions to, JavaCompOptions from) {
+    if (from.getIgnorePaths() != null && !from.getIgnorePaths().isEmpty()) {
+      to.ignorePaths = from.getIgnorePaths();
+    }
+    if (from.getLogLevel() != null) {
+      to.logLevel = InitializeParams.LogLevel.fromJavaLogLevel(from.getLogLevel());
+    }
+    if (from.getLogPath() != null) {
+      to.logPath = from.getLogPath();
+    }
+    if (from.getTypeIndexFiles() != null && !from.getTypeIndexFiles().isEmpty()) {
+      to.typeIndexFiles = from.getTypeIndexFiles();
+    }
   }
 
   public static final void main(String[] args) {

@@ -14,5 +14,8 @@ final class Constants {
   /** Patch version. Increment it when making backwards-compatible bug fixes. */
   public static final int PATCH_VERSION = 0;
 
+  /** The filename of the per-project options JSON file. */
+  public static final String PROJECT_OPTIONS_FILENAME = "javacomp.json";
+
   private Constants() {}
 }

@@ -1,0 +1,14 @@
+{
+    "typeIndexFiles": ["typeindeces/guava.json",
+                       "typeindeces/javac.json",
+                       "typeindeces/truth.json"],
+    "logLevel": "fine",
+    "ignorePaths": ["openjdk_src/test",
+                    "openjdk_src",
+                    "testdata",
+                    "typeindeces",
+                    "bazel-javacomp",
+                    "bazel-bin",
+                    "bazel-out",
+                    ".*"]
+}

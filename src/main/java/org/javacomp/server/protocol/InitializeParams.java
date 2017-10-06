@@ -112,5 +112,23 @@ public class InitializeParams implements RequestParams {
     FINE,
     FINER,
     FINEST,
+    ;
+
+    public static LogLevel fromJavaLogLevel(java.util.logging.Level level) {
+      if (level == java.util.logging.Level.SEVERE) {
+        return LogLevel.SEVERE;
+      } else if (level == java.util.logging.Level.WARNING) {
+        return LogLevel.WARNING;
+      } else if (level == java.util.logging.Level.INFO) {
+        return LogLevel.INFO;
+      } else if (level == java.util.logging.Level.FINE) {
+        return LogLevel.FINE;
+      } else if (level == java.util.logging.Level.FINER) {
+        return LogLevel.FINER;
+      } else if (level == java.util.logging.Level.FINEST) {
+        return LogLevel.FINEST;
+      }
+      throw new IllegalArgumentException("Unsupported level " + level);
+    }
   }
 }

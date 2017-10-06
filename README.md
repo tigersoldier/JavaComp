@@ -30,14 +30,28 @@ See the installation guide for your editor:
 
 ## Customization
 
-Editor plugins can customize the behavior of JavaComp by setting the
-`initializationOptions` field of of the [`initialize`
-Request][initialize-request]. Consult the documentation of the editor for how to
-set them in your editor.
+You can put a `javacomp.json` file under the project root directory to customize
+the behavior of JavaComp.
 
-Below is supported options. The source of truth of the supported options is the
-`InitializationOptions` class defined in
-[InitializeParams.java][InitializeParams.java].
+Example `javacomp.json` file content:
+
+```json
+{
+  "logPath": "/tmp/javacomp.log",
+  "logLevel": "fine",
+  "typeIndexFiles": ["typeindeces/guava.json"],
+  "ignorePaths": ["*.bak", ".*"]
+}
+```
+
+The schema of the JSON is defined by the `InitializationOptions` class in
+[InitializeParams.java][InitializeParams.java]. The `initializationOptions`
+field of the [`initialize` Request][initialize-request] accepts the same format
+as `javacomp.json`. Editor plugins can set `initializationOptions` to customize
+JavaComp. If both `javacomp.json` and `initializationOptions` exist,
+`initializationOptions` overrides `javacomp.json`.
+
+Below are supported options. The source of truth of the supported options is the
 
 ### logPath
 
