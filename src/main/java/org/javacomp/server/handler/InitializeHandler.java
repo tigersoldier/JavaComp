@@ -23,7 +23,8 @@ public class InitializeHandler extends RequestHandler<InitializeParams> {
   @Override
   public InitializeResult handleRequest(Request<InitializeParams> request) {
     InitializeParams params = request.getParams();
-    server.initialize(params.processId, params.rootUri, params.initializationOptions);
+    server.initialize(
+        params.processId, params.rootUri, params.capabilities, params.initializationOptions);
     InitializeResult result = new InitializeResult();
     result.capabilities = new InitializeResult.ServerCapabilities();
     result.capabilities.textDocumentSync = new InitializeResult.TextDocumentSyncOptions();

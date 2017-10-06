@@ -18,6 +18,7 @@ java_library(
         "//src/main/java/org/javacomp/file",
         "//src/main/java/org/javacomp/options",
         "//src/main/java/org/javacomp/project",
+        "//src/main/java/org/javacomp/protocol",
     ],
 )
 

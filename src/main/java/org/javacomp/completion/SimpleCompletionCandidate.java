@@ -10,8 +10,18 @@ public abstract class SimpleCompletionCandidate implements CompletionCandidate {
   }
 
   @Override
+  public Optional<String> getInsertPlainText() {
+    return Optional.empty();
+  }
+
+  @Override
+  public Optional<String> getInsertSnippet() {
+    return Optional.empty();
+  }
+
+  @Override
   public Optional<String> getDetail() {
-    return Optional.ofNullable(null);
+    return Optional.empty();
   }
 
   @AutoValue.Builder

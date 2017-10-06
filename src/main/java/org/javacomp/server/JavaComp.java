@@ -24,6 +24,7 @@ import org.javacomp.logging.JLogger;
 import org.javacomp.options.IndexOptions;
 import org.javacomp.options.JavaCompOptions;
 import org.javacomp.project.Project;
+import org.javacomp.protocol.ClientCapabilities;
 import org.javacomp.protocol.InitializeParams;
 import org.javacomp.server.handler.CompletionTextDocumentHandler;
 import org.javacomp.server.handler.DefinitionTextDocumentHandler;
@@ -56,6 +57,7 @@ public class JavaComp implements Server {
   private int exitCode = 0;
   private FileManager fileManager;
   private Project project;
+  private ClientCapabilities clientCapabilities;
 
   public JavaComp(InputStream inputStream, OutputStream outputStream) {
     this.gson = GsonUtils.getGson();
@@ -99,7 +101,10 @@ public class JavaComp implements Server {
 
   @Override
   public synchronized void initialize(
-      int clientProcessId, URI projectRootUri, @Nullable JavaCompOptions initializeOptions) {
+      int clientProcessId,
+      URI projectRootUri,
+      @Nullable ClientCapabilities clientCapabilities,
+      @Nullable JavaCompOptions initializeOptions) {
     checkState(!initialized, "Cannot initialize the server twice in a row.");
     initialized = true;
 
@@ -126,6 +131,11 @@ public class JavaComp implements Server {
     }
     fileManager = new FileManagerImpl(projectRootUri, ignorePaths, executor);
     project = new Project(fileManager, projectRootUri, IndexOptions.FULL_INDEX_BUILDER.build());
+    if (clientCapabilities == null) {
+      this.clientCapabilities = new ClientCapabilities();
+    } else {
+      this.clientCapabilities = clientCapabilities;
+    }
 
     // Project initialization can take a while. Run it in a separate thread.
     executor.submit(
@@ -142,6 +152,11 @@ public class JavaComp implements Server {
         });
 
     // TODO: Someday we should implement monitoring client process for all major platforms.
+  }
+
+  @Override
+  public synchronized ClientCapabilities getClientCapabilities() {
+    return clientCapabilities;
   }
 
   @Override

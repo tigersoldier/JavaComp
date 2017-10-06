@@ -15,9 +15,17 @@ public interface CompletionCandidate {
     KEYWORD,
   }
 
-  public abstract String getName();
+  public String getName();
 
-  public abstract Kind getKind();
+  default public Optional<String> getInsertPlainText() {
+    return Optional.empty();
+  }
 
-  public abstract Optional<String> getDetail();
+  default public Optional<String> getInsertSnippet() {
+    return Optional.empty();
+  }
+
+  public Kind getKind();
+
+  public Optional<String> getDetail();
 }

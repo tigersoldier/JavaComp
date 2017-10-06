@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Optional;
 import org.javacomp.completion.CompletionCandidate;
 import org.javacomp.project.Project;
+import org.javacomp.protocol.ClientCapabilities;
 import org.javacomp.protocol.CompletionList;
 import org.javacomp.protocol.CompletionList.CompletionItem;
 import org.javacomp.protocol.CompletionList.CompletionItemKind;
@@ -46,15 +47,35 @@ public class CompletionTextDocumentHandler extends RequestHandler<TextDocumentPo
     for (CompletionCandidate candidate : candidates) {
       CompletionItem item = new CompletionItem();
       item.label = candidate.getName();
-      item.insertTextFormat = InsertTextFormat.PLAINTEXT;
       item.kind = getCompletionItemKind(candidate.getKind());
       Optional<String> detail = candidate.getDetail();
       if (detail.isPresent()) {
         item.detail = detail.get();
       }
+      boolean supportsSnippet = clientSupportsSnippet(server.getClientCapabilities());
+      item.insertTextFormat =
+          supportsSnippet ? InsertTextFormat.SNIPPET : InsertTextFormat.PLAINTEXT;
+      Optional<String> insertText = Optional.empty();
+      if (supportsSnippet) {
+        insertText = candidate.getInsertSnippet();
+      }
+      if (!insertText.isPresent()) {
+        // Either the client doesn't snippet, or the candidate doesn't have a snippet.
+        insertText = candidate.getInsertPlainText();
+      }
+      item.insertText = insertText.orElse(null);
       completionList.items.add(item);
     }
     return completionList;
+  }
+
+  private static boolean clientSupportsSnippet(ClientCapabilities clientCapabilities) {
+    if (clientCapabilities.textDocument == null
+        || clientCapabilities.textDocument.completion == null
+        || clientCapabilities.textDocument.completion.completionItem == null) {
+      return false;
+    }
+    return clientCapabilities.textDocument.completion.completionItem.snippetSupport;
   }
 
   private static CompletionItemKind getCompletionItemKind(CompletionCandidate.Kind candidateKind) {

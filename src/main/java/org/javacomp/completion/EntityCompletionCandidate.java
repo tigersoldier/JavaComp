@@ -28,6 +28,32 @@ class EntityCompletionCandidate implements CompletionCandidate {
   }
 
   @Override
+  public Optional<String> getInsertSnippet() {
+    switch (entity.getKind()) {
+      case METHOD: {
+        MethodEntity method = (MethodEntity) entity;
+        StringBuilder sb = new StringBuilder(getName());
+        sb.append("(");
+        boolean firstParam = true;
+        int nParam = 0;
+        for (VariableEntity param: method.getParameters()) {
+          if (!firstParam) {
+            sb.append(", ");
+          } else {
+            firstParam = false;
+          }
+          nParam++;
+          sb.append(String.format("${%d:%s}", nParam, param.getSimpleName()));
+        }
+        sb.append(")");
+        return Optional.of(sb.toString());
+      }
+      default:
+        return Optional.empty();
+    }
+  }
+
+  @Override
   public Optional<String> getDetail() {
     switch (entity.getKind()) {
       case METHOD:
