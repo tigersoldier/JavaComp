@@ -25,7 +25,7 @@ signatures and jumping to definitions to editors that support the protocol.
 
 See the installation guide for your editor:
 
- * Emacs: [javacomp-el][javacomp-el]
+ * Emacs: [lsp-javacomp][lsp-javacomp]
  * Visual Studio Code: [javacomp-vscode][javacomp-vscode]
 
 ## Customization
@@ -94,9 +94,9 @@ See our [Wiki page][javacomp-wiki].
 [lang-server]: https://github.com/Microsoft/language-server-protocol
 [initialize-request]: https://github.com/Microsoft/language-server-protocol/blob/master/protocol.md#initialize-request
 [InitializeParams.java]: https://github.com/tigersoldier/JavaComp/blob/develop/src/main/java/org/javacomp/server/protocol/InitializeParams.java
-[javacomp-el]: https://github.com/tigersoldier/javacomp-el
 [javacomp-vscode]: https://github.com/tigersoldier/javacomp-vscode
 [javacomp-wiki]: https://github.com/tigersoldier/JavaComp/wiki
 [completion-screencast]: https://user-images.githubusercontent.com/226229/31046835-b3a36ba8-a632-11e7-8cd5-d53da7c6a638.gif
 [definition-screencast]: https://user-images.githubusercontent.com/226229/31046836-b3c26166-a632-11e7-8601-8c4f368f3f37.gif
 [hover-screencast]: https://user-images.githubusercontent.com/226229/31046837-b3c2f220-a632-11e7-84c1-d04260a9ac3d.gif
+[lsp-javacomp]: https://github.com/tigersoldier/lsp-javacomp
