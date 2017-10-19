@@ -24,19 +24,19 @@ import org.javacomp.logging.JLogger;
 import org.javacomp.options.IndexOptions;
 import org.javacomp.options.JavaCompOptions;
 import org.javacomp.project.Project;
+import org.javacomp.protocol.InitializeParams;
+import org.javacomp.server.handler.CompletionTextDocumentHandler;
+import org.javacomp.server.handler.DefinitionTextDocumentHandler;
+import org.javacomp.server.handler.DidChangeTextDocumentHandler;
+import org.javacomp.server.handler.DidCloseTextDocumentHandler;
+import org.javacomp.server.handler.DidOpenTextDocumentHandler;
+import org.javacomp.server.handler.ExitHandler;
+import org.javacomp.server.handler.HoverTextDocumentHandler;
+import org.javacomp.server.handler.InitializeHandler;
+import org.javacomp.server.handler.ShutdownHandler;
+import org.javacomp.server.handler.SignatureHelpTextDocumentHandler;
 import org.javacomp.server.io.RequestReader;
 import org.javacomp.server.io.ResponseWriter;
-import org.javacomp.server.protocol.CompletionTextDocumentHandler;
-import org.javacomp.server.protocol.DefinitionTextDocumentHandler;
-import org.javacomp.server.protocol.DidChangeTextDocumentHandler;
-import org.javacomp.server.protocol.DidCloseTextDocumentHandler;
-import org.javacomp.server.protocol.DidOpenTextDocumentHandler;
-import org.javacomp.server.protocol.ExitHandler;
-import org.javacomp.server.protocol.HoverTextDocumentHandler;
-import org.javacomp.server.protocol.InitializeHandler;
-import org.javacomp.server.protocol.InitializeParams;
-import org.javacomp.server.protocol.ShutdownHandler;
-import org.javacomp.server.protocol.SignatureHelpTextDocumentHandler;
 
 /** Entry point of the JavaComp server. */
 public class JavaComp implements Server {

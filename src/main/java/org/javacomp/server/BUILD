@@ -48,8 +48,9 @@ java_library(
         "//src/main/java/org/javacomp/logging",
         "//src/main/java/org/javacomp/options",
         "//src/main/java/org/javacomp/project",
+        "//src/main/java/org/javacomp/protocol",
+        "//src/main/java/org/javacomp/server/handler",
         "//src/main/java/org/javacomp/server/io",
-        "//src/main/java/org/javacomp/server/protocol",
         "//third_party:auto_value",
         "//third_party:gson",
     ],
@@ -63,6 +64,7 @@ java_library(
 java_library(
     name = "gsonenum",
     srcs = ["GsonEnum.java"],
+    visibility = ["//visibility:public"],
 )
 
 java_library(
@@ -80,8 +82,8 @@ java_library(
     deps = [
         "//external:guava",
         "//external:jsr305",
-        "//src/main/java/org/javacomp/server/protocol:nullparams",
-        "//src/main/java/org/javacomp/server/protocol:requestparams",
+        "//src/main/java/org/javacomp/protocol:nullparams",
+        "//src/main/java/org/javacomp/protocol:requestparams",
         "//third_party:auto_value",
     ],
 )

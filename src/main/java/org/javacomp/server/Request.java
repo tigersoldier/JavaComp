@@ -4,8 +4,8 @@ import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableMap;
 import java.util.Map;
 import javax.annotation.Nullable;
-import org.javacomp.server.protocol.NullParams;
-import org.javacomp.server.protocol.RequestParams;
+import org.javacomp.protocol.NullParams;
+import org.javacomp.protocol.RequestParams;
 
 /**
  * A request sent by the client.

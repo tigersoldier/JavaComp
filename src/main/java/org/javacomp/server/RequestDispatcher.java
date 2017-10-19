@@ -10,11 +10,11 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import org.javacomp.logging.JLogger;
+import org.javacomp.protocol.NullParams;
+import org.javacomp.protocol.RequestParams;
+import org.javacomp.server.handler.RequestHandler;
 import org.javacomp.server.io.ResponseWriter;
 import org.javacomp.server.io.StreamClosedException;
-import org.javacomp.server.protocol.NullParams;
-import org.javacomp.server.protocol.RequestHandler;
-import org.javacomp.server.protocol.RequestParams;
 
 /**
  * Logic for dispatching requests to registered {@link RequestHandler} instances based on method
@@ -117,7 +117,8 @@ public class RequestDispatcher {
 
           String requestId = rawRequest.getContent().getId();
           if (Strings.isNullOrEmpty(requestId)) {
-            // No ID provided. The request is a notification and the client doesn't expect any response.
+            // No ID provided. The request is a notification and the client doesn't expect any
+            // response.
             continue;
           }
 
