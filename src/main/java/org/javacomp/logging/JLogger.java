@@ -1,6 +1,7 @@
 package org.javacomp.logging;
 
 import java.util.logging.FileHandler;
+import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
@@ -35,6 +36,9 @@ public class JLogger {
   public static synchronized void setLogLevel(Level level) {
     Logger rootLogger = Logger.getLogger("");
     rootLogger.setLevel(level);
+    for (Handler handler : rootLogger.getHandlers()) {
+      handler.setLevel(level);
+    }
   }
 
   private JLogger(String enclosingClassName) {
