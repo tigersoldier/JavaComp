@@ -3,8 +3,12 @@ package org.javacomp.logging;
 import java.util.logging.FileHandler;
 import java.util.logging.Handler;
 import java.util.logging.Level;
+import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
+import javax.annotation.Nullable;
+import sun.misc.JavaLangAccess;
+import sun.misc.SharedSecrets;
 
 /**
  * Wrapper around Java logger.
@@ -55,7 +59,7 @@ public class JLogger {
 
   /** Logs a message at severe level. */
   public void severe(String msg) {
-    javaLogger.severe(msg);
+    log(Level.SEVERE, msg, null /* thrown */);
   }
 
   /**
@@ -65,7 +69,7 @@ public class JLogger {
    * @param args arguments to be filled into {@code msgfmt}
    */
   public void severe(String msgfmt, Object... args) {
-    javaLogger.severe(String.format(msgfmt, args));
+    log(Level.SEVERE, String.format(msgfmt, args), null /* thrown */);
   }
 
   /**
@@ -76,12 +80,12 @@ public class JLogger {
    * @param args arguments to be filled into {@code msgfmt}
    */
   public void severe(Throwable thrown, String msgfmt, Object... args) {
-    javaLogger.log(Level.SEVERE, String.format(msgfmt, args), thrown);
+    log(Level.SEVERE, String.format(msgfmt, args), thrown);
   }
 
   /** Logs a message at warning level. */
   public void warning(String msg) {
-    javaLogger.warning(msg);
+    log(Level.WARNING, msg, null /* thrown */);
   }
 
   /**
@@ -91,7 +95,7 @@ public class JLogger {
    * @param args arguments to be filled into {@code msgfmt}
    */
   public void warning(String msgfmt, Object... args) {
-    javaLogger.warning(String.format(msgfmt, args));
+    log(Level.WARNING, String.format(msgfmt, args), null /* thrown */);
   }
 
   /**
@@ -103,12 +107,12 @@ public class JLogger {
    * @param args arguments to be filled into {@code msgfmt}
    */
   public void warning(Throwable thrown, String msgfmt, Object... args) {
-    javaLogger.log(Level.WARNING, String.format(msgfmt, args), thrown);
+    log(Level.WARNING, String.format(msgfmt, args), thrown);
   }
 
   /** Logs a message at info level. */
   public void info(String msg) {
-    javaLogger.info(msg);
+    log(Level.INFO, msg, null /* thrown */);
   }
 
   /**
@@ -118,12 +122,12 @@ public class JLogger {
    * @param args arguments to be filled into {@code msgfmt}
    */
   public void info(String msgfmt, Object... args) {
-    javaLogger.info(String.format(msgfmt, args));
+    log(Level.INFO, String.format(msgfmt, args), null /* thrown */);
   }
 
   /** Logs a message at fine level. */
   public void fine(String msg) {
-    javaLogger.fine(msg);
+    log(Level.FINE, msg, null /* thrown */);
   }
 
   /**
@@ -133,6 +137,41 @@ public class JLogger {
    * @param args arguments to be filled into {@code msgfmt}
    */
   public void fine(String msgfmt, Object... args) {
-    javaLogger.fine(String.format(msgfmt, args));
+    log(Level.FINE, String.format(msgfmt, args), null /* thrown */);
+  }
+
+  private void log(Level level, String msg, @Nullable Throwable thrown) {
+    LogRecord logRecord = new LogRecord(level, msg);
+    if (thrown != null) {
+      logRecord.setThrown(thrown);
+    }
+    StackTraceElement callerStackTraceElement = findCallerStackTraceElement();
+    if (callerStackTraceElement != null) {
+      logRecord.setSourceClassName(callerStackTraceElement.getClassName());
+      logRecord.setSourceMethodName(callerStackTraceElement.getMethodName());
+    }
+    javaLogger.log(logRecord);
+  }
+
+  @Nullable
+  private static StackTraceElement findCallerStackTraceElement() {
+    JavaLangAccess access = SharedSecrets.getJavaLangAccess();
+    Throwable throwable = new Throwable();
+    int stackTraceDepth = access.getStackTraceDepth(throwable);
+
+    boolean loggerStackTraceFound = true;
+    for (int i = 0; i < stackTraceDepth; i++) {
+      StackTraceElement stackTraceElement = access.getStackTraceElement(throwable, i);
+      String className = stackTraceElement.getClassName();
+      if (JLogger.class.getCanonicalName().equals(className)) {
+        loggerStackTraceFound = true;
+      } else {
+        if (loggerStackTraceFound) {
+          // We've skipped all JLogger. This is the caller.
+          return stackTraceElement;
+        }
+      }
+    }
+    return null;
   }
 }
