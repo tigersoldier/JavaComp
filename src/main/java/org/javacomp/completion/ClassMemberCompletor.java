@@ -20,7 +20,10 @@ class ClassMemberCompletor {
   }
 
   ImmutableList<CompletionCandidate> getClassMembers(
-      EntityWithContext actualClass, Module module, String prefix) {
+      EntityWithContext actualClass,
+      Module module,
+      String prefix,
+      boolean addBothInstanceAndStaticMembers) {
     CompletionCandidateListBuilder builder = new CompletionCandidateListBuilder(prefix);
     for (EntityWithContext classInHierachy : typeSolver.classHierarchy(actualClass, module)) {
       checkState(
@@ -28,15 +31,11 @@ class ClassMemberCompletor {
           "classHierarchy() returns non class entity %s for %s",
           classInHierachy,
           actualClass);
-      if (actualClass.isInstanceContext()) {
-        builder.addEntities(((ClassEntity) classInHierachy.getEntity()).getMemberEntities());
-      } else {
-        // Non instance context only allows non instance members.
-        for (Entity member :
-            ((ClassEntity) classInHierachy.getEntity()).getMemberEntities().values()) {
-          if (!member.isInstanceMember()) {
-            builder.addEntity(member);
-          }
+      for (Entity member :
+          ((ClassEntity) classInHierachy.getEntity()).getMemberEntities().values()) {
+        if (addBothInstanceAndStaticMembers
+            || actualClass.isInstanceContext() == member.isInstanceMember()) {
+          builder.addEntity(member);
         }
       }
     }

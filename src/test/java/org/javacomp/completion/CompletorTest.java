@@ -113,6 +113,22 @@ public class CompletorTest {
   }
 
   @Test
+  public void completeSymbolsInMethod() throws Exception {
+    String toComplete = "/** @complete */";
+    List<CompletionCandidate> candidates = completeWithContent("CompleteInMethod.java", toComplete);
+    assertThat(getCandidateNames(candidates))
+        .named("Candidates of '" + toComplete + "'")
+        .containsAllOf(
+            "STATIC_FIELD",
+            "staticMethod",
+            "self",
+            "fakeString",
+            "AboveClass",
+            "completeMethod",
+            "BelowClass");
+  }
+
+  @Test
   public void completeNewStatement() throws Exception {
     List<String> keywords =
         Arrays.stream(KeywordCompletionCandidate.values())
@@ -147,14 +163,7 @@ public class CompletorTest {
     String baseAboveCompletion = "above./** @complete */";
     List<String> aboveCases =
         ImmutableList.of(baseAboveCompletion, baseAboveCompletion + "\nabove.aboveMethod();");
-    assertCompletion(
-        "CompleteInMethod.java",
-        aboveCases,
-        "aboveField",
-        "aboveMethod",
-        "STATIC_ABOVE_FIELD",
-        "staticAboveMethod",
-        "toString");
+    assertCompletion("CompleteInMethod.java", aboveCases, "aboveField", "aboveMethod", "toString");
 
     String baseBelowCompletion = "below./** @complete */";
     List<String> belowCases =
@@ -163,14 +172,7 @@ public class CompletorTest {
             baseBelowCompletion + "\nbelow.belowMethod();",
             "above.;" + baseBelowCompletion,
             "self.new BelowClass()./** @complete */");
-    assertCompletion(
-        "CompleteInMethod.java",
-        belowCases,
-        "belowField",
-        "belowMethod",
-        "STATIC_BELOW_FIELD",
-        "staticBelowMethod",
-        "toString");
+    assertCompletion("CompleteInMethod.java", belowCases, "belowField", "belowMethod", "toString");
   }
 
   @Test
@@ -184,7 +186,9 @@ public class CompletorTest {
         "CompleteInMethod.java",
         ImmutableList.of("CompleteInMethod./** @complete */"),
         "AboveClass",
-        "BelowClass");
+        "BelowClass",
+        "STATIC_FIELD",
+        "staticMethod");
   }
 
   @Test
@@ -195,7 +199,7 @@ public class CompletorTest {
             "new OtherClass().innerClass./** @complete */",
             "OtherClass.java");
     assertThat(getCandidateNames(candidates))
-        .containsExactly("innerInnerClass", "getInnerInnerClass", "InnerInnerClass", "toString");
+        .containsExactly("innerInnerClass", "getInnerInnerClass", "toString");
   }
 
   @Test
@@ -216,14 +220,7 @@ public class CompletorTest {
             + "  AboveClass innerAboveClass;\n"
             + "  innerAboveClass./** @complete */\n"
             + "}";
-    assertCompletion(
-        "CompleteInMethod.java",
-        content,
-        "aboveField",
-        "aboveMethod",
-        "STATIC_ABOVE_FIELD",
-        "staticAboveMethod",
-        "toString");
+    assertCompletion("CompleteInMethod.java", content, "aboveField", "aboveMethod", "toString");
   }
 
   @Test

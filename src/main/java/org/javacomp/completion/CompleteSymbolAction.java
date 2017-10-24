@@ -53,7 +53,8 @@ class CompleteSymbolAction implements CompletionAction {
             classMemberCompletor.getClassMembers(
                 EntityWithContext.ofEntity((ClassEntity) currentScope),
                 positionContext.getModule(),
-                completionPrefix));
+                completionPrefix,
+                true /* addBothInstanceAndStaticMembers */));
       } else if (currentScope instanceof FileScope) {
         FileScope fileScope = (FileScope) currentScope;
         builder.addEntities(getPackageMembers(fileScope, positionContext.getModule()));

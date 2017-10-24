@@ -1,8 +1,11 @@
 package org.javacomp.completion.testdata;
 
 public class CompleteInMethod {
+  public static final int STATIC_FIELD;
   public CompleteInMethod self = new CompleteInMethod();
   public FakeString fakeString;
+
+  public static void staticMethod();
 
   public class AboveClass {
     public static final int STATIC_ABOVE_FIELD;

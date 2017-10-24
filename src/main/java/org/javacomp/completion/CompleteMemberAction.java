@@ -18,7 +18,7 @@ import org.javacomp.typesolver.TypeSolver;
 
 /** An action to get completion candidates for member selection. */
 class CompleteMemberAction implements CompletionAction {
-  private final JLogger logger = JLogger.createForEnclosingClass();
+  private static final JLogger logger = JLogger.createForEnclosingClass();
   private final ExpressionTree memberExpression;
   private final TypeSolver typeSolver;
   private final ExpressionSolver expressionSolver;
@@ -57,7 +57,10 @@ class CompleteMemberAction implements CompletionAction {
     if (solvedEntityWithContext.get().getEntity() instanceof ClassEntity) {
       return new ClassMemberCompletor(typeSolver, expressionSolver)
           .getClassMembers(
-              solvedEntityWithContext.get(), positionContext.getModule(), completionPrefix);
+              solvedEntityWithContext.get(),
+              positionContext.getModule(),
+              completionPrefix,
+              false /* addBothInstanceAndContextMembers */);
     }
 
     return createCompletionCandidates(
