@@ -3,6 +3,7 @@ package org.javacomp.completion;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multimap;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,6 +18,12 @@ import org.javacomp.typesolver.EntityShadowingListBuilder;
  */
 public class CompletionCandidateListBuilder {
   private static final GetElementFunction GET_ELEMENT_FUNCTION = new GetElementFunction();
+  private static final Comparator<CompletionCandidateWithMatchLevel> CANDIDATE_COMPARATOR =
+      Comparator.comparing(
+              (CompletionCandidateWithMatchLevel candidateWithLevel) ->
+                  candidateWithLevel.getCompletionCandidate().getSortCategory().ordinal())
+          .thenComparing(
+              (candidateWithLevel) -> candidateWithLevel.getCompletionCandidate().getName());
 
   private final Map<String, EntityShadowingListBuilder<CompletionCandidateWithMatchLevel>>
       candidateMap;
@@ -31,9 +38,10 @@ public class CompletionCandidateListBuilder {
     return candidateMap.containsKey(name);
   }
 
-  public CompletionCandidateListBuilder addEntities(Multimap<String, Entity> entities) {
+  public CompletionCandidateListBuilder addEntities(
+      Multimap<String, Entity> entities, CompletionCandidate.SortCategory sortCategory) {
     for (Entity entity : entities.values()) {
-      addEntity(entity);
+      addEntity(entity, sortCategory);
     }
     return this;
   }
@@ -45,8 +53,9 @@ public class CompletionCandidateListBuilder {
     return this;
   }
 
-  public CompletionCandidateListBuilder addEntity(Entity entity) {
-    return this.addCandidate(new EntityCompletionCandidate(entity));
+  public CompletionCandidateListBuilder addEntity(
+      Entity entity, CompletionCandidate.SortCategory sortCategory) {
+    return this.addCandidate(new EntityCompletionCandidate(entity, sortCategory));
   }
 
   public CompletionCandidateListBuilder addCandidate(CompletionCandidate candidate) {

@@ -12,9 +12,11 @@ import org.javacomp.model.VariableEntity;
 /** A {@link CompletionCandidate} backed by {@link Entity}. */
 class EntityCompletionCandidate implements CompletionCandidate {
   private final Entity entity;
+  private final SortCategory sortCategory;
 
-  EntityCompletionCandidate(Entity entity) {
+  EntityCompletionCandidate(Entity entity, SortCategory sortCategory) {
     this.entity = entity;
+    this.sortCategory = sortCategory;
   }
 
   @Override
@@ -30,24 +32,25 @@ class EntityCompletionCandidate implements CompletionCandidate {
   @Override
   public Optional<String> getInsertSnippet() {
     switch (entity.getKind()) {
-      case METHOD: {
-        MethodEntity method = (MethodEntity) entity;
-        StringBuilder sb = new StringBuilder(getName());
-        sb.append("(");
-        boolean firstParam = true;
-        int nParam = 0;
-        for (VariableEntity param: method.getParameters()) {
-          if (!firstParam) {
-            sb.append(", ");
-          } else {
-            firstParam = false;
+      case METHOD:
+        {
+          MethodEntity method = (MethodEntity) entity;
+          StringBuilder sb = new StringBuilder(getName());
+          sb.append("(");
+          boolean firstParam = true;
+          int nParam = 0;
+          for (VariableEntity param : method.getParameters()) {
+            if (!firstParam) {
+              sb.append(", ");
+            } else {
+              firstParam = false;
+            }
+            nParam++;
+            sb.append(String.format("${%d:%s}", nParam, param.getSimpleName()));
           }
-          nParam++;
-          sb.append(String.format("${%d:%s}", nParam, param.getSimpleName()));
+          sb.append(")");
+          return Optional.of(sb.toString());
         }
-        sb.append(")");
-        return Optional.of(sb.toString());
-      }
       default:
         return Optional.empty();
     }
@@ -115,6 +118,11 @@ class EntityCompletionCandidate implements CompletionCandidate {
       default:
         return Optional.empty();
     }
+  }
+
+  @Override
+  public SortCategory getSortCategory() {
+    return sortCategory;
   }
 
   public static Kind toCandidateKind(Entity.Kind entityKind) {

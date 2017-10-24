@@ -3,6 +3,7 @@ package org.javacomp.completion;
 import static com.google.common.base.Preconditions.checkState;
 
 import com.google.common.collect.ImmutableList;
+import org.javacomp.completion.CompletionCandidate.SortCategory;
 import org.javacomp.model.ClassEntity;
 import org.javacomp.model.Entity;
 import org.javacomp.model.EntityWithContext;
@@ -25,6 +26,7 @@ class ClassMemberCompletor {
       String prefix,
       boolean addBothInstanceAndStaticMembers) {
     CompletionCandidateListBuilder builder = new CompletionCandidateListBuilder(prefix);
+    boolean directMembers = true;
     for (EntityWithContext classInHierachy : typeSolver.classHierarchy(actualClass, module)) {
       checkState(
           classInHierachy.getEntity() instanceof ClassEntity,
@@ -35,9 +37,11 @@ class ClassMemberCompletor {
           ((ClassEntity) classInHierachy.getEntity()).getMemberEntities().values()) {
         if (addBothInstanceAndStaticMembers
             || actualClass.isInstanceContext() == member.isInstanceMember()) {
-          builder.addEntity(member);
+          builder.addEntity(
+              member, directMembers ? SortCategory.DIRECT_MEMBER : SortCategory.ACCESSIBLE_SYMBOL);
         }
       }
+      directMembers = false;
     }
     return builder.build();
   }

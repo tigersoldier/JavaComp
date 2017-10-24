@@ -6,6 +6,7 @@ import com.google.common.collect.Multimap;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import org.javacomp.completion.CompletionCandidate.SortCategory;
 import org.javacomp.logging.JLogger;
 import org.javacomp.model.ClassEntity;
 import org.javacomp.model.Entity;
@@ -57,19 +58,23 @@ class CompleteSymbolAction implements CompletionAction {
                 true /* addBothInstanceAndStaticMembers */));
       } else if (currentScope instanceof FileScope) {
         FileScope fileScope = (FileScope) currentScope;
-        builder.addEntities(getPackageMembers(fileScope, positionContext.getModule()));
+        builder.addEntities(
+            getPackageMembers(fileScope, positionContext.getModule()),
+            SortCategory.ACCESSIBLE_SYMBOL);
         addImportedEntities(builder, fileScope, positionContext.getModule());
       } else {
-        builder.addEntities(currentScope.getMemberEntities());
+        builder.addEntities(currentScope.getMemberEntities(), SortCategory.DIRECT_MEMBER);
       }
     }
     builder.addEntities(
-        typeSolver.getAggregateRootPackageScope(positionContext.getModule()).getMemberEntities());
+        typeSolver.getAggregateRootPackageScope(positionContext.getModule()).getMemberEntities(),
+        SortCategory.UNKNOWN);
 
     Optional<PackageScope> javaLangPackage =
         typeSolver.findPackageInModule(JAVA_LANG_QUALIFIERS, positionContext.getModule());
     if (javaLangPackage.isPresent()) {
-      builder.addEntities(javaLangPackage.get().getMemberEntities());
+      builder.addEntities(
+          javaLangPackage.get().getMemberEntities(), SortCategory.ACCESSIBLE_SYMBOL);
     }
 
     return builder.build();
@@ -108,7 +113,7 @@ class CompleteSymbolAction implements CompletionAction {
         }
 
         if (member instanceof MethodEntity || member instanceof VariableEntity) {
-          builder.addEntity(member);
+          builder.addEntity(member, CompletionCandidate.SortCategory.ACCESSIBLE_SYMBOL);
         }
       }
     }
@@ -136,7 +141,7 @@ class CompleteSymbolAction implements CompletionAction {
 
       for (Entity member : enclosingClassOrPackage.getChildScope().getMemberEntities().values()) {
         if (member.isStatic() && allowedKinds.contains(member.getKind())) {
-          builder.addEntity(member);
+          builder.addEntity(member, CompletionCandidate.SortCategory.ACCESSIBLE_SYMBOL);
         }
       }
     }

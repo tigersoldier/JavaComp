@@ -52,6 +52,12 @@ public class CompletionTextDocumentHandler extends RequestHandler<TextDocumentPo
       if (detail.isPresent()) {
         item.detail = detail.get();
       }
+
+      // The sort text of a candidate is the candidate label prefixed with its
+      // sort category ordinal.
+      char sortPrefix = (char) ('a' + candidate.getSortCategory().ordinal());
+      item.sortText = sortPrefix + item.label;
+
       boolean supportsSnippet = clientSupportsSnippet(server.getClientCapabilities());
       item.insertTextFormat =
           supportsSnippet ? InsertTextFormat.SNIPPET : InsertTextFormat.PLAINTEXT;

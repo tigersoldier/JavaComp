@@ -66,6 +66,11 @@ enum KeywordCompletionCandidate implements CompletionCandidate {
   }
 
   @Override
+  public SortCategory getSortCategory() {
+    return SortCategory.KEYWORD;
+  }
+
+  @Override
   public Optional<String> getDetail() {
     return Optional.ofNullable(null);
   }

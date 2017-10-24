@@ -74,7 +74,10 @@ class CompleteMemberAction implements CompletionAction {
         .stream()
         .filter(
             (entity -> CompletionPrefixMatcher.matches(entity.getSimpleName(), completionPrefix)))
-        .map((entity) -> new EntityCompletionCandidate(entity))
+        .map(
+            (entity) ->
+                new EntityCompletionCandidate(
+                    entity, CompletionCandidate.SortCategory.DIRECT_MEMBER))
         .collect(ImmutableList.toImmutableList());
   }
 }

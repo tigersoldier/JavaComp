@@ -66,7 +66,7 @@ public class Completor {
     if (cachedCompletion.isIncrementalCompletion(filePath, line, column, prefix)) {
       candidates = getCompletionCandidatesFromCache(prefix);
     } else {
-          candidates = computeCompletionCandidates(positionContext.get(), prefix);
+      candidates = computeCompletionCandidates(positionContext.get(), prefix);
       cachedCompletion =
           CachedCompletion.builder()
               .setFilePath(filePath)
@@ -105,7 +105,8 @@ public class Completor {
       logger.warning("Cannot get file content of %s for completion prefix", filePath);
       return "";
     }
-    // Get position of line, column. Note that we cannot use the position from PositionContext because
+    // Get position of line, column. Note that we cannot use the position from PositionContext
+    // because
     // it's the position of the possibly modified content, not the original content.
     JCCompilationUnit compilationUnit = fileScope.getCompilationUnit();
     LineMap lineMap = compilationUnit.getLineMap();
