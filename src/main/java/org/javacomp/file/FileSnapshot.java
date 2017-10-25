@@ -119,7 +119,7 @@ public class FileSnapshot extends SimpleJavaFileObject {
   }
 
   @VisibleForTesting
-  static FileSnapshot createFromContent(String content) {
+  public static FileSnapshot createFromContent(String content) {
     return new FileSnapshot(URI.create("test://testContent"), content);
   }
 }

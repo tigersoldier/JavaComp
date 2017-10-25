@@ -89,8 +89,8 @@ public class CompletionCandidateListBuilder {
     @Nullable
     public Entity apply(CompletionCandidateWithMatchLevel candidateWithMatchLevel) {
       CompletionCandidate candidate = candidateWithMatchLevel.getCompletionCandidate();
-      if (candidate instanceof EntityCompletionCandidate) {
-        return ((EntityCompletionCandidate) candidate).getEntity();
+      if (candidate instanceof EntityBasedCompletionCandidate) {
+        return ((EntityBasedCompletionCandidate) candidate).getEntity();
       } else {
         return null;
       }

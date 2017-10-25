@@ -208,7 +208,7 @@ public class TypeSolver {
     return findClassInModule(qualifiers, module, false /* useCanonicalName */);
   }
 
-  private Optional<ClassEntity> findClassInModule(
+  public Optional<ClassEntity> findClassInModule(
       List<String> qualifiers, Module module, boolean useCanonicalName) {
     Optional<Entity> classInModule =
         findClassOrPackageInModule(qualifiers, module, useCanonicalName);
@@ -375,7 +375,8 @@ public class TypeSolver {
       String name, EntityWithContext entityWithContext, Set<Entity.Kind> allowedKinds) {
     for (Entity member :
         entityWithContext.getEntity().getChildScope().getMemberEntities().get(name)) {
-      // Inner classes are considered non-instance member, regardless whether they are static or not.
+      // Inner classes are considered non-instance member, regardless whether they are static or
+      // not.
       if (allowedKinds.contains(member.getKind())
           && (entityWithContext.isInstanceContext() || !member.isInstanceMember())) {
         return Optional.of(

@@ -1,8 +1,6 @@
 package org.javacomp.model;
 
-import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Multimap;
 import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -21,15 +19,12 @@ import org.javacomp.logging.JLogger;
 public class Module {
   private static final JLogger logger = JLogger.createForEnclosingClass();
 
-  // Map of simple names -> FileScope that defines the name.
-  private final Multimap<String, FileScope> nameToFileMap;
   // Map of filename -> FileScope.
   private final Map<String, FileScope> fileScopeMap;
   private final PackageScope rootPackage;
   private final List<Module> dependingModules;
 
   public Module() {
-    this.nameToFileMap = HashMultimap.create();
     this.fileScopeMap = new HashMap<>();
     this.rootPackage = new PackageScope();
     this.dependingModules = new ArrayList<>();
@@ -43,16 +38,9 @@ public class Module {
     addFileToPackage(fileScope);
 
     if (existingFileScope != null) {
-      // Remove old entity scopees.
-      for (String entityName : existingFileScope.getGlobalEntities().keys()) {
-        nameToFileMap.remove(entityName, existingFileScope);
-      }
       removeFileFromPacakge(existingFileScope);
     }
     fileScopeMap.put(fileScope.getFilename(), fileScope);
-    for (String entityName : fileScope.getGlobalEntities().keys()) {
-      nameToFileMap.put(entityName, fileScope);
-    }
   }
 
   public synchronized void removeFile(Path filePath) {

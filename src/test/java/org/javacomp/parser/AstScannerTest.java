@@ -79,9 +79,9 @@ public class AstScannerTest {
 
   @Test
   public void classIsDeclaredGlobally() {
-    List<Entity> classEntity = fileScope.getGlobalEntitiesWithName("TestData");
-    assertThat(classEntity).hasSize(1);
-    assertThat(classEntity.get(0).getKind()).isEqualTo(Entity.Kind.CLASS);
+    Collection<Entity> testDataEntities = fileScope.getMemberEntities().get("TestData");
+    assertThat(testDataEntities).hasSize(1);
+    assertThat(Iterables.getOnlyElement(testDataEntities).getKind()).isEqualTo(Entity.Kind.CLASS);
   }
 
   @Test

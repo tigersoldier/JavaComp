@@ -1,5 +1,6 @@
 java_library(
     name = "tests",
+    testonly = 1,
     srcs = glob(["*.java"]),
     data = glob(["testdata/*"]),
     deps = [
@@ -7,10 +8,13 @@ java_library(
         "//external:javac",
         "//external:jsr305",
         "//src/main/java/org/javacomp/completion",
+        "//src/main/java/org/javacomp/file:impl",
         "//src/main/java/org/javacomp/file:simplefilemanager",
         "//src/main/java/org/javacomp/model",
         "//src/main/java/org/javacomp/options",
         "//src/main/java/org/javacomp/parser",
+        "//src/main/java/org/javacomp/protocol",
+        "//src/main/java/org/javacomp/testing",
         "//third_party:junit4",
         "//third_party:truth",
     ],
@@ -26,6 +30,14 @@ java_test(
 
 java_test(
     name = "CompletionCandidateListBuilderTest",
+    size = "small",
+    runtime_deps = [
+        ":tests",
+    ],
+)
+
+java_test(
+    name = "TextEditsTest",
     size = "small",
     runtime_deps = [
         ":tests",

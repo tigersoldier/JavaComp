@@ -105,10 +105,10 @@ public class Completor {
       logger.warning("Cannot get file content of %s for completion prefix", filePath);
       return "";
     }
-    // Get position of line, column. Note that we cannot use the position from PositionContext
-    // because
-    // it's the position of the possibly modified content, not the original content.
-    JCCompilationUnit compilationUnit = fileScope.getCompilationUnit();
+    // Get position of line, column. Note that we cannot use the position from
+    // PositionContext because it's the position of the possibly modified
+    // content, not the original content.
+    JCCompilationUnit compilationUnit = fileScope.getCompilationUnit().get();
     LineMap lineMap = compilationUnit.getLineMap();
     int position = LineMapUtil.getPositionFromZeroBasedLineAndColumn(lineMap, line, column);
     if (position < 0) {

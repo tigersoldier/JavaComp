@@ -10,31 +10,30 @@ import org.javacomp.model.TypeReference;
 import org.javacomp.model.VariableEntity;
 
 /** A {@link CompletionCandidate} backed by {@link Entity}. */
-class EntityCompletionCandidate implements CompletionCandidate {
-  private final Entity entity;
+class EntityCompletionCandidate extends EntityBasedCompletionCandidate {
   private final SortCategory sortCategory;
 
   EntityCompletionCandidate(Entity entity, SortCategory sortCategory) {
-    this.entity = entity;
+    super(entity);
     this.sortCategory = sortCategory;
   }
 
   @Override
   public String getName() {
-    return entity.getSimpleName();
+    return getEntity().getSimpleName();
   }
 
   @Override
   public Kind getKind() {
-    return toCandidateKind(entity.getKind());
+    return toCandidateKind(getEntity().getKind());
   }
 
   @Override
   public Optional<String> getInsertSnippet() {
-    switch (entity.getKind()) {
+    switch (getEntity().getKind()) {
       case METHOD:
         {
-          MethodEntity method = (MethodEntity) entity;
+          MethodEntity method = (MethodEntity) getEntity();
           StringBuilder sb = new StringBuilder(getName());
           sb.append("(");
           boolean firstParam = true;
@@ -58,6 +57,7 @@ class EntityCompletionCandidate implements CompletionCandidate {
 
   @Override
   public Optional<String> getDetail() {
+    Entity entity = getEntity();
     switch (entity.getKind()) {
       case METHOD:
         {
@@ -147,10 +147,6 @@ class EntityCompletionCandidate implements CompletionCandidate {
       default:
         return CompletionCandidate.Kind.UNKNOWN;
     }
-  }
-
-  public Entity getEntity() {
-    return entity;
   }
 
   private static void appendTypeParameters(StringBuilder sb, List<TypeParameter> typeParameters) {

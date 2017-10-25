@@ -20,6 +20,7 @@ import java.util.Optional;
 import java.util.stream.Stream;
 import org.javacomp.completion.CompletionCandidate;
 import org.javacomp.completion.Completor;
+import org.javacomp.completion.TextEdits;
 import org.javacomp.file.FileChangeListener;
 import org.javacomp.file.FileManager;
 import org.javacomp.logging.JLogger;
@@ -31,6 +32,7 @@ import org.javacomp.parser.AstScanner;
 import org.javacomp.parser.FileContentFixer;
 import org.javacomp.parser.FileContentFixer.FixedContent;
 import org.javacomp.parser.ParserContext;
+import org.javacomp.protocol.TextEdit;
 import org.javacomp.reference.DefinitionSolver;
 import org.javacomp.reference.MethodSignatures;
 import org.javacomp.reference.SignatureSolver;
@@ -150,7 +152,9 @@ public class Project {
           new AstScanner(indexOptions)
               .startScan(
                   parserContext.parse(filePath.toString(), content), filePath.toString(), content);
-      fileScope.setAdjustedLineMap(adjustedLineMap);
+      if (adjustedLineMap != null) {
+        fileScope.setAdjustedLineMap(adjustedLineMap);
+      }
       projectModule.addOrReplaceFileScope(fileScope);
     } catch (Throwable e) {
       logger.warning(e, "Failed to process file %s", filePath);
@@ -186,6 +190,10 @@ public class Project {
 
   public synchronized MethodSignatures findMethodSignatures(Path filePath, int line, int column) {
     return signatureSolver.getMethodSignatures(projectModule, filePath, line, column);
+  }
+
+  public synchronized TextEdit textEditForImport(Path filePath, String fullClassName) {
+    return new TextEdits().forImportClass(projectModule, filePath, fullClassName).orElse(null);
   }
 
   public Module getModule() {

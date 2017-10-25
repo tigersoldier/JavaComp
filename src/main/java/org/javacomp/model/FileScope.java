@@ -42,18 +42,15 @@ public class FileScope implements EntityScope {
   private final String filename;
   // Map of simple names -> entities.
   private final Multimap<String, Entity> entities;
-  // Simples that can be reached globally.
-  // Map of simple names -> entities.
-  private final Multimap<String, Entity> globalEntities;
   private final ImmutableList<String> packageQualifiers;
   private final Map<String, List<String>> importedClasses;
   private final Map<String, List<String>> importedStaticMembers;
   private final List<List<String>> onDemandClassImportQualifiers;
   private final List<List<String>> onDemandStaticImportQualifiers;
-  private final JCCompilationUnit compilationUnit;
+  private final Optional<JCCompilationUnit> compilationUnit;
   private final FileType fileType;
   private RangeMap<Integer, EntityScope> scopeRangeMap = null;
-  private LineMap adjustedLineMap = null;
+  private Optional<LineMap> adjustedLineMap = Optional.empty();
 
   private FileScope(
       String filename,
@@ -69,12 +66,11 @@ public class FileScope implements EntityScope {
     this.filename = filename;
     this.entities = HashMultimap.create();
     this.packageQualifiers = ImmutableList.copyOf(packageQualifiers);
-    this.globalEntities = HashMultimap.create();
     this.importedClasses = new HashMap<>();
     this.importedStaticMembers = new HashMap<>();
     this.onDemandClassImportQualifiers = new ArrayList<>();
     this.onDemandStaticImportQualifiers = new ArrayList<>();
-    this.compilationUnit = compilationUnit;
+    this.compilationUnit = Optional.ofNullable(compilationUnit);
     this.fileType = fileType;
   }
 
@@ -195,19 +191,6 @@ public class FileScope implements EntityScope {
     return scopeRangeMap.get(position);
   }
 
-  public void addGlobalEntity(Entity entity) {
-    globalEntities.put(entity.getSimpleName(), entity);
-  }
-
-  /** @return a multimap of entity simple name to entities */
-  public Multimap<String, Entity> getGlobalEntities() {
-    return ImmutableMultimap.copyOf(globalEntities);
-  }
-
-  public List<Entity> getGlobalEntitiesWithName(String simpleName) {
-    return ImmutableList.copyOf(globalEntities.get(simpleName));
-  }
-
   public List<String> getPackageQualifiers() {
     return packageQualifiers;
   }
@@ -222,13 +205,12 @@ public class FileScope implements EntityScope {
   }
 
   /** @return non-null value iff {@link #getFileType} returns {@code SOURCE_TYPE} */
-  @Nullable
-  public JCCompilationUnit getCompilationUnit() {
+  public Optional<JCCompilationUnit> getCompilationUnit() {
     return compilationUnit;
   }
 
   public void setAdjustedLineMap(LineMap adjustedLineMap) {
-    this.adjustedLineMap = adjustedLineMap;
+    this.adjustedLineMap = Optional.of(adjustedLineMap);
   }
 
   /**
@@ -243,15 +225,14 @@ public class FileScope implements EntityScope {
    * @throws IllegalStateException thrown if called when the return value of {@link #getFileType} is
    *     not {@code SOURCE_CODE}.
    */
-  public LineMap getLineMap() {
-    if (adjustedLineMap != null) {
+  public Optional<LineMap> getLineMap() {
+    if (adjustedLineMap.isPresent()) {
       return adjustedLineMap;
     }
-    if (compilationUnit == null) {
-      throw new IllegalStateException(
-          "Cannot get line map from null compilation unit. File is " + filename);
+    if (!compilationUnit.isPresent()) {
+      return Optional.empty();
     }
-    return compilationUnit.getLineMap();
+    return Optional.of(compilationUnit.get().getLineMap());
   }
 
   public FileType getFileType() {

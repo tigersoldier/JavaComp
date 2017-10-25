@@ -52,11 +52,15 @@ public abstract class PositionContext {
       Module module, Path filePath, int line, int column) {
     Optional<FileScope> inputFileScope = module.getFileScope(filePath.toString());
     if (!inputFileScope.isPresent()) {
-      return Optional.ofNullable(null);
+      return Optional.empty();
     }
 
-    JCCompilationUnit compilationUnit = inputFileScope.get().getCompilationUnit();
-    LineMap lineMap = inputFileScope.get().getLineMap();
+    if (!inputFileScope.get().getCompilationUnit().isPresent()) {
+      return Optional.empty();
+    }
+    JCCompilationUnit compilationUnit = inputFileScope.get().getCompilationUnit().get();
+
+    LineMap lineMap = inputFileScope.get().getLineMap().get();
     int position = LineMapUtil.getPositionFromZeroBasedLineAndColumn(lineMap, line, column);
     EntityScope scopeAtPosition = inputFileScope.get().getEntityScopeAt(position - 1);
     PositionAstScanner scanner = new PositionAstScanner(compilationUnit.endPositions, position);

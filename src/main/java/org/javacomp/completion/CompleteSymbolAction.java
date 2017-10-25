@@ -77,6 +77,12 @@ class CompleteSymbolAction implements CompletionAction {
           javaLangPackage.get().getMemberEntities(), SortCategory.ACCESSIBLE_SYMBOL);
     }
 
+    addClassesForImport(
+        builder,
+        positionContext.getModule(),
+        completionPrefix,
+        positionContext.getFileScope().getFilename());
+
     return builder.build();
   }
 
@@ -89,13 +95,19 @@ class CompleteSymbolAction implements CompletionAction {
       CompletionCandidateListBuilder builder, FileScope fileScope, Module module) {
     // import foo.Bar;
     for (List<String> fullClassName : fileScope.getAllImportedClasses()) {
-      String simpleName = fullClassName.get(fullClassName.size() - 1);
-      if (!builder.hasCandidateWithName(simpleName)) {
-        builder.addCandidate(
-            SimpleCompletionCandidate.builder()
-                .setName(simpleName)
-                .setKind(CompletionCandidate.Kind.CLASS)
-                .build());
+      Optional<ClassEntity> importedEntity =
+          typeSolver.findClassInModule(fullClassName, module, true /* useCanonicalName */);
+      if (importedEntity.isPresent()) {
+        builder.addEntity(importedEntity.get(), SortCategory.ACCESSIBLE_SYMBOL);
+      } else {
+        String simpleName = fullClassName.get(fullClassName.size() - 1);
+        if (!builder.hasCandidateWithName(simpleName)) {
+          builder.addCandidate(
+              SimpleCompletionCandidate.builder()
+                  .setName(simpleName)
+                  .setKind(CompletionCandidate.Kind.CLASS)
+                  .build());
+        }
       }
     }
 
@@ -151,6 +163,14 @@ class CompleteSymbolAction implements CompletionAction {
     // TODO: add only keywords that are available for the current context.
     for (KeywordCompletionCandidate keyword : KeywordCompletionCandidate.values()) {
       builder.addCandidate(keyword);
+    }
+  }
+
+  private void addClassesForImport(
+      CompletionCandidateListBuilder builder, Module module, String prefix, String filename) {
+    List<ClassEntity> classes = new AllEntitiesCompletor().getAllClasses(module, prefix);
+    for (ClassEntity classEntity : classes) {
+      builder.addCandidate(new ClassForImportCandidate(classEntity, filename));
     }
   }
 }

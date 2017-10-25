@@ -1,6 +1,10 @@
 package org.javacomp.completion;
 
+import com.google.common.collect.ImmutableMap;
+import java.util.Map;
 import java.util.Optional;
+import org.javacomp.protocol.CompletionItem.ResolveAction;
+import org.javacomp.protocol.CompletionItem.ResolveActionParams;
 
 public interface CompletionCandidate {
   public enum Kind {
@@ -37,21 +41,25 @@ public interface CompletionCandidate {
     TO_IMPORT,
   }
 
-  public String getName();
+  String getName();
 
-  public default Optional<String> getInsertPlainText() {
+  Kind getKind();
+
+  Optional<String> getDetail();
+
+  default Optional<String> getInsertPlainText() {
     return Optional.empty();
   }
 
-  public default Optional<String> getInsertSnippet() {
+  default Optional<String> getInsertSnippet() {
     return Optional.empty();
   }
 
-  public default SortCategory getSortCategory() {
+  default SortCategory getSortCategory() {
     return SortCategory.UNKNOWN;
   }
 
-  public Kind getKind();
-
-  public Optional<String> getDetail();
+  default Map<ResolveAction, ResolveActionParams> getResolveActions() {
+    return ImmutableMap.of();
+  }
 }

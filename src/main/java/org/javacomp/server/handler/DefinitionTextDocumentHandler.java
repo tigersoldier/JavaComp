@@ -62,7 +62,10 @@ public class DefinitionTextDocumentHandler extends RequestHandler<TextDocumentPo
                 // symbol.
                 return null;
               }
-              LineMap lineMap = fileScope.getLineMap();
+              if (!fileScope.getLineMap().isPresent()) {
+                return null;
+              }
+              LineMap lineMap = fileScope.getLineMap().get();
 
               Location location = new Location();
               location.range =

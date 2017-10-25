@@ -175,9 +175,7 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
     currentScope.addEntity(classEntity);
     addScopeRange((JCTree) node, classEntity);
     if (this.currentQualifiers != UNAVAILABLE_QUALIFIERS) {
-      // Not in a method, can be reached globally.
       this.currentQualifiers.add(classEntity.getSimpleName());
-      this.fileScope.addGlobalEntity(classEntity);
     }
 
     for (Tree member : node.getMembers()) {

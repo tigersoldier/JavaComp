@@ -1,8 +1,10 @@
 package org.javacomp.server.handler;
 
+import com.google.gson.Gson;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.javacomp.completion.CompletionCandidate;
 import org.javacomp.project.Project;
@@ -10,6 +12,9 @@ import org.javacomp.protocol.ClientCapabilities;
 import org.javacomp.protocol.CompletionItem;
 import org.javacomp.protocol.CompletionItem.CompletionItemKind;
 import org.javacomp.protocol.CompletionItem.InsertTextFormat;
+import org.javacomp.protocol.CompletionItem.ResolveAction;
+import org.javacomp.protocol.CompletionItem.ResolveActionParams;
+import org.javacomp.protocol.CompletionItem.ResolveData;
 import org.javacomp.protocol.CompletionList;
 import org.javacomp.protocol.TextDocumentPositionParams;
 import org.javacomp.server.Request;
@@ -23,10 +28,12 @@ import org.javacomp.server.Server;
  */
 public class CompletionTextDocumentHandler extends RequestHandler<TextDocumentPositionParams> {
   private final Server server;
+  private final Gson gson;
 
-  public CompletionTextDocumentHandler(Server server) {
+  public CompletionTextDocumentHandler(Server server, Gson gson) {
     super("textDocument/completion", TextDocumentPositionParams.class);
     this.server = server;
+    this.gson = gson;
   }
 
   @Override
@@ -58,21 +65,43 @@ public class CompletionTextDocumentHandler extends RequestHandler<TextDocumentPo
       char sortPrefix = (char) ('a' + candidate.getSortCategory().ordinal());
       item.sortText = sortPrefix + item.label;
 
-      boolean supportsSnippet = clientSupportsSnippet(server.getClientCapabilities());
-      item.insertTextFormat =
-          supportsSnippet ? InsertTextFormat.SNIPPET : InsertTextFormat.PLAINTEXT;
-      Optional<String> insertText = Optional.empty();
-      if (supportsSnippet) {
-        insertText = candidate.getInsertSnippet();
-      }
-      if (!insertText.isPresent()) {
-        // Either the client doesn't snippet, or the candidate doesn't have a snippet.
-        insertText = candidate.getInsertPlainText();
-      }
-      item.insertText = insertText.orElse(null);
+      fillInsertText(item, candidate);
+      fillData(item, candidate);
+
       completionList.items.add(item);
     }
     return completionList;
+  }
+
+  private void fillInsertText(CompletionItem item, CompletionCandidate candidate) {
+    boolean supportsSnippet = clientSupportsSnippet(server.getClientCapabilities());
+    item.insertTextFormat = supportsSnippet ? InsertTextFormat.SNIPPET : InsertTextFormat.PLAINTEXT;
+    Optional<String> insertText = Optional.empty();
+    if (supportsSnippet) {
+      insertText = candidate.getInsertSnippet();
+    }
+    if (!insertText.isPresent()) {
+      // Either the client doesn't snippet, or the candidate doesn't have a snippet.
+      insertText = candidate.getInsertPlainText();
+    }
+    item.insertText = insertText.orElse(null);
+  }
+
+  private void fillData(CompletionItem item, CompletionCandidate candidate) {
+    Map<ResolveAction, ResolveActionParams> resolveActions = candidate.getResolveActions();
+    if (resolveActions.isEmpty()) {
+      return;
+    }
+
+    item.data = new ArrayList<>(resolveActions.size());
+    for (Map.Entry<ResolveAction, ResolveActionParams> entry : resolveActions.entrySet()) {
+      ResolveAction action = entry.getKey();
+      ResolveActionParams params = entry.getValue();
+      ResolveData data = new ResolveData();
+      data.action = action;
+      data.params = gson.toJsonTree(params);
+      item.data.add(data);
+    }
   }
 
   private static boolean clientSupportsSnippet(ClientCapabilities clientCapabilities) {

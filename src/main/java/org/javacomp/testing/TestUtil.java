@@ -33,6 +33,8 @@ import org.javacomp.parser.SourceFileObject;
 /** Utility methods for writing tests. */
 public class TestUtil {
   public static final Joiner QUALIFIER_JOINER = Joiner.on(".");
+  public static final Path DUMMY_PATH = Paths.get("/dummy/path");
+
   private static final Context javacContext = new Context();
   private static final JavacFileManager fileManager =
       new JavacFileManager(javacContext, true /* register */, UTF_8);
@@ -53,6 +55,13 @@ public class TestUtil {
     return module;
   }
 
+  /** The path of the file added for the content is {@link #DUMMY_PATH}. */
+  public static Module parseContent(String content) {
+    Module module = new Module();
+    module.addOrReplaceFileScope(parseFileContent(content, DUMMY_PATH));
+    return module;
+  }
+
   public static String readFileContent(Path filePath) {
     try {
       return new String(Files.readAllBytes(filePath), UTF_8);
@@ -62,8 +71,12 @@ public class TestUtil {
   }
 
   public static FileScope parseFile(Path filePath) {
-    Log javacLog = Log.instance(javacContext);
     String fileContent = readFileContent(filePath);
+    return parseFileContent(fileContent, filePath);
+  }
+
+  public static FileScope parseFileContent(String content, Path filePath) {
+    Log javacLog = Log.instance(javacContext);
     // If source file not set, parser will throw IllegalArgumentException when errors occur.
     SourceFileObject sourceFileObject = new SourceFileObject(filePath.toString());
     javacLog.useSource(sourceFileObject);
@@ -71,13 +84,10 @@ public class TestUtil {
     JavacParser parser =
         ParserFactory.instance(javacContext)
             .newParser(
-                fileContent,
-                true /* keepDocComments */,
-                true /* keepEndPos */,
-                true /* keepLineMap */);
+                content, true /* keepDocComments */, true /* keepEndPos */, true /* keepLineMap */);
     JCCompilationUnit compilationUnit = parser.parseCompilationUnit();
     return new AstScanner(IndexOptions.FULL_INDEX_BUILDER.build())
-        .startScan(compilationUnit, filePath.toString(), fileContent);
+        .startScan(compilationUnit, filePath.toString(), content);
   }
 
   /** Lookup an entity from module with qualified name. */

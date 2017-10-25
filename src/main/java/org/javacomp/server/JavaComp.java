@@ -80,11 +80,11 @@ public class JavaComp implements Server {
             .registerHandler(new DidOpenTextDocumentHandler(this))
             .registerHandler(new DidChangeTextDocumentHandler(this))
             .registerHandler(new DidCloseTextDocumentHandler(this))
-            .registerHandler(new CompletionTextDocumentHandler(this))
+            .registerHandler(new CompletionTextDocumentHandler(this, gson))
             .registerHandler(new DefinitionTextDocumentHandler(this))
             .registerHandler(new SignatureHelpTextDocumentHandler(this))
             .registerHandler(new HoverTextDocumentHandler(this))
-            .registerHandler(new ResolveCompletionItemHandler(this))
+            .registerHandler(new ResolveCompletionItemHandler(this, gson))
             .setExecutor(executor)
             .build();
   }

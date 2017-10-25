@@ -1,6 +1,8 @@
 package org.javacomp.protocol;
 
 import com.google.gson.JsonElement;
+import java.net.URI;
+import java.util.List;
 import javax.annotation.Nullable;
 
 public class CompletionItem implements RequestParams {
@@ -59,7 +61,7 @@ public class CompletionItem implements RequestParams {
    * An optional array of additional text edits that are applied when selecting this completion.
    * Edits must not overlap with the main edit nor with themselves.
    */
-  @Nullable public TextEdit[] additionalTextEdits;
+  @Nullable public List<TextEdit> additionalTextEdits;
 
   /**
    * An optional command that is executed <b>after</b> inserting this completion. <b>Note</b> that
@@ -72,7 +74,7 @@ public class CompletionItem implements RequestParams {
    * An data entry field that is preserved on a completion item between a completion and a
    * completion resolve request.
    */
-  @Nullable public ResolveData[] data;
+  @Nullable public List<ResolveData> data;
 
   /**
    * Defines whether the insert text in a completion item should be interpreted as plain text or a
@@ -124,12 +126,23 @@ public class CompletionItem implements RequestParams {
     /** The action for resolving the completion item. */
     public ResolveAction action;
     /** Action-specific data. */
-    public JsonElement data;
+    public JsonElement params;
   }
 
   /** Actions for resolving a completion item. */
   public enum ResolveAction {
     /** Fill additionalTextEdits with adding import statements. */
-    ADD_IMPORT_TEXT_EDITS,
+    ADD_IMPORT_TEXT_EDIT,
+  }
+
+  /** Marker interface for the actual type of {@link ResolveData#data}. */
+  public interface ResolveActionParams {}
+
+  /** Resolve data for ADD_IMPORT_TEXT_EDIT action. */
+  public static class ResolveAddImportTextEditsParams implements ResolveActionParams {
+    /** The text document's URI. */
+    public URI uri;
+    /** The full name of the class to be imported. */
+    public String classFullName;
   }
 }
