@@ -35,13 +35,13 @@ public abstract class RawRequest {
    */
   public static class Content {
     private String method;
-    private String id;
+    private JsonElement id;
     private String jsonrpc;
     private JsonElement params;
 
     public Content() {}
 
-    public Content(String method, String id, String jsonrpc, JsonElement params) {
+    public Content(String method, JsonElement id, String jsonrpc, JsonElement params) {
       this.method = method;
       this.id = id;
       this.jsonrpc = jsonrpc;
@@ -52,7 +52,7 @@ public abstract class RawRequest {
       return method;
     }
 
-    public String getId() {
+    public JsonElement getId() {
       return id;
     }
 

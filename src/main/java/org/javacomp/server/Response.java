@@ -1,6 +1,7 @@
 package org.javacomp.server;
 
 import com.google.common.base.MoreObjects;
+import com.google.gson.JsonPrimitive;
 import java.util.Objects;
 import javax.annotation.Nullable;
 
@@ -12,11 +13,11 @@ import javax.annotation.Nullable;
  */
 public class Response {
   private final String jsonrpc;
-  private final String id;
+  private final JsonPrimitive id;
   @Nullable private final Object result;
   @Nullable private final ResponseError error;
 
-  private Response(String id, @Nullable Object result, @Nullable ResponseError error) {
+  private Response(JsonPrimitive id, @Nullable Object result, @Nullable ResponseError error) {
     this.jsonrpc = "2.0";
     this.id = id;
     this.result = result;
@@ -30,19 +31,19 @@ public class Response {
    * @param result the result of the request. If non-null, must be able to be converted to JSON by
    *     Gson.
    */
-  public static Response createResponse(String id, @Nullable Object result) {
+  public static Response createResponse(JsonPrimitive id, @Nullable Object result) {
     return new Response(id, result, null /* error */);
   }
 
   /** Create a response for errors. */
   public static Response createError(
-      String id, ErrorCode errorCode, String msgfmt, Object... args) {
+      JsonPrimitive id, ErrorCode errorCode, String msgfmt, Object... args) {
     return new Response(
         id, null /* result */, new ResponseError(errorCode, String.format(msgfmt, args)));
   }
 
   /** Create a response for errors. */
-  public static Response createError(String id, ResponseError error) {
+  public static Response createError(JsonPrimitive id, ResponseError error) {
     return new Response(id, null /* result */, error);
   }
 
@@ -50,7 +51,7 @@ public class Response {
     return jsonrpc;
   }
 
-  public String getId() {
+  public JsonPrimitive getId() {
     return id;
   }
 

@@ -2,6 +2,7 @@ package org.javacomp.server;
 
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableMap;
+import com.google.gson.JsonPrimitive;
 import java.util.Map;
 import javax.annotation.Nullable;
 import org.javacomp.protocol.NullParams;
@@ -27,14 +28,14 @@ public abstract class Request<T extends RequestParams> {
 
   /** The request ID. If the ID is null, it's a notification. */
   @Nullable
-  public abstract String getId();
+  public abstract JsonPrimitive getId();
 
   /** The parameters specific to the requdst method. */
   @Nullable
   public abstract T getParams();
 
   public static <T extends RequestParams> Request<T> create(
-      Map<String, String> header, String method, String messageId, @Nullable T params) {
+      Map<String, String> header, String method, JsonPrimitive messageId, @Nullable T params) {
     return new AutoValue_Request<T>(ImmutableMap.copyOf(header), method, messageId, params);
   }
 }

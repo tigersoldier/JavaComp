@@ -5,6 +5,8 @@ import static org.mockito.Mockito.when;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import java.util.Map;
@@ -58,17 +60,17 @@ public class RequestDispatcherTest {
     // Handle request1.
     JsonObject rawParams1 = new JsonObject();
     String params1Value = "foo";
-    rawParams1.add("strvalue", new JsonPrimitive(params1Value));
-    dispatchRequest(handler1.getMethod(), "id1", rawParams1);
-    Response expectedResponse1 = Response.createResponse("id1", params1Value);
+    rawParams1.add("strvalue", json(params1Value));
+    dispatchRequest(handler1.getMethod(), json("id1"), rawParams1);
+    Response expectedResponse1 = Response.createResponse(json("id1"), params1Value);
     assertResponseWritten(expectedResponse1);
 
     // Handle request2.
     JsonObject rawParams2 = new JsonObject();
     int params2Value = 42;
-    rawParams2.add("intvalue", new JsonPrimitive(params2Value));
-    dispatchRequest(handler2.getMethod(), "id2", rawParams2);
-    Response expectedResponse2 = Response.createResponse("id2", params2Value);
+    rawParams2.add("intvalue", json(params2Value));
+    dispatchRequest(handler2.getMethod(), json("id2"), rawParams2);
+    Response expectedResponse2 = Response.createResponse(json("id2"), params2Value);
     assertResponseWritten(expectedResponse2);
   }
 
@@ -80,39 +82,53 @@ public class RequestDispatcherTest {
   }
 
   @Test
+  public void testDispatchNotification_jsonNullId_doesNotWriteResponse() {
+    dispatchRequest(notificationHandler.getMethod(), new JsonNull() /* id */, null);
+    assertThat(responseWriter.pollResponse()).isNull();
+    assertThat(notificationHandler.numReceived).isEqualTo(1);
+  }
+
+  @Test
+  public void testDispatchNotification_invalidItType_doesNotWriteResponse() {
+    dispatchRequest(notificationHandler.getMethod(), new JsonObject() /* id */, null);
+    assertThat(responseWriter.pollResponse()).isNull();
+    assertThat(notificationHandler.numReceived).isEqualTo(1);
+  }
+
+  @Test
   public void testNullParamsAndResult() {
-    dispatchRequest(nullParamsHandler.getMethod(), "id3", null /* params */);
+    dispatchRequest(nullParamsHandler.getMethod(), json("id3"), null /* params */);
     Response response = responseWriter.pollResponse();
-    assertThat(response.getId()).isEqualTo("id3");
+    assertThat(response.getId()).isEqualTo(json("id3"));
     assertThat(response.getResult()).isNull();
   }
 
   @Test
   public void testDispatchRequest_missingMethod_returnsInvalidRequestError() {
     JsonObject params = new JsonObject();
-    dispatchRequest(null /* method */, "id", params);
-    assertErrorResponseWritten(ErrorCode.INVALID_REQUEST, "id", "method");
+    dispatchRequest(null /* method */, json("id"), params);
+    assertErrorResponseWritten(ErrorCode.INVALID_REQUEST, json("id"), "method");
   }
 
   @Test
   public void testDispatchRequest_missingParamsForNonNullHandler_returnsInvalidRequestError() {
-    dispatchRequest(handler1.getMethod(), "id", null /* params */);
-    assertErrorResponseWritten(ErrorCode.INVALID_REQUEST, "id", "params");
+    dispatchRequest(handler1.getMethod(), json("id"), null /* params */);
+    assertErrorResponseWritten(ErrorCode.INVALID_REQUEST, json("id"), "params");
   }
 
   @Test
   public void testDispatchRequest_methodNotExist_returnsMethodNotFoundError() {
     JsonObject params = new JsonObject();
-    dispatchRequest("invalidmethod", "id", params);
-    assertErrorResponseWritten(ErrorCode.METHOD_NOT_FOUND, "id", "invalidmethod");
+    dispatchRequest("invalidmethod", json("id"), params);
+    assertErrorResponseWritten(ErrorCode.METHOD_NOT_FOUND, json("id"), "invalidmethod");
   }
 
   @Test
   public void testHandlerThrowsException_returnsInternalError() {
     ErrorThrowingHandler handler = new ErrorThrowingHandler(new Exception("internal error"));
     dispatcher = createDispatcher(handler);
-    dispatchRequest(handler.getMethod(), "id", null /* params */);
-    assertErrorResponseWritten(ErrorCode.INTERNAL_ERROR, "id", "internal error");
+    dispatchRequest(handler.getMethod(), json("id"), null /* params */);
+    assertErrorResponseWritten(ErrorCode.INTERNAL_ERROR, json("id"), "internal error");
   }
 
   @Test
@@ -121,8 +137,8 @@ public class RequestDispatcherTest {
         new ErrorThrowingHandler(
             new RequestException(ErrorCode.SERVER_NOT_INITIALIZED, "custom error"));
     dispatcher = createDispatcher(handler);
-    dispatchRequest(handler.getMethod(), "id", null /* params */);
-    assertErrorResponseWritten(ErrorCode.SERVER_NOT_INITIALIZED, "id", "custom error");
+    dispatchRequest(handler.getMethod(), json("id"), null /* params */);
+    assertErrorResponseWritten(ErrorCode.SERVER_NOT_INITIALIZED, json("id"), "custom error");
   }
 
   private RequestDispatcher createDispatcher(RequestHandler<?>... handlers) {
@@ -139,7 +155,8 @@ public class RequestDispatcherTest {
     return builder.build();
   }
 
-  private boolean dispatchRequest(String method, @Nullable String id, @Nullable JsonObject params) {
+  private boolean dispatchRequest(
+      String method, @Nullable JsonElement id, @Nullable JsonObject params) {
     RawRequest rawRequest =
         RawRequest.create(HEADER, new RawRequest.Content(method, id, JSON_RPC, params));
     try {
@@ -154,12 +171,20 @@ public class RequestDispatcherTest {
     assertThat(responseWriter.pollResponse()).isEqualTo(expected);
   }
 
-  private void assertErrorResponseWritten(ErrorCode errorCode, String id, String message) {
+  private void assertErrorResponseWritten(ErrorCode errorCode, JsonPrimitive id, String message) {
     Response response = responseWriter.pollResponse();
     assertThat(response.getId()).isEqualTo(id);
     assertThat(response.getError()).isNotNull();
     assertThat(response.getError().getCode()).isEqualTo(errorCode.getCode());
     assertThat(response.getError().getMessage()).contains(message);
+  }
+
+  private static JsonPrimitive json(String value) {
+    return new JsonPrimitive(value);
+  }
+
+  private static JsonPrimitive json(int value) {
+    return new JsonPrimitive(value);
   }
 
   private static class Param1 implements RequestParams {

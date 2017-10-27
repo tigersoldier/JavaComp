@@ -86,6 +86,7 @@ java_library(
         "//src/main/java/org/javacomp/protocol:nullparams",
         "//src/main/java/org/javacomp/protocol:requestparams",
         "//third_party:auto_value",
+        "//third_party:gson",
     ],
 )
 
@@ -104,6 +105,7 @@ java_library(
         ":errorcode",
         "//external:guava",
         "//external:jsr305",
+        "//third_party:gson",
     ],
 )
 
