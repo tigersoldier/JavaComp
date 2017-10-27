@@ -6,6 +6,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import com.google.gson.Gson;
 import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonPrimitive;
 import java.io.StringBufferInputStream;
 import org.hamcrest.CustomMatcher;
 import org.hamcrest.Matcher;
@@ -28,20 +29,43 @@ public class RequestParserTest {
         createParser(
             createMessages(
                 "{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"cmd1\", \"params\": {\"foo\": 1}}",
-                "{\"jsonrpc\": \"2.0\", \"id\": 2, \"method\": \"cmd2\", "
+                "{\"jsonrpc\": \"2.0\", \"id\": \"2\", \"method\": \"cmd2\", "
                     + "\"params\": {\"bar\": \"baz\"}}"));
 
     JsonObject params1 = new JsonObject();
     params1.addProperty("foo", 1);
     RawRequest.Content content1 =
-        new RawRequest.Content("cmd1", "1" /* id */, "2.0" /* jsonrpc */, params1);
+        new RawRequest.Content("cmd1", json(1) /* id */, "2.0" /* jsonrpc */, params1);
     assertThat(parser.parse().getContent()).isEqualTo(content1);
 
     JsonObject params2 = new JsonObject();
     params2.addProperty("bar", "baz");
     RawRequest.Content content2 =
-        new RawRequest.Content("cmd2", "2" /* id */, "2.0" /* jsonrpc */, params2);
+        new RawRequest.Content("cmd2", json("2") /* id */, "2.0" /* jsonrpc */, params2);
     assertThat(parser.parse().getContent()).isEqualTo(content2);
+  }
+
+  @Test
+  public void testParseAbsentId() throws Exception {
+    RequestParser parser =
+        createParser(
+            createMessages("{\"jsonrpc\": \"2.0\", \"method\": \"cmd1\", \"params\": null}"));
+    RawRequest.Content content =
+        new RawRequest.Content(
+            "cmd1", null /* id */, "2.0" /* jsonrpc */, new JsonNull() /* params */);
+    assertThat(parser.parse().getContent()).isEqualTo(content);
+  }
+
+  @Test
+  public void testParseNullId() throws Exception {
+    RequestParser parser =
+        createParser(
+            createMessages(
+                "{\"jsonrpc\": \"2.0\", id: null, \"method\": \"cmd1\", \"params\": null}"));
+    RawRequest.Content content =
+        new RawRequest.Content(
+            "cmd1", new JsonNull() /* id */, "2.0" /* jsonrpc */, new JsonNull() /* params */);
+    assertThat(parser.parse().getContent()).isEqualTo(content);
   }
 
   @Test
@@ -52,7 +76,7 @@ public class RequestParserTest {
                 "{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"cmd1\", \"params\": null}"));
     RawRequest.Content content =
         new RawRequest.Content(
-            "cmd1", "1" /* id */, "2.0" /* jsonrpc */, new JsonNull() /* params */);
+            "cmd1", json(1) /* id */, "2.0" /* jsonrpc */, new JsonNull() /* params */);
     assertThat(parser.parse().getContent()).isEqualTo(content);
   }
 
@@ -65,7 +89,7 @@ public class RequestParserTest {
                     "{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"cmd1\", \"params\": null}"));
     RawRequest.Content content =
         new RawRequest.Content(
-            "cmd1", "1" /* id */, "2.0" /* jsonrpc */, new JsonNull() /* params */);
+            "cmd1", json(1) /* id */, "2.0" /* jsonrpc */, new JsonNull() /* params */);
     assertThat(parser.parse().getContent()).isEqualTo(content);
   }
 
@@ -78,11 +102,11 @@ public class RequestParserTest {
 
     RequestParser parser = createParser(msg1 + "\n" + msg2);
     RawRequest.Content content1 =
-        new RawRequest.Content("cmd1", "1" /* id */, "2.0" /* jsonrpc */, new JsonNull());
+        new RawRequest.Content("cmd1", json(1) /* id */, "2.0" /* jsonrpc */, new JsonNull());
     assertThat(parser.parse().getContent()).isEqualTo(content1);
 
     RawRequest.Content content2 =
-        new RawRequest.Content("cmd2", "2" /* id */, "2.0" /* jsonrpc */, new JsonNull());
+        new RawRequest.Content("cmd2", json(2) /* id */, "2.0" /* jsonrpc */, new JsonNull());
     assertThat(parser.parse().getContent()).isEqualTo(content2);
   }
 
@@ -93,8 +117,16 @@ public class RequestParserTest {
 
     RequestParser parser = createParser("Content-Length: -1\r\n\r\n" + msg);
     RawRequest.Content content =
-        new RawRequest.Content("cmd1", "1" /* id */, "2.0" /* jsonrpc */, new JsonNull());
+        new RawRequest.Content("cmd1", json(1) /* id */, "2.0" /* jsonrpc */, new JsonNull());
     assertThat(parser.parse().getContent()).isEqualTo(content);
+  }
+
+  private static JsonPrimitive json(int value) {
+    return new JsonPrimitive(value);
+  }
+
+  private static JsonPrimitive json(String value) {
+    return new JsonPrimitive(value);
   }
 
   private RequestParser createParser(String messages) {

@@ -5,10 +5,13 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonPrimitive;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import javax.annotation.Nullable;
 import org.javacomp.logging.JLogger;
 import org.javacomp.protocol.NullParams;
 import org.javacomp.protocol.RequestParams;
@@ -105,8 +108,19 @@ public class RequestDispatcher {
 
           Object result = null;
           Response.ResponseError error = null;
+
+          JsonElement requestIdElem = rawRequest.getContent().getId();
+          JsonPrimitive requestId = null;
+          if (requestIdElem != null && !requestIdElem.isJsonNull()) {
+            if (requestIdElem.isJsonPrimitive()) {
+              requestId = requestIdElem.getAsJsonPrimitive();
+            } else {
+              logger.warning("Invalid type of request ID: %s", requestIdElem);
+            }
+          }
+
           try {
-            result = dispatchRequestInternal(rawRequest);
+            result = dispatchRequestInternal(rawRequest, requestId);
           } catch (RequestException e) {
             logger.severe(e, "Failed to process request.");
             error = new Response.ResponseError(e.getErrorCode(), e.getMessage());
@@ -115,10 +129,13 @@ public class RequestDispatcher {
             error = new Response.ResponseError(ErrorCode.INTERNAL_ERROR, e.getMessage());
           }
 
-          String requestId = rawRequest.getContent().getId();
-          if (Strings.isNullOrEmpty(requestId)) {
+          if (requestId == null) {
             // No ID provided. The request is a notification and the client doesn't expect any
             // response.
+            continue;
+          }
+          if (!requestId.isNumber() && !requestId.isString()) {
+            logger.warning("Invalid type of request ID: %s", requestId);
             continue;
           }
 
@@ -147,7 +164,7 @@ public class RequestDispatcher {
      *
      * @return the result of processing the request
      */
-    private Object dispatchRequestInternal(RawRequest rawRequest)
+    private Object dispatchRequestInternal(RawRequest rawRequest, @Nullable JsonPrimitive requestId)
         throws RequestException, Exception {
       RawRequest.Content requestContent = rawRequest.getContent();
 
@@ -162,7 +179,7 @@ public class RequestDispatcher {
 
       RequestHandler handler = handlerRegistry.get(requestContent.getMethod());
 
-      Request typedRequest = convertRawToRequest(rawRequest, handler);
+      Request typedRequest = convertRawToRequest(rawRequest, requestId, handler);
       logger.info("Handling request %s", requestContent.getMethod());
       @SuppressWarnings("unchecked")
       Object result = handler.handleRequest(typedRequest);
@@ -170,7 +187,8 @@ public class RequestDispatcher {
     }
 
     @SuppressWarnings("unchecked")
-    private Request convertRawToRequest(RawRequest rawRequest, RequestHandler handler)
+    private Request convertRawToRequest(
+        RawRequest rawRequest, @Nullable JsonPrimitive requestId, RequestHandler handler)
         throws RequestException {
       RequestParams requestParams;
       RawRequest.Content requestContent = rawRequest.getContent();
@@ -186,10 +204,7 @@ public class RequestDispatcher {
       }
 
       return Request.create(
-          rawRequest.getHeader(),
-          requestContent.getMethod(),
-          requestContent.getId(),
-          requestParams);
+          rawRequest.getHeader(), requestContent.getMethod(), requestId, requestParams);
     }
   }
 
