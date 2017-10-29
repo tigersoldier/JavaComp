@@ -73,17 +73,20 @@ class AdjustedLineMap implements LineMap {
     long originalPos = pos - posDelta;
     long lineNumber;
     if (upperBound == null) {
-      // lowerBound is the last line that has adjustment.
-      lineNumber = lowerBound.getOriginal();
+      // No more insertion beyong lowerBound. originalPos is within the original length of the file
+      // content.
+      lineNumber = originalLineMap.getLineNumber(originalPos);
     } else {
       lineNumber = Integer.MAX_VALUE;
       try {
         lineNumber = originalLineMap.getLineNumber(originalPos);
       } catch (Exception e) {
-        // Line start position + original length + line delta exceeds content length. Use upperBound to get line number below.
+        // Line start position + original length + line delta exceeds content length. Use upperBound
+        // to get line number below.
       }
       if (upperBound != null && upperBound.getOriginal() <= lineNumber) {
-        // This can happen if there are insertions on the original line and the column of the adjusted
+        // This can happen if there are insertions on the original line and the column of the
+        // adjusted
         // pos is greater than the length of the original line.
         lineNumber = upperBound.getOriginal() - 1;
       }

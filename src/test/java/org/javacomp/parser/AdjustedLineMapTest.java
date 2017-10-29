@@ -29,6 +29,8 @@ public class AdjustedLineMapTest {
             + "insertEnd\n"
             + "insertAll\n"
             + "\n"
+            + "FIN\n"
+            + "\n"
             + "EOF";
     originalLineMap = new SimpleLineMap(originalContent);
     ImmutableList<Insertion> insertions =
@@ -57,7 +59,9 @@ public class AdjustedLineMapTest {
                 + "insertEnd123456\n"
                 + "12insert12All12\n"
                 + "\n"
-                + "1E1O1F");
+                + "1F1I1N\n"
+                + "\n"
+                + "EOF");
   }
 
   private Insertion createInsertion(long line, long column, String content) {
@@ -75,6 +79,8 @@ public class AdjustedLineMapTest {
     assertThat(adjustedLineMap.getStartPosition(6)).isEqualTo(65);
     assertThat(adjustedLineMap.getStartPosition(7)).isEqualTo(81);
     assertThat(adjustedLineMap.getStartPosition(8)).isEqualTo(82);
+    assertThat(adjustedLineMap.getStartPosition(9)).isEqualTo(89);
+    assertThat(adjustedLineMap.getStartPosition(10)).isEqualTo(90);
   }
 
   @Test
@@ -97,6 +103,9 @@ public class AdjustedLineMapTest {
     assertThat(adjustedLineMap.getPosition(8, 2)).isEqualTo(84);
     assertThat(adjustedLineMap.getPosition(8, 3)).isEqualTo(86);
     assertThat(adjustedLineMap.getPosition(8, 4)).isEqualTo(88);
+    assertThat(adjustedLineMap.getPosition(9, 1)).isEqualTo(89);
+    assertThat(adjustedLineMap.getPosition(10, 1)).isEqualTo(90);
+    assertThat(adjustedLineMap.getPosition(10, 3)).isEqualTo(92);
   }
 
   @Test
@@ -115,7 +124,10 @@ public class AdjustedLineMapTest {
     assertThat(adjustedLineMap.getLineNumber(81)).isEqualTo(7);
     assertThat(adjustedLineMap.getLineNumber(82)).isEqualTo(8);
     assertThat(adjustedLineMap.getLineNumber(84)).isEqualTo(8);
-    assertThat(adjustedLineMap.getLineNumber(86)).isEqualTo(8);
+    assertThat(adjustedLineMap.getLineNumber(88)).isEqualTo(8);
+    assertThat(adjustedLineMap.getLineNumber(89)).isEqualTo(9);
+    assertThat(adjustedLineMap.getLineNumber(90)).isEqualTo(10);
+    assertThat(adjustedLineMap.getLineNumber(92)).isEqualTo(10);
   }
 
   @Test
@@ -136,6 +148,7 @@ public class AdjustedLineMapTest {
     assertThat(adjustedLineMap.getColumnNumber(84)).isEqualTo(2);
     assertThat(adjustedLineMap.getColumnNumber(86)).isEqualTo(3);
     assertThat(adjustedLineMap.getColumnNumber(88)).isEqualTo(4);
+    assertThat(adjustedLineMap.getColumnNumber(92)).isEqualTo(3);
   }
 
   private static class SimpleLineMap implements LineMap {
