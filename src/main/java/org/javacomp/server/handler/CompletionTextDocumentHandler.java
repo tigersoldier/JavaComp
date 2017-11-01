@@ -27,6 +27,8 @@ import org.javacomp.server.Server;
  * https://github.com/Microsoft/language-server-protocol/blob/master/protocol.md#completion-request
  */
 public class CompletionTextDocumentHandler extends RequestHandler<TextDocumentPositionParams> {
+  private static final int MAX_CANDIDATES = 30;
+
   private final Server server;
   private final Gson gson;
 
@@ -48,10 +50,12 @@ public class CompletionTextDocumentHandler extends RequestHandler<TextDocumentPo
             params.position.getCharacter());
 
     CompletionList completionList = new CompletionList();
-    completionList.isIncomplete = false;
+    completionList.isIncomplete = (candidates.size() > MAX_CANDIDATES);
     completionList.items = new ArrayList<>();
 
-    for (CompletionCandidate candidate : candidates) {
+    int len = Math.min(candidates.size(), MAX_CANDIDATES);
+    for (int i = 0; i < len; i++) {
+      CompletionCandidate candidate = candidates.get(i);
       CompletionItem item = new CompletionItem();
       item.label = candidate.getName();
       item.kind = getCompletionItemKind(candidate.getKind());
