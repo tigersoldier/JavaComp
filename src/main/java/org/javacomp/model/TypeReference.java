@@ -4,6 +4,7 @@ import com.google.auto.value.AutoValue;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import java.util.Collection;
+import java.util.Optional;
 
 /** A reference to a type for lazy resolution. */
 @AutoValue
@@ -29,34 +30,103 @@ public abstract class TypeReference implements TypeArgument {
           .setArray(false)
           .setTypeArguments(ImmutableList.of())
           .build();
+  public static final TypeReference VOID_TYPE = primitiveType("void");
+  public static final TypeReference BYTE_TYPE = primitiveType("byte");
+  public static final TypeReference CHAR_TYPE = primitiveType("char");
+  public static final TypeReference DOUBLE_TYPE = primitiveType("double");
+  public static final TypeReference FLOAT_TYPE = primitiveType("float");
+  public static final TypeReference INT_TYPE = primitiveType("int");
+  public static final TypeReference LONG_TYPE = primitiveType("long");
+  public static final TypeReference SHORT_TYPE = primitiveType("short");
+  public static final TypeReference BOOLEAN_TYPE = primitiveType("boolean");
 
   private static final Joiner JOINER = Joiner.on(".");
 
-  public abstract ImmutableList<String> getFullName();
+  protected abstract ImmutableList<String> getUnformalizedFullName();
 
-  public abstract boolean isPrimitive();
+  protected abstract SimpleType getSimpleType();
+
+  public abstract Optional<ImmutableList<String>> getPackageName();
+
+  public abstract Optional<ImmutableList<SimpleType>> getEnclosingClasses();
 
   public abstract boolean isArray();
 
-  public abstract ImmutableList<TypeArgument> getTypeArguments();
+  public ImmutableList<String> getFullName() {
+    if (getPackageName().isPresent()) {
+      ImmutableList.Builder<String> builder =
+          new ImmutableList.Builder<String>().addAll(getPackageName().get());
 
-  public static Builder builder() {
-    return new AutoValue_TypeReference.Builder();
+      for (SimpleType enclosingClass : getEnclosingClasses().get()) {
+        builder.add(
+            enclosingClass.getSimpleName() + typeArgumentString(enclosingClass.getTypeArguments()));
+      }
+      return builder.add(getSimpleName()).build();
+    } else {
+      return getUnformalizedFullName();
+    }
   }
 
-  public abstract Builder toBuilder();
+  public boolean isPrimitive() {
+    return getSimpleType().isPrimitive();
+  }
 
   public String getSimpleName() {
-    ImmutableList<String> fullName = getFullName();
-    if (fullName.isEmpty()) {
-      return "";
-    }
-    return fullName.get(fullName.size() - 1);
+    return getSimpleType().getSimpleName();
+  }
+
+  public ImmutableList<TypeArgument> getTypeArguments() {
+    return getSimpleType().getTypeArguments();
+  }
+
+  public static Builder builder() {
+    return new AutoValue_TypeReference.Builder()
+        .setPackageName(Optional.empty())
+        .setEnclosingClasses(Optional.empty());
+  }
+
+  public static Builder formalizedBuilder() {
+    return new AutoValue_TypeReference.Builder().setUnformalizedFullName(ImmutableList.of());
+  }
+
+  protected abstract Builder autoToBuilder();
+
+  public Builder toBuilder() {
+    return autoToBuilder()
+        .setPrimitive(isPrimitive())
+        .setSimpleName(getSimpleName())
+        .setTypeArguments(getTypeArguments());
   }
 
   @Override
   public String toString() {
-    return "TypeReference<" + JOINER.join(getFullName()) + (isArray() ? "[]>" : ">");
+    StringBuilder sb =
+        new StringBuilder().append("TypeReference<").append(JOINER.join(getFullName()));
+    sb.append(typeArgumentString(getTypeArguments()));
+    if (isArray()) {
+      sb.append("[]");
+    }
+    sb.append(">");
+    return sb.toString();
+  }
+
+  private static CharSequence typeArgumentString(ImmutableList<TypeArgument> typeArguments) {
+    if (typeArguments.isEmpty()) {
+      return "";
+    }
+    StringBuilder sb = new StringBuilder();
+    sb.append("<");
+    boolean first = true;
+    for (TypeArgument typeArgument : typeArguments) {
+      if (first) {
+        first = false;
+      } else {
+        sb.append(", ");
+      }
+      sb.append(typeArgument.toString());
+    }
+    sb.append(">");
+    return sb;
   }
 
   @Override
@@ -82,15 +152,68 @@ public abstract class TypeReference implements TypeArgument {
     return sb.toString();
   }
 
+  private static TypeReference primitiveType(String name) {
+    return TypeReference.builder()
+        .setArray(false)
+        .setPrimitive(true)
+        .setFullName(name)
+        .setTypeArguments(ImmutableList.of())
+        .build();
+  }
+
   @AutoValue.Builder
   public abstract static class Builder {
-    public abstract Builder setFullName(ImmutableList<String> fullName);
-
-    public abstract Builder setPrimitive(boolean isPrimitive);
+    private final SimpleType.Builder simpleTypeBuilder = SimpleType.builder();
 
     public abstract Builder setArray(boolean isArray);
 
-    public abstract TypeReference build();
+    public abstract Builder setPackageName(ImmutableList<String> packageName);
+
+    public abstract Builder setPackageName(Optional<ImmutableList<String>> packageName);
+
+    public Builder setPackageName(String... packageNames) {
+      return this.setPackageName(ImmutableList.copyOf(packageNames));
+    }
+
+    public abstract Builder setEnclosingClasses(ImmutableList<SimpleType> enclosingClassName);
+
+    public abstract Builder setEnclosingClasses(
+        Optional<ImmutableList<SimpleType>> enclosingClassName);
+
+    public Builder setEnclosingClasses(Collection<SimpleType> enclosingClassName) {
+      return setEnclosingClasses(ImmutableList.copyOf(enclosingClassName));
+    }
+
+    public Builder setEnclosingClasses(SimpleType... enclosingClassNames) {
+      return setEnclosingClasses(ImmutableList.copyOf(enclosingClassNames));
+    }
+
+    protected abstract Builder setUnformalizedFullName(ImmutableList<String> fullName);
+
+    protected abstract Builder setSimpleType(SimpleType simpleType);
+
+    public Builder setPrimitive(boolean isPrimitive) {
+      simpleTypeBuilder.setPrimitive(isPrimitive);
+      return this;
+    }
+
+    public Builder setSimpleName(String simpleName) {
+      simpleTypeBuilder.setSimpleName(simpleName);
+      return this;
+    }
+
+    public Builder setTypeArguments(ImmutableList<TypeArgument> typeArguments) {
+      simpleTypeBuilder.setTypeArguments(typeArguments);
+      return this;
+    }
+
+    public Builder setTypeArguments(Collection<TypeArgument> typeArguments) {
+      return setTypeArguments(ImmutableList.copyOf(typeArguments));
+    }
+
+    public Builder setTypeArguments(TypeArgument... typeArguments) {
+      return setTypeArguments(ImmutableList.copyOf(typeArguments));
+    }
 
     public Builder setFullName(String... fullName) {
       return setFullName(ImmutableList.copyOf(fullName));
@@ -100,10 +223,20 @@ public abstract class TypeReference implements TypeArgument {
       return setFullName(ImmutableList.copyOf(fullName));
     }
 
-    public abstract Builder setTypeArguments(ImmutableList<TypeArgument> typeArguments);
+    public Builder setFullName(ImmutableList<String> fullName) {
+      setUnformalizedFullName(fullName);
+      if (fullName.isEmpty()) {
+        setSimpleName("");
+      } else {
+        setSimpleName(fullName.get(fullName.size() - 1));
+      }
+      return this;
+    }
 
-    public Builder setTypeArguments(Collection<TypeArgument> typeArguments) {
-      return setTypeArguments(ImmutableList.copyOf(typeArguments));
+    protected abstract TypeReference autoBuild();
+
+    public TypeReference build() {
+      return setSimpleType(simpleTypeBuilder.build()).autoBuild();
     }
   }
 }

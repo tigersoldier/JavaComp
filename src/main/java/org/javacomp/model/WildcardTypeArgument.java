@@ -11,6 +11,10 @@ public abstract class WildcardTypeArgument implements TypeArgument {
     return new AutoValue_WildcardTypeArgument(bound);
   }
 
+  public static WildcardTypeArgument create(Bound bound) {
+    return new AutoValue_WildcardTypeArgument(Optional.of(bound));
+  }
+
   public abstract Optional<Bound> getBound();
 
   @Override

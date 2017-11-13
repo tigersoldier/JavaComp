@@ -4,6 +4,7 @@ java_library(
     data = glob(["testdata/*"]),
     deps = [
         "//external:guava",
+        "//src/main/java/org/javacomp/model",
         "//src/main/java/org/javacomp/parser/classfile",
         "//third_party:auto_value",
         "//third_party:junit4",
@@ -13,6 +14,14 @@ java_library(
 
 java_test(
     name = "ClassFileParserTest",
+    size = "small",
+    runtime_deps = [
+        ":tests",
+    ],
+)
+
+java_test(
+    name = "SignatureParserTest",
     size = "small",
     runtime_deps = [
         ":tests",

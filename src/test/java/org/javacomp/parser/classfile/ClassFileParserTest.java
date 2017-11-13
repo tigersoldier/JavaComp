@@ -16,7 +16,8 @@ import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
 public class ClassFileParserTest {
-  private static final String TEST_DATA_DIR = "src/test/java/org/javacomp/parser/classfile/testdata/";
+  private static final String TEST_DATA_DIR =
+      "src/test/java/org/javacomp/parser/classfile/testdata/";
   private static final String CLASS_FILE = "TestClass.class";
   private static final String INNER_INTERFACE_FILE = "TestClass$InnerInterface.class";
 
