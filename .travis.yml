@@ -4,23 +4,30 @@ language: java
 
 os: linux
 
+cache:
+  directories:
+    - $HOME/bazel/install
+    - $HOME/bazel/outbase
+
 before_install:
-  - V=0.4.3
+  - BAZEL_VERSION=0.7.0
   - OS=linux
   - ARCH=x86_64
-  - GH_BASE="https://github.com/bazelbuild/bazel/releases/download/$V"
-  - GH_ARTIFACT="bazel-$V-installer-$OS-$ARCH.sh"
+  - GH_BASE="https://github.com/bazelbuild/bazel/releases/download/$BAZEL_VERSION"
+  - GH_ARTIFACT="bazel-$BAZEL_VERSION-installer-$OS-$ARCH.sh"
   - URL="$GH_BASE/$GH_ARTIFACT"
   - echo $URL
-  - wget -O install.sh $URL
-  - chmod +x install.sh
-  - ./install.sh --user
-  - rm -f install.sh
+  - mkdir -p ${HOME}/bazel/install
+  - cd ${HOME}/bazel/install
+  - wget -c -O install_$BAZEL_VERSION.sh $URL
+  - chmod +x install_$BAZEL_VERSION.sh
+  - ./install_$BAZEL_VERSION.sh --user
+  - cd ${TRAVIS_BUILD_DIR}
 
 script:
   - |
     bazel \
-      --output_base=$HOME/.cache/bazel \
+      --output_base=$HOME/bazel/outbase \
       --batch \
       --host_jvm_args=-Xmx500m \
       --host_jvm_args=-Xms500m \
