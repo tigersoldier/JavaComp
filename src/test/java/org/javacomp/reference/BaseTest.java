@@ -124,7 +124,7 @@ public class BaseTest {
       int pos = fileContent.indexOf(symbol, start);
       assertThat(pos).named("pos").isGreaterThan(-1);
       FileScope fileScope = module.getFileScope(filename).get();
-      LineMap lineMap = fileScope.getLineMap();
+      LineMap lineMap = fileScope.getLineMap().get();
       // LineMap line and column are 1-indexed, while our API is 0-indexed.
       return TextPosition.create(
           (int) lineMap.getLineNumber(pos) - 1, (int) lineMap.getColumnNumber(pos) - 1);
