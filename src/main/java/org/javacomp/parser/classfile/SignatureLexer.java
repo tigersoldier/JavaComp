@@ -44,7 +44,7 @@ public class SignatureLexer {
   /** Read the next identifier and consume it. */
   public String nextIdentifier() {
     int startPos = pos;
-    while (startPos < content.length() && !NON_IDENTIFIER_CHARS.contains(content.charAt(pos))) {
+    while (pos < content.length() && !NON_IDENTIFIER_CHARS.contains(content.charAt(pos))) {
       pos++;
     }
     checkState(startPos < pos, "No identifier at current point: " + remainingContent());

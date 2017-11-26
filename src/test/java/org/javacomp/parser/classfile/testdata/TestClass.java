@@ -39,4 +39,11 @@ public class TestClass extends AbstractList<String> implements Comparable<TestCl
       }
     }
   }
+
+  public enum InnerEnum {
+    ENUM_FIELD,
+  }
+
+  public @interface InnerAnnotation {
+  }
 }

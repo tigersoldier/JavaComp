@@ -29,6 +29,10 @@ public abstract class SimpleType {
       return setTypeArguments(ImmutableList.copyOf(typeArguments));
     }
 
+    public Builder setTypeArguments(TypeArgument... typeArguments) {
+      return setTypeArguments(ImmutableList.copyOf(typeArguments));
+    }
+
     public abstract SimpleType build();
   }
 }

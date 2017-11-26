@@ -10,6 +10,7 @@ import com.google.common.collect.Multimap;
 import com.google.common.collect.RangeMap;
 import com.sun.source.tree.LineMap;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -35,6 +36,11 @@ public class FileScope implements EntityScope {
      * There is no actual file available on the file system.
      */
     TYPE_INDEX,
+    /**
+     * The {@link FileScope} is created from a compiled .class file. The file name may point to an
+     * existing file, or a file in the JAR archive.
+     */
+    CLASS_FILE,
     /** No file is used for creating the {@link FileScope}. It's useful for testing. */
     NONE,
   }
@@ -83,6 +89,14 @@ public class FileScope implements EntityScope {
     String filename = TYPE_INDEX_SCHEME + "://" + FILE_PATH_JOINER.join(packageQualifiers);
     return new FileScope(
         filename, packageQualifiers, null /* compilationUnit */, FileType.TYPE_INDEX);
+  }
+
+  public static FileScope createFromClassFile(Path classFilePath, List<String> packageQualifiers) {
+    return new FileScope(
+        classFilePath.toString(),
+        packageQualifiers,
+        null /* compilationUnit */,
+        FileType.CLASS_FILE);
   }
 
   public static FileScope createForTesting(List<String> packageQualifiers) {

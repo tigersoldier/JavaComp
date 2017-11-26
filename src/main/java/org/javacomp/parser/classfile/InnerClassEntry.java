@@ -1,6 +1,7 @@
 package org.javacomp.parser.classfile;
 
 import com.google.auto.value.AutoValue;
+import java.util.EnumSet;
 
 @AutoValue
 public abstract class InnerClassEntry {
@@ -9,7 +10,10 @@ public abstract class InnerClassEntry {
   /** Simple name of the inner class, e.g. InnerClass. */
   public abstract String getInnerName();
 
-  public static InnerClassEntry create(String outerClassName, String innerName) {
-    return new AutoValue_InnerClassEntry(outerClassName, innerName);
+  public abstract EnumSet<ClassAccessFlag> getAccessFlags();
+
+  public static InnerClassEntry create(
+      String outerClassName, String innerName, EnumSet<ClassAccessFlag> accessFlags) {
+    return new AutoValue_InnerClassEntry(outerClassName, innerName, accessFlags);
   }
 }

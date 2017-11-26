@@ -3,6 +3,9 @@ package org.javacomp.parser.classfile;
 /** Class accss flags of a class_info structure in .class files. */
 public enum ClassAccessFlag {
   PUBLIC(0x0001),
+  PRIVATE(0x0002),
+  PROTECTED(0x0004),
+  STATIC(0x0008),
   FINAL(0x0010),
   SUPER(0x0020),
   INTERFACE(0x0200),

@@ -4,6 +4,7 @@ import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import java.util.EnumSet;
 import org.javacomp.model.SimpleType;
 import org.javacomp.model.TypeArgument;
 import org.javacomp.model.TypeParameter;
@@ -15,12 +16,16 @@ import org.junit.runners.JUnit4;
 
 @RunWith(JUnit4.class)
 public class SignatureParserTest {
+  private static final EnumSet<ClassAccessFlag> NO_CLASS_ACCESS_FLAG =
+      EnumSet.noneOf(ClassAccessFlag.class);
   private static final ImmutableMap<String, InnerClassEntry> INNER_CLASS_MAP =
       ImmutableMap.of(
-          "foo/Inner1$Inner2", InnerClassEntry.create("foo/Inner1", "Inner2"),
-          "foo/Inner1$Inner2$Inner3", InnerClassEntry.create("foo/Inner1$Inner2", "Inner3"),
+          "foo/Inner1$Inner2",
+          InnerClassEntry.create("foo/Inner1", "Inner2", NO_CLASS_ACCESS_FLAG),
+          "foo/Inner1$Inner2$Inner3",
+          InnerClassEntry.create("foo/Inner1$Inner2", "Inner3", NO_CLASS_ACCESS_FLAG),
           "foo/Inner1$Inner2$Inner3$Inner4",
-              InnerClassEntry.create("foo/Inner1$Inner2$Inner3", "Inner4"));
+          InnerClassEntry.create("foo/Inner1$Inner2$Inner3", "Inner4", NO_CLASS_ACCESS_FLAG));
 
   private static final TypeReference CLASS_BAR = classType(ImmutableList.of("foo"), "Bar").build();
   private static final TypeReference CLASS_BAR_ARRAY = CLASS_BAR.toBuilder().setArray(true).build();
@@ -339,6 +344,13 @@ public class SignatureParserTest {
     String signature = "Lfoo/Inner1.Inner2<Lfoo/Bar;>.Inner3.Inner4<Lfoo/Foz;>;";
     assertThat(new SignatureParser(signature, INNER_CLASS_MAP).parseClassTypeSignature())
         .isEqualTo(TYPED_INNER_4);
+  }
+
+  @Test
+  public void parseClassBinaryName_withInnerClasses() throws Exception {
+    String signature = "foo/Inner1$Inner2$Inner3$Inner4";
+    assertThat(new SignatureParser(signature, INNER_CLASS_MAP).parseClassBinaryName())
+        .isEqualTo(NON_TYPED_INNER_4);
   }
 
   private static SimpleType simpleReferenceType(String name, TypeArgument... typeArguments) {

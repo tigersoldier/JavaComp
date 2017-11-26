@@ -59,9 +59,13 @@ public class Module {
   }
 
   public synchronized PackageScope getPackageForFile(FileScope fileScope) {
+    return getOrCreatePackage(fileScope.getPackageQualifiers());
+  }
+
+  public synchronized PackageScope getOrCreatePackage(List<String> packageQualifiers) {
     List<String> currentQualifiers = new ArrayList<>();
     PackageScope currentPackage = rootPackage;
-    for (String qualifier : fileScope.getPackageQualifiers()) {
+    for (String qualifier : packageQualifiers) {
       Optional<PackageEntity> packageEntity = getPackageEntity(qualifier, currentPackage);
       if (packageEntity.isPresent()) {
         currentPackage = packageEntity.get().getChildScope();

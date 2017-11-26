@@ -2,8 +2,8 @@ package org.javacomp.parser.classfile;
 
 import com.google.common.collect.ImmutableList;
 import java.io.DataInputStream;
-import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.EnumSet;
 import org.javacomp.parser.classfile.ConstantPoolInfo.ConstantClassInfo;
@@ -49,7 +49,7 @@ public class ClassFileParser {
   public ClassFileParser() {}
 
   public ClassFileInfo parse(Path filePath) throws IOException {
-    try (DataInputStream inStream = new DataInputStream(new FileInputStream(filePath.toString()))) {
+    try (DataInputStream inStream = new DataInputStream(Files.newInputStream(filePath))) {
       return parseClass(inStream);
     }
   }
@@ -330,15 +330,7 @@ public class ClassFileParser {
           int innerClassIndex = inStream.readUnsignedShort();
           int outerClassIndex = inStream.readUnsignedShort();
           int innerNameIndex = inStream.readUnsignedShort();
-          int accessFlagsInt = inStream.readUnsignedShort();
-          EnumSet<AttributeInfo.InnerClassAccessFlag> accessFlags =
-              EnumSet.noneOf(AttributeInfo.InnerClassAccessFlag.class);
-          for (AttributeInfo.InnerClassAccessFlag accessFlag :
-              AttributeInfo.InnerClassAccessFlag.values()) {
-            if ((accessFlagsInt & accessFlag.getValue()) != 0) {
-              accessFlags.add(accessFlag);
-            }
-          }
+          EnumSet<ClassAccessFlag> accessFlags = parseClassAccessFlags(inStream);
           classInfoBuilder.add(
               AttributeInfo.InnerClass.ClassInfo.create(
                   innerClassIndex, outerClassIndex, innerNameIndex, accessFlags));

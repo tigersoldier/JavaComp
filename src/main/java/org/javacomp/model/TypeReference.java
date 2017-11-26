@@ -52,6 +52,11 @@ public abstract class TypeReference implements TypeArgument {
 
   public abstract boolean isArray();
 
+  /**
+   * ["org", "package", "EnclosingClass&lt;TypeArg1&gt;", "SimpleName"]
+   *
+   * <p>Note: type arguments after simple name is not returned for historical reasons.
+   */
   public ImmutableList<String> getFullName() {
     if (getPackageName().isPresent()) {
       ImmutableList.Builder<String> builder =
@@ -64,6 +69,22 @@ public abstract class TypeReference implements TypeArgument {
       return builder.add(getSimpleName()).build();
     } else {
       return getUnformalizedFullName();
+    }
+  }
+
+  /** ["org", "package", "EnclosingClass"] */
+  public ImmutableList<String> getQualifiers() {
+    if (getPackageName().isPresent()) {
+      ImmutableList.Builder<String> builder =
+          new ImmutableList.Builder<String>().addAll(getPackageName().get());
+
+      for (SimpleType enclosingClass : getEnclosingClasses().get()) {
+        builder.add(enclosingClass.getSimpleName());
+      }
+      return builder.build();
+    } else {
+      ImmutableList<String> unformalizedFullName = getUnformalizedFullName();
+      return unformalizedFullName.subList(0, unformalizedFullName.size() - 1);
     }
   }
 

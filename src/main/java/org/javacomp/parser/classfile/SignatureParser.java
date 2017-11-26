@@ -101,7 +101,7 @@ public class SignatureParser {
       ch = lexer.nextChar();
       switch (ch) {
         case 'L':
-          builder.addThrowsSignature(parseClassTypeSignatureContent());
+          builder.addThrowsSignature(parseClassTypeSignatureContent(false /* endsWithEos */));
           break;
         case 'T':
           builder.addThrowsSignature(parseTypeVariableSignatureContent());
@@ -179,10 +179,14 @@ public class SignatureParser {
         "ClassTypeSignature does not start with 'L': %s%s",
         ch,
         lexer.remainingContent());
-    return parseClassTypeSignatureContent();
+    return parseClassTypeSignatureContent(false /* endsWithEos */);
   }
 
-  private TypeReference parseClassTypeSignatureContent() {
+  /**
+   * @param endsWithEos whether the signature should end with END_OF_SIGNATURE. If it's false, it
+   *     should end with a semi-colon.
+   */
+  private TypeReference parseClassTypeSignatureContent(boolean endsWithEos) {
     ImmutableList.Builder<String> packageNameBuilder = new ImmutableList.Builder<>();
     Map<String, ImmutableList<TypeArgument>> binaryNameToTypeArguments = new HashMap<>();
 
@@ -208,9 +212,16 @@ public class SignatureParser {
       simpleClassTypeSignature = parseSimpleClassTypeSignature();
     }
     binaryNameBuilder.append(simpleClassTypeSignature.getSimpleName());
-    char ch = lexer.nextChar();
-    checkState(
-        ch == ';', "ClassTypeSignature does not end with ';': %s%s", ch, lexer.remainingContent());
+    if (endsWithEos) {
+      checkState(lexer.peekChar() == SignatureLexer.END_OF_SIGNATURE);
+    } else {
+      char ch = lexer.nextChar();
+      checkState(
+          ch == ';',
+          "ClassTypeSignature does not end with ';': %s%s",
+          ch,
+          lexer.remainingContent());
+    }
 
     // When the binary name is in the form of package/to/Foo$Bar, we don't know if there is
     // an inner class Bar defined in the class Foo, or there is a class named Foo$Bar. We need
@@ -271,6 +282,17 @@ public class SignatureParser {
         .setPrimitive(false)
         .setArray(false)
         .build();
+  }
+
+  /**
+   * Parses class and interface binary names.
+   *
+   * <p>See JVMS 4.2.1: https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.2.1
+   */
+  public TypeReference parseClassBinaryName() {
+    // The binary name is a subset of the class type signature, with the exception that it doesn't
+    // have the leading "L" and ends without a semicolon.
+    return parseClassTypeSignatureContent(true /* endsWithEos */);
   }
 
   private TypeReference parseTypeVariableSignatureContent() {
@@ -366,7 +388,7 @@ public class SignatureParser {
     char ch = lexer.nextChar();
     switch (ch) {
       case 'L':
-        return parseClassTypeSignatureContent();
+        return parseClassTypeSignatureContent(false /* endsWithEos */);
       case 'T':
         return parseTypeVariableSignatureContent();
       case '[':

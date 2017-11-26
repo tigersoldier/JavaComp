@@ -147,6 +147,10 @@ public class ClassFileParserTest {
             InnerClassName.create(
                 "test/data/TestClass$InnerInterface", "test/data/TestClass", "InnerInterface"),
             InnerClassName.create(
+                "test/data/TestClass$InnerEnum", "test/data/TestClass", "InnerEnum"),
+            InnerClassName.create(
+                "test/data/TestClass$InnerAnnotation", "test/data/TestClass", "InnerAnnotation"),
+            InnerClassName.create(
                 "test/data/TestClass$InnerClass", "test/data/TestClass", "InnerClass"),
             InnerClassName.create(
                 "test/data/TestClass$InnerClass$InnerClass2",

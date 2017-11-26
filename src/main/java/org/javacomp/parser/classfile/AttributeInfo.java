@@ -11,30 +11,6 @@ import java.util.EnumSet;
  */
 public abstract class AttributeInfo {
 
-  public enum InnerClassAccessFlag {
-    PUBLIC(0x0001),
-    PRIVATE(0x0002),
-    PROTECTED(0x0004),
-    STATIC(0x0008),
-    FINAL(0x0010),
-    INTERFACE(0x0200),
-    ABSTRACT(0x0400),
-    SYNTHETIC(0x1000),
-    ANNOTATION(0x2000),
-    ENUM(0x4000),
-    ;
-
-    private final int value;
-
-    private InnerClassAccessFlag(int value) {
-      this.value = value;
-    }
-
-    public int getValue() {
-      return value;
-    }
-  }
-
   /** See https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.7.6 */
   @AutoValue
   public abstract static class InnerClass extends AttributeInfo {
@@ -72,13 +48,13 @@ public abstract class AttributeInfo {
        */
       public abstract int getInnerNameIndex();
 
-      public abstract EnumSet<InnerClassAccessFlag> getAccessFlags();
+      public abstract EnumSet<ClassAccessFlag> getAccessFlags();
 
       public static ClassInfo create(
           int innerClassInfoIndex,
           int outerClassInfoIndex,
           int innerNameIndex,
-          EnumSet<InnerClassAccessFlag> accessFlags) {
+          EnumSet<ClassAccessFlag> accessFlags) {
         return new AutoValue_AttributeInfo_InnerClass_ClassInfo(
             innerClassInfoIndex, outerClassInfoIndex, innerNameIndex, accessFlags);
       }
