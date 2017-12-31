@@ -3,6 +3,7 @@ package org.javacomp.completion;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.sun.source.tree.LineMap;
+import com.sun.source.tree.LiteralTree;
 import com.sun.source.tree.MemberSelectTree;
 import com.sun.source.util.TreePath;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
@@ -86,6 +87,9 @@ public class Completor {
     CompletionAction action;
     if (treePath.getLeaf() instanceof MemberSelectTree) {
       action = new CompleteMemberAction(treePath, typeSolver, expressionSolver);
+    } else if (treePath.getLeaf() instanceof LiteralTree) {
+      // Do not complete on any literals, especially strings.
+      action = NoCandidateAction.INSTANCE;
     } else {
       action = new CompleteSymbolAction(typeSolver, expressionSolver);
     }
@@ -128,5 +132,16 @@ public class Completor {
       start--;
     }
     return fileContent.subSequence(start + 1, position).toString();
+  }
+
+  /** A {@link CompletionAction} that always returns an empty list of candidates. */
+  private static class NoCandidateAction implements CompletionAction {
+    public static final NoCandidateAction INSTANCE = new NoCandidateAction();
+
+    @Override
+    public ImmutableList<CompletionCandidate> getCompletionCandidates(
+        PositionContext positionContext, String prefix) {
+      return ImmutableList.of();
+    }
   }
 }

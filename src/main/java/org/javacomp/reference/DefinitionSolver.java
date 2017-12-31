@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.IdentifierTree;
+import com.sun.source.tree.LiteralTree;
 import com.sun.source.tree.MemberSelectTree;
 import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.MethodTree;
@@ -77,7 +78,11 @@ public class DefinitionSolver {
     TreePath parentPath = treePath.getParentPath();
     Tree parentTree = parentPath != null ? parentPath.getLeaf() : null;
 
-    if (leafTree instanceof ExpressionTree) {
+    if (leafTree instanceof LiteralTree) {
+      // LiteralTree is also an ExpressionTree. We don't want to show type definitions for literal
+      // constants.
+      return ImmutableList.of();
+    } else if (leafTree instanceof ExpressionTree) {
       Set<Entity.Kind> allowedKinds = ALLOWED_ENTITY_KINDS;
       if (treeIsMethodName(leafTree, parentTree)) {
         // parentTree is the method we need to solve.
