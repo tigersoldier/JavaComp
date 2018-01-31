@@ -1,8 +1,4 @@
 {
-    "typeIndexFiles": ["typeindeces/guava.json",
-                       "typeindeces/javac.json",
-                       "typeindeces/truth.json",
-                       "typeindeces/gson.json"],
     "logLevel": "fine",
     "ignorePaths": ["openjdk_src/test",
                     "openjdk_src",

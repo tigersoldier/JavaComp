@@ -32,6 +32,7 @@ import org.javacomp.parser.AstScanner;
 import org.javacomp.parser.FileContentFixer;
 import org.javacomp.parser.FileContentFixer.FixedContent;
 import org.javacomp.parser.ParserContext;
+import org.javacomp.parser.classfile.ClassModuleBuilder;
 import org.javacomp.protocol.TextEdit;
 import org.javacomp.reference.DefinitionSolver;
 import org.javacomp.reference.MethodSignatures;
@@ -43,6 +44,7 @@ public class Project {
   private static final JLogger logger = JLogger.createForEnclosingClass();
 
   private static final String JAVA_EXTENSION = ".java";
+  private static final String JAR_EXTENSION = ".jar";
   private static final String JDK_RESOURCE_PATH = "/resources/jdk/index.json";
 
   private final Module projectModule;
@@ -124,8 +126,12 @@ public class Project {
               }
               if (Files.isDirectory(entryPath)) {
                 queue.add(entryPath);
-              } else if (isJavaFile(entryPath) && !fileManager.shouldIgnorePath(entryPath)) {
-                addOrUpdateFile(entryPath);
+              } else if (!fileManager.shouldIgnorePath(entryPath)) {
+                if (isJavaFile(entryPath)) {
+                  addOrUpdateFile(entryPath);
+                } else if (isJarFile(entryPath)) {
+                  addJarModule(entryPath);
+                }
               }
             });
       } catch (IOException e) {
@@ -158,6 +164,16 @@ public class Project {
       projectModule.addOrReplaceFileScope(fileScope);
     } catch (Throwable e) {
       logger.warning(e, "Failed to process file %s", filePath);
+    }
+  }
+
+  private synchronized void addJarModule(Path filePath) {
+    logger.fine("Adding JAR module for %s", filePath);
+    try {
+      Module jarModule = ClassModuleBuilder.createForJarFile(filePath).createModule();
+      projectModule.addDependingModule(jarModule);
+    } catch (Throwable t) {
+      logger.warning(t, "Failed to create module for JAR file %s", filePath);
     }
   }
 
@@ -204,6 +220,10 @@ public class Project {
     // We don't check if file is regular file here because the file may be new in editor and not
     // saved to the file system.
     return filePath.toString().endsWith(JAVA_EXTENSION) && !Files.isDirectory(filePath);
+  }
+
+  private static boolean isJarFile(Path filePath) {
+    return filePath.toString().endsWith(JAR_EXTENSION) && !Files.isDirectory(filePath);
   }
 
   private class ProjectFileChangeListener implements FileChangeListener {

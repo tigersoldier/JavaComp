@@ -14,6 +14,7 @@ java_library(
         "//src/main/java/org/javacomp/model",
         "//src/main/java/org/javacomp/options",
         "//src/main/java/org/javacomp/parser",
+        "//src/main/java/org/javacomp/parser/classfile",
         "//src/main/java/org/javacomp/protocol",
         "//src/main/java/org/javacomp/reference",
         "//src/main/java/org/javacomp/storage",
