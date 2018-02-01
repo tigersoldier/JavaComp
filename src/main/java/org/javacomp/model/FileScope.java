@@ -200,9 +200,12 @@ public class FileScope implements EntityScope {
     return scopeRangeMap;
   }
 
-  @Nullable
   public EntityScope getEntityScopeAt(int position) {
-    return scopeRangeMap.get(position);
+    EntityScope scope = scopeRangeMap.get(position);
+    if (scope == null) {
+      scope = this;
+    }
+    return scope;
   }
 
   public List<String> getPackageQualifiers() {
