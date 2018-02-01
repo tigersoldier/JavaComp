@@ -9,13 +9,14 @@ import org.javacomp.model.ClassEntity;
 import org.javacomp.protocol.CompletionItem.ResolveAction;
 import org.javacomp.protocol.CompletionItem.ResolveActionParams;
 import org.javacomp.protocol.CompletionItem.ResolveAddImportTextEditsParams;
+import org.javacomp.typesolver.EntityShadowingListBuilder.ForImportEntity;
 
 /** A candidate with import class edit actions. */
 class ClassForImportCandidate extends EntityBasedCompletionCandidate {
   private final Path filePath;
 
   ClassForImportCandidate(ClassEntity classEntity, String filePath) {
-    super(classEntity);
+    super(new ForImportEntity(classEntity));
     this.filePath = Paths.get(filePath);
   }
 

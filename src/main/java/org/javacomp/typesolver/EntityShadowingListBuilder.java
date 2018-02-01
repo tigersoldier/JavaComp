@@ -6,6 +6,7 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
 import org.javacomp.model.Entity;
+import org.javacomp.model.EntityScope;
 
 /**
  * A build of {@link List} that ignores a new element the list if any {@link Entity} from existing
@@ -57,7 +58,14 @@ public class EntityShadowingListBuilder<E> {
     }
     boolean existingIsMethod = existingEntity.getKind() == Entity.Kind.METHOD;
     boolean newIsMethod = newEntity.getKind() == Entity.Kind.METHOD;
+    boolean existingIsForImport = existingEntity instanceof ForImportEntity;
+    boolean newIsForImport = newEntity instanceof ForImportEntity;
+
     if (existingIsMethod != newIsMethod) {
+      return false;
+    }
+    if (existingIsForImport && newIsForImport) {
+      // We don't want foo.Bar shadow foz.Bar if no class Bar is imported.
       return false;
     }
     if (!existingIsMethod) {
@@ -66,5 +74,29 @@ public class EntityShadowingListBuilder<E> {
 
     // TODO: Implement method overriding detection.
     return false;
+  }
+
+  /**
+   * A special entity that is considered not available in the current context and needs to be
+   * imported.
+   *
+   * <p>This kind of entity will be shadowed by other entities, but not by each other.
+   */
+  public static class ForImportEntity extends Entity {
+    private static Entity delegate;
+    public ForImportEntity(Entity delegate) {
+      super(
+          delegate.getSimpleName(),
+          delegate.getKind(),
+          delegate.getQualifiers(),
+          delegate.isStatic(),
+          delegate.getSymbolRange());
+      this.delegate = delegate;
+    }
+
+    @Override
+    public EntityScope getChildScope() {
+      return delegate.getChildScope();
+    }
   }
 }
