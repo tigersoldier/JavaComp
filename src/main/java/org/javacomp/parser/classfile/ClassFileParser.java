@@ -140,6 +140,13 @@ public class ClassFileParser {
           throw new ClassFileParserError("Unknown constant pool tag %s", tag);
       }
       builder.add(info);
+
+      if (tag == CONSTANT_DOUBLE || tag == CONSTANT_LONG) {
+        // 8-byte constants take up two entries in the constant_pool table.
+        // See https://docs.oracle.com/javase/specs/jvms/se8/html/jvms-4.html#jvms-4.4.5
+        builder.add(info);
+        i++;
+      }
     }
     return builder.build();
   }

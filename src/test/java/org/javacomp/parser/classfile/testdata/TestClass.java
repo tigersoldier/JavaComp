@@ -6,6 +6,9 @@ import java.util.Map;
 
 public class TestClass extends AbstractList<String> implements Comparable<TestClass> {
   public static final int PUBLIC_STATIC_FIELD = 0;
+  // Test parsing 8 byte constants should take up two constant pool entries.
+  public static final long LONG_CONSTANT = 1L;
+  public static final double DOUBLE_CONSTANT = 1.0;
   private final List<String> privateStringListField = null;
   protected String protectedStringField;
   boolean packagePrivateBooleanField;

@@ -66,6 +66,8 @@ public class ClassFileParserTest {
     assertThat(fieldNames)
         .containsExactly(
             "PUBLIC_STATIC_FIELD",
+            "LONG_CONSTANT",
+            "DOUBLE_CONSTANT",
             "privateStringListField",
             "protectedStringField",
             "packagePrivateBooleanField",
