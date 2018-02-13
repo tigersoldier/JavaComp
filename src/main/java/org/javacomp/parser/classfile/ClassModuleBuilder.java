@@ -67,8 +67,7 @@ public class ClassModuleBuilder {
 
   public Module createModule() {
     try {
-      DirectoryStream<Path> stream = Files.newDirectoryStream(rootDirectory);
-      return processDirectoryStream(stream);
+      return processDirectory(rootDirectory);
     } catch (IOException e) {
       throw new RuntimeException(
           "Failed to list root directory for creating Module for .class files, root directory is "
@@ -78,20 +77,21 @@ public class ClassModuleBuilder {
   }
 
   @VisibleForTesting
-  Module processDirectoryStream(DirectoryStream<Path> rootStream) throws IOException {
+  Module processDirectory(Path rootDirectory) throws IOException {
     module = new Module();
     classEntityMap = new HashMap<>();
     parsedInnerClassFileMap = ArrayListMultimap.create();
-    Deque<DirectoryStream<Path>> streams = new LinkedList<>();
-    streams.add(rootStream);
-    while (!streams.isEmpty()) {
-      try (DirectoryStream<Path> stream = streams.removeFirst()) {
+    Deque<Path> dirs = new LinkedList<>();
+    dirs.add(rootDirectory);
+    while (!dirs.isEmpty()) {
+      Path dir = dirs.removeFirst();
+      try (DirectoryStream<Path> stream = Files.newDirectoryStream(dir)) {
         for (Path path : stream) {
           try {
             if (Files.isRegularFile(path) && path.toString().endsWith(".class")) {
               processClassFile(path);
             } else if (Files.isDirectory(path, LinkOption.NOFOLLOW_LINKS)) {
-              streams.addLast(Files.newDirectoryStream(path));
+              dirs.addLast(path);
             }
           } catch (Throwable t) {
             logger.warning(t, "Failed to process .class file: %s", path);

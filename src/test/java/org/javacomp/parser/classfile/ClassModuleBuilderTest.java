@@ -44,18 +44,8 @@ public class ClassModuleBuilderTest {
 
   @Test
   public void addInnerClassesFirst() throws Exception {
-    DirectoryStream<Path> stream =
-        new ListDirectoryStream(
-            Paths.get(TEST_DATA_DIR, "TestClass$InnerClass$InnerClass2$InnerClass3.class"),
-            Paths.get(TEST_DATA_DIR, "TestClass$InnerClass$InnerClass2.class"),
-            Paths.get(TEST_DATA_DIR, "TestClass$InnerClass.class"),
-            Paths.get(TEST_DATA_DIR, "TestClass$InnerInterface.class"),
-            Paths.get(TEST_DATA_DIR, "TestClass$InnerAnnotation.class"),
-            Paths.get(TEST_DATA_DIR, "TestClass$InnerEnum.class"),
-            Paths.get(TEST_DATA_DIR, "TestClass.class"),
-            Paths.get(TEST_DATA_DIR, "TestClass2.class"));
     Path rootPath = Paths.get(TEST_DATA_DIR);
-    Module module = new ClassModuleBuilder(rootPath).processDirectoryStream(stream);
+    Module module = new ClassModuleBuilder(rootPath).processDirectory(rootPath);
     assertModuleIsExpected(module);
   }
 
