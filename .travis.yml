@@ -10,7 +10,7 @@ cache:
     - $HOME/bazel/outbase
 
 before_install:
-  - BAZEL_VERSION=0.7.0
+  - BAZEL_VERSION=0.10.0
   - OS=linux
   - ARCH=x86_64
   - GH_BASE="https://github.com/bazelbuild/bazel/releases/download/$BAZEL_VERSION"
