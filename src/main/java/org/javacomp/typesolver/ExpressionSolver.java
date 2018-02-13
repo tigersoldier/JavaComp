@@ -10,6 +10,7 @@ import com.sun.source.tree.LiteralTree;
 import com.sun.source.tree.MemberSelectTree;
 import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.NewClassTree;
+import com.sun.source.tree.PrimitiveTypeTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.tree.TypeCastTree;
 import com.sun.source.util.TreeScanner;
@@ -178,6 +179,13 @@ public class ExpressionSolver {
       List<EntityWithContext> methods = scan(node.getMethodSelect(), null);
       methodArgs = null;
       return applyTypeArguments(methods, node.getTypeArguments());
+    }
+
+    @Override
+    public List<EntityWithContext> visitPrimitiveType(PrimitiveTypeTree node, Void unused) {
+      return ImmutableList.of(
+          EntityWithContext.ofStaticEntity(
+              PrimitiveEntity.get(node.getPrimitiveTypeKind().name().toLowerCase())));
     }
 
     @Override

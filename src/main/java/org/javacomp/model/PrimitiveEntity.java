@@ -16,6 +16,7 @@ public class PrimitiveEntity extends Entity {
   public static final PrimitiveEntity DOUBLE = new PrimitiveEntity("double");
   public static final PrimitiveEntity CHAR = new PrimitiveEntity("char");
   public static final PrimitiveEntity BOOLEAN = new PrimitiveEntity("boolean");
+  public static final PrimitiveEntity VOID = new PrimitiveEntity("void");
 
   private static final Map<String, PrimitiveEntity> TYPE_MAP =
       new ImmutableMap.Builder<String, PrimitiveEntity>()
@@ -27,6 +28,7 @@ public class PrimitiveEntity extends Entity {
           .put(DOUBLE.getSimpleName(), DOUBLE)
           .put(CHAR.getSimpleName(), CHAR)
           .put(BOOLEAN.getSimpleName(), BOOLEAN)
+          .put(VOID.getSimpleName(), VOID)
           .build();
 
   private static final Map<Class<?>, PrimitiveEntity> CLASS_MAP =
@@ -39,6 +41,7 @@ public class PrimitiveEntity extends Entity {
           .put(Double.class, DOUBLE)
           .put(Character.class, CHAR)
           .put(Boolean.class, BOOLEAN)
+          .put(Void.class, VOID)
           .build();
 
   public static boolean isPrimitive(String typeName) {

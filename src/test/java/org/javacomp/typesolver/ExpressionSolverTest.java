@@ -354,6 +354,12 @@ public class ExpressionSolverTest {
   }
 
   @Test
+  public void solvePrimitiveType() {
+    assertThat(solveExpression("int", methodScope).getEntity()).isSameAs(PrimitiveEntity.INT);
+    assertThat(solveExpression("char", methodScope).getEntity()).isSameAs(PrimitiveEntity.CHAR);
+  }
+
+  @Test
   public void solveEnumFields() {
     assertThat(solveExpression("InnerEnum", topLevelClass).getEntity()).isSameAs(innerEnum);
     assertThat(solveExpression("InnerEnum.ENUM1", topLevelClass).getEntity()).isSameAs(innerEnum);
@@ -401,7 +407,7 @@ public class ExpressionSolverTest {
     ExpressionTree expressionTree = TestUtil.parseExpression(expression);
     Optional<EntityWithContext> solvedExpression =
         expressionSolver.solve(expressionTree, module, baseScope, position);
-    Truth8.assertThat(solvedExpression).named(expression).isPresent();
+    Truth8.assertThat(solvedExpression).named(expression + "(" + expressionTree + ")").isPresent();
     return solvedExpression.get();
   }
 
