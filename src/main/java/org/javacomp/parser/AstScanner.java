@@ -259,13 +259,22 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
     Entity.Kind variableKind =
         (currentScope instanceof ClassEntity) ? Entity.Kind.FIELD : Entity.Kind.VARIABLE;
     Range<Integer> range = getVariableNameRange((JCVariableDecl) node);
+
+    TypeReference variableType;
+    if (node.getType() == null) {
+      // This can happen in the case of untyped lambda function parameters.
+      variableType = TypeReference.EMPTY_TYPE;
+    } else {
+      variableType = typeReferenceScanner.getTypeReference(node.getType());
+    }
+
     VariableEntity variableEntity =
         new VariableEntity(
             node.getName().toString(),
             variableKind,
             this.currentQualifiers,
             isStatic(node.getModifiers()),
-            typeReferenceScanner.getTypeReference(node.getType()),
+            variableType,
             currentScope,
             range);
     currentScope.addEntity(variableEntity);
