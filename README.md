@@ -91,8 +91,8 @@ The path can be either relative to the project root path, or an absolute path.
 
 See our [Wiki page][javacomp-wiki].
 
-[lang-server]: https://github.com/Microsoft/language-server-protocol
-[initialize-request]: https://github.com/Microsoft/language-server-protocol/blob/master/protocol.md#initialize-request
+[lang-server]: https://microsoft.github.io/language-server-protocol/
+[initialize-request]: https://microsoft.github.io/language-server-protocol/specification#initialize
 [InitializeParams.java]: https://github.com/tigersoldier/JavaComp/blob/develop/src/main/java/org/javacomp/server/protocol/InitializeParams.java
 [javacomp-vscode]: https://github.com/tigersoldier/javacomp-vscode
 [javacomp-wiki]: https://github.com/tigersoldier/JavaComp/wiki
