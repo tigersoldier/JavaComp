@@ -6,9 +6,6 @@ java_library(
     name = "handler",
     srcs = glob(["*.java"]),
     deps = [
-        "//external:guava",
-        "//external:javac",
-        "//external:jsr305",
         "//src/main/java/org/javacomp/completion",
         "//src/main/java/org/javacomp/file",
         "//src/main/java/org/javacomp/logging",
@@ -20,5 +17,8 @@ java_library(
         "//src/main/java/org/javacomp/server:request",
         "//src/main/java/org/javacomp/server:requestexception",
         "//third_party:gson",
+        "//third_party:guava",
+        "//third_party:javac",
+        "//third_party:jsr305",
     ],
 )

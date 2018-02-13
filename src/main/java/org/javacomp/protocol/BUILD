@@ -10,13 +10,13 @@ java_library(
     ),
     deps = [
         ":requestparams",
-        "//external:guava",
-        "//external:javac",
-        "//external:jsr305",
         "//src/main/java/org/javacomp/file",
         "//src/main/java/org/javacomp/options",
         "//src/main/java/org/javacomp/server:gsonenum",
         "//third_party:gson",
+        "//third_party:guava",
+        "//third_party:javac",
+        "//third_party:jsr305",
     ],
 )
 

@@ -6,8 +6,6 @@ java_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
-        "//external:guava",
-        "//external:javac",
         "//src/main/java/org/javacomp/completion",
         "//src/main/java/org/javacomp/file",
         "//src/main/java/org/javacomp/logging",
@@ -18,5 +16,7 @@ java_library(
         "//src/main/java/org/javacomp/protocol",
         "//src/main/java/org/javacomp/reference",
         "//src/main/java/org/javacomp/storage",
+        "//third_party:guava",
+        "//third_party:javac",
     ],
 )

@@ -4,10 +4,10 @@ java_library(
     srcs = glob(["*.java"]),
     data = glob(["testdata/**"]),
     deps = [
-        "//external:guava",
         "//src/main/java/org/javacomp/model",
         "//src/main/java/org/javacomp/storage",
         "//src/main/java/org/javacomp/testing",
+        "//third_party:guava",
         "//third_party:junit4",
         "//third_party:truth",
     ],

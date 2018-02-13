@@ -6,6 +6,6 @@ java_library(
     name = "logging",
     srcs = glob(["*.java"]),
     deps = [
-        "//external:jsr305",
+        "//third_party:jsr305",
     ],
 )

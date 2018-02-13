@@ -7,17 +7,6 @@ package(
 )
 
 java_library(
-    name = "mockito",
-    exports = [
-        "@org_mockito_mockito_core//jar",
-    ],
-    runtime_deps = [
-        "@net_bytebutty_byte_butty//jar",
-        "@org_objenesis_objenesis//jar",
-    ],
-)
-
-java_library(
     name = "auto_value",
     exported_plugins = [
         ":auto_annotation_plugin",
@@ -61,7 +50,32 @@ java_library(
 )
 
 java_library(
+    name = "guava",
+    exports = [
+        "@com_google_guava_guava21//jar",
+    ],
+)
+
+java_library(
+    name = "javac",
+    exports = [
+        "@com_google_errorprone_javac//jar",
+    ],
+)
+
+java_library(
+    name = "jsr305",
+    exports = [
+        "@com_google_code_findbugs_jsr305//jar",
+    ],
+)
+
+####################
+# For tests
+
+java_library(
     name = "truth",
+    testonly = 1,
     exports = [
         "@com_google_truth_extensions_truth_java8_extension//jar",
         "@com_google_truth_truth//jar",
@@ -70,8 +84,21 @@ java_library(
 
 java_library(
     name = "junit4",
+    testonly = 1,
     exports = [
         "@junit_junit//jar",
         "@org_hamcrest_hamcrest_core_1_3//jar",
+    ],
+)
+
+java_library(
+    name = "mockito",
+    testonly = 1,
+    exports = [
+        "@org_mockito_mockito_core//jar",
+    ],
+    runtime_deps = [
+        "@net_bytebutty_byte_butty//jar",
+        "@org_objenesis_objenesis//jar",
     ],
 )

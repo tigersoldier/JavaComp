@@ -6,9 +6,6 @@ java_library(
     name = "completion",
     srcs = glob(["*.java"]),
     deps = [
-        "//external:guava",
-        "//external:javac",
-        "//external:jsr305",
         "//src/main/java/org/javacomp/file",
         "//src/main/java/org/javacomp/logging",
         "//src/main/java/org/javacomp/model",
@@ -16,5 +13,8 @@ java_library(
         "//src/main/java/org/javacomp/protocol",
         "//src/main/java/org/javacomp/typesolver",
         "//third_party:auto_value",
+        "//third_party:guava",
+        "//third_party:javac",
+        "//third_party:jsr305",
     ],
 )

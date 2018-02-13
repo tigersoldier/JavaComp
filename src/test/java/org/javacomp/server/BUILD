@@ -1,10 +1,9 @@
 java_library(
     name = "tests",
+    testonly = 1,
     srcs = glob(["*.java"]),
     data = glob(["testdata/*"]),
     deps = [
-        "//external:guava",
-        "//external:jsr305",
         "//src/main/java/org/javacomp/protocol",
         "//src/main/java/org/javacomp/server:errorcode",
         "//src/main/java/org/javacomp/server:gsonutils",
@@ -15,6 +14,8 @@ java_library(
         "//src/main/java/org/javacomp/server/handler",
         "//src/main/java/org/javacomp/server/io",
         "//third_party:gson",
+        "//third_party:guava",
+        "//third_party:jsr305",
         "//third_party:junit4",
         "//third_party:mockito",
         "//third_party:truth",

@@ -15,8 +15,8 @@ java_library(
     name = "file",
     srcs = PUBLIC_INTERFACES,
     deps = [
-        "//external:guava",
         "//third_party:auto_value",
+        "//third_party:guava",
     ],
 )
 
@@ -28,8 +28,8 @@ java_library(
     ),
     deps = [
         ":file",
-        "//external:guava",
         "//src/main/java/org/javacomp/logging",
+        "//third_party:guava",
     ],
 )
 
@@ -38,6 +38,6 @@ java_library(
     srcs = ["SimpleFileManager.java"],
     deps = [
         ":file",
-        "//external:guava",
+        "//third_party:guava",
     ],
 )

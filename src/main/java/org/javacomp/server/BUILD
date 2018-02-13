@@ -14,11 +14,11 @@ java_library(
     name = "server",
     srcs = ["Server.java"],
     deps = [
-        "//external:jsr305",
         "//src/main/java/org/javacomp/file",
         "//src/main/java/org/javacomp/options",
         "//src/main/java/org/javacomp/project",
         "//src/main/java/org/javacomp/protocol",
+        "//third_party:jsr305",
     ],
 )
 
@@ -42,8 +42,6 @@ java_library(
         ":requestexception",
         ":response",
         ":server",
-        "//external:guava",
-        "//external:jsr305",
         "//src/main/java/org/javacomp/file",
         "//src/main/java/org/javacomp/file:impl",
         "//src/main/java/org/javacomp/logging",
@@ -54,6 +52,8 @@ java_library(
         "//src/main/java/org/javacomp/server/io",
         "//third_party:auto_value",
         "//third_party:gson",
+        "//third_party:guava",
+        "//third_party:jsr305",
     ],
 )
 
@@ -81,12 +81,12 @@ java_library(
     name = "request",
     srcs = ["Request.java"],
     deps = [
-        "//external:guava",
-        "//external:jsr305",
         "//src/main/java/org/javacomp/protocol:nullparams",
         "//src/main/java/org/javacomp/protocol:requestparams",
         "//third_party:auto_value",
         "//third_party:gson",
+        "//third_party:guava",
+        "//third_party:jsr305",
     ],
 )
 
@@ -103,9 +103,9 @@ java_library(
     srcs = ["Response.java"],
     deps = [
         ":errorcode",
-        "//external:guava",
-        "//external:jsr305",
         "//third_party:gson",
+        "//third_party:guava",
+        "//third_party:jsr305",
     ],
 )
 

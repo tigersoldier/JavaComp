@@ -6,7 +6,7 @@ java_library(
     name = "util",
     srcs = glob(["*.java"]),
     deps = [
-        "//external:guava",
-        "//external:jsr305",
+        "//third_party:guava",
+        "//third_party:jsr305",
     ],
 )

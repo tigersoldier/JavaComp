@@ -1,16 +1,6 @@
-bind(
-    name = "guava",
-    actual = "@com_google_guava_guava21//jar",
-)
-
 maven_jar(
     name = "com_google_guava_guava21",
     artifact = "com.google.guava:guava:jar:21.0",
-)
-
-bind(
-    name = "javac",
-    actual = "@com_google_errorprone_javac//jar",
 )
 
 maven_jar(
@@ -19,25 +9,17 @@ maven_jar(
     sha1 = "b23b2b0e3f79e3f737496a9eca5bab65cdca791d",
 )
 
-# maven_jar(
-#     name = "com_google_code_gson_gson",
-#     artifact = "com.google.code.gson:gson:2.8.0",
-# )
-
-bind(
-    name = "jsr305",
-    actual = "@com_google_code_findbugs_jsr305//jar",
+maven_jar(
+    name = "com_google_code_gson_gson",
+    artifact = "com.google.code.gson:gson:2.8.2",
+    sha1 = "3edcfe49d2c6053a70a2a47e4e1c2f94998a49cf",
 )
 
-git_repository(
-    name = "org_pubref_rules_protobuf",
-    remote = "https://github.com/pubref/rules_protobuf",
-    tag = "v0.7.1",
+maven_jar(
+    name = "com_google_code_findbugs_jsr305",
+    artifact = "com.google.code.findbugs:jsr305:3.0.2",
+    sha1 = "25ea2e8b0c338a877313bd4672d3fe056ea78f0d",
 )
-
-load("@org_pubref_rules_protobuf//java:rules.bzl", "java_proto_repositories")
-
-java_proto_repositories()
 
 ####################
 # For tests
