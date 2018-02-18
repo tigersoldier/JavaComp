@@ -61,9 +61,11 @@ public class CompletorTest {
     fileManager.openFileForSnapshot(inputFilePath.toUri(), testDataContent);
     ParserContext parserContext = new ParserContext();
     FileContentFixer fileContentFixer = new FileContentFixer(parserContext);
+    parserContext.setupLoggingSource(inputFilename);
 
     int completionPoint = testDataContent.indexOf(COMPLETION_POINT_MARK);
     assertThat(completionPoint).named("Index of " + COMPLETION_POINT_MARK).isGreaterThan(-1);
+    testDataContent = testDataContent.replace(COMPLETION_POINT_MARK, "");
 
     LineMap lineMap = parserContext.tokenize(testDataContent, false).getLineMap();
     // Completion line and column numbers are 0-based, while LineMap values are 1-based.
@@ -189,6 +191,16 @@ public class CompletorTest {
         "BelowClass",
         "STATIC_FIELD",
         "staticMethod");
+  }
+
+  @Test
+  public void completeTwoDots() throws Exception {
+    String toComplete = "above./** @complete */.something";
+
+    List<CompletionCandidate> candidates = completeWithContent("CompleteInMethod.java", toComplete);
+    assertThat(getCandidateNames(candidates))
+        .named("Candidates of '" + toComplete + "'")
+        .containsAllOf("aboveField", "aboveMethod", "toString");
   }
 
   @Test

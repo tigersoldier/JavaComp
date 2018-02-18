@@ -22,17 +22,25 @@ public class ParserContext {
   }
 
   /**
+   * Set source file of the log.
+   *
+   * <p>This method should be called before parsing or lexing. If not set, IllegalArgumentException
+   * will be thrown if the parser enconters errors.
+   */
+  public void setupLoggingSource(String filename) {
+    SourceFileObject sourceFileObject = new SourceFileObject(filename);
+    Log javacLog = Log.instance(javacContext);
+    javacLog.useSource(sourceFileObject);
+  }
+
+  /**
    * Parses the content of a Java file.
    *
    * @param filename the filename of the Java file
    * @param content the content of the Java file
    */
   public JCCompilationUnit parse(String filename, CharSequence content) {
-    // Set source file of the log before parsing. If not set, IllegalArgumentException will be
-    // thrown if the parser enconters errors.
-    SourceFileObject sourceFileObject = new SourceFileObject(filename);
-    Log javacLog = Log.instance(javacContext);
-    javacLog.useSource(sourceFileObject);
+    setupLoggingSource(filename);
 
     // Create a parser and start parsing.
     JavacParser parser =

@@ -46,6 +46,7 @@ public class AstPrinter extends TreeScanner<Void, Void> {
   public void scan(String filename, boolean fixFileContent) {
     try {
       CharSequence content = new String(Files.readAllBytes(Paths.get(filename)), UTF_8);
+      parserContext.setupLoggingSource(filename);
 
       if (fixFileContent) {
         content = fileContentFixer.fixFileContent(content).getContent();
