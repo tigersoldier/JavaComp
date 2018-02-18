@@ -55,6 +55,7 @@ public class ClassModuleBuilder {
   public static ClassModuleBuilder createForJarFile(Path jarFilePath) throws IOException {
     // JAR specific URI pattern.
     // See https://docs.oracle.com/javase/8/docs/technotes/guides/io/fsp/zipfilesystemprovider.html
+    logger.fine("Parsing jar file: %s", jarFilePath);
     String jarUri = "jar:file:" + jarFilePath.toAbsolutePath().normalize().toString();
     FileSystem fs = FileSystems.newFileSystem(URI.create(jarUri), ImmutableMap.of());
     Path jarRootPath = fs.getPath("/");

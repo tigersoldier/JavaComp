@@ -166,9 +166,20 @@ public class ClassInfoConverter {
 
       ImmutableMap.Builder<String, InnerClassEntry> builder = new ImmutableMap.Builder<>();
       for (AttributeInfo.InnerClass.ClassInfo classInfo : innerClass.get().getClasses()) {
+        int innerNameIndex = classInfo.getInnerNameIndex();
+        if (innerNameIndex == 0) {
+          // This is an annonymous class. Ignore it since it has no name.
+          continue;
+        }
+        int outerClassInfoIndex = classInfo.getOuterClassInfoIndex();
+        if (outerClassInfoIndex == 0) {
+          // The class is a top-level class. Ignore it.
+          continue;
+        }
+
         String innerClassName = getClassName(classInfo.getInnerClassInfoIndex());
-        String outerClassName = getClassName(classInfo.getOuterClassInfoIndex());
-        String innerName = getUtf8(classInfo.getInnerNameIndex());
+        String outerClassName = getClassName(outerClassInfoIndex);
+        String innerName = getUtf8(innerNameIndex);
         builder.put(
             innerClassName,
             InnerClassEntry.create(outerClassName, innerName, classInfo.getAccessFlags()));
