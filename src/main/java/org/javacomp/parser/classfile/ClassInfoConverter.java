@@ -188,7 +188,7 @@ public class ClassInfoConverter {
     private <T extends ConstantPoolInfo> T getConstant(int index, Class<T> constantClass) {
       checkArgument(
           index > 0 && index < classFileInfo.getConstantPool().size(),
-          "Constant index %s out of range [1, %d]",
+          "Constant index %s out of range [1, %s]",
           index,
           classFileInfo.getConstantPool().size());
       ConstantPoolInfo constant = classFileInfo.getConstantPool().get(index);
