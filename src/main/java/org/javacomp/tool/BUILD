@@ -40,3 +40,13 @@ java_binary(
         "//third_party:javac",
     ],
 )
+
+java_binary(
+    name = "JarPrinter",
+    srcs = ["JarPrinter.java"],
+    main_class = "org.javacomp.tool.JarPrinter",
+    deps = [
+        "//src/main/java/org/javacomp/parser/classfile",
+        "//third_party:guava",
+    ],
+)
