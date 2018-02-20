@@ -1,6 +1,9 @@
 # Forked from https://github.com/pubref/rules_protobuf
 dist: trusty
 language: java
+jdk:
+  - openjdk8
+  - oraclejdk9
 
 os: linux
 
