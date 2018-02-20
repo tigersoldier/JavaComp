@@ -7,8 +7,6 @@ import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
 import javax.annotation.Nullable;
-import sun.misc.JavaLangAccess;
-import sun.misc.SharedSecrets;
 
 /**
  * Wrapper around Java logger.
@@ -155,13 +153,11 @@ public class JLogger {
 
   @Nullable
   private static StackTraceElement findCallerStackTraceElement() {
-    JavaLangAccess access = SharedSecrets.getJavaLangAccess();
     Throwable throwable = new Throwable();
-    int stackTraceDepth = access.getStackTraceDepth(throwable);
+    StackTraceElement[] stackTrace = throwable.getStackTrace();
 
     boolean loggerStackTraceFound = true;
-    for (int i = 0; i < stackTraceDepth; i++) {
-      StackTraceElement stackTraceElement = access.getStackTraceElement(throwable, i);
+    for (StackTraceElement stackTraceElement : stackTrace) {
       String className = stackTraceElement.getClassName();
       if (JLogger.class.getCanonicalName().equals(className)) {
         loggerStackTraceFound = true;
