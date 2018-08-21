@@ -59,7 +59,12 @@ maven_jar(
 
 maven_jar(
     name = "com_google_auto_value_auto_value",
-    artifact = "com.google.auto.value:auto-value:1.3",
+    artifact = "com.google.auto.value:auto-value:1.6.2",
+)
+
+maven_jar(
+    name = "com_google_auto_value_auto_value_annotations",
+    artifact = "com.google.auto.value:auto-value-annotations:1.6.2",
 )
 
 maven_jar(

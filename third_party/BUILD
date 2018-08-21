@@ -14,7 +14,7 @@ java_library(
     ],
     visibility = ["//visibility:public"],
     exports = [
-        "@com_google_auto_value_auto_value//jar",
+        "@com_google_auto_value_auto_value_annotations//jar",
     ],
 )
 
