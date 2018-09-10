@@ -14,9 +14,11 @@ import java.nio.file.Paths;
 import java.nio.file.StandardWatchEventKinds;
 import java.nio.file.WatchEvent;
 import java.util.Deque;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Stream;
 import org.javacomp.completion.CompletionCandidate;
 import org.javacomp.completion.Completor;
@@ -210,6 +212,26 @@ public class Project {
 
   public synchronized TextEdit textEditForImport(Path filePath, String fullClassName) {
     return new TextEdits().forImportClass(projectModule, filePath, fullClassName).orElse(null);
+  }
+
+  public synchronized Optional<FileScope> findFileScope(Path filePath) {
+    Deque<Module> queue = new LinkedList<>();
+    Set<Module> visitedModules = new HashSet<>();
+    queue.addLast(getModule());
+    while (!queue.isEmpty()) {
+      Module module = queue.removeFirst();
+      Optional<FileScope> fileScope = module.getFileScope(filePath.toString());
+      if (fileScope.isPresent()) {
+        return fileScope;
+      }
+      for (Module dependency : module.getDependingModules()) {
+        if (!visitedModules.contains(module)) {
+          visitedModules.add(module);
+          queue.addLast(module);
+        }
+      }
+    }
+    return Optional.empty();
   }
 
   public Module getModule() {

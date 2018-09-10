@@ -1,6 +1,7 @@
 package org.javacomp.protocol;
 
 import com.google.gson.JsonElement;
+import java.util.Set;
 import javax.annotation.Nullable;
 
 /** Client capability submessage. */
@@ -56,7 +57,7 @@ public class ClientCapabilities {
     @Nullable public DynamicRegistrationCapability documentHighlight;
 
     /** Capabilities specific to the `textDocument/documentSymbol` */
-    @Nullable public DynamicRegistrationCapability documentSymbol;
+    @Nullable public DocumentSymbolCapabilities documentSymbol;
 
     /** Capabilities specific to the `textDocument/formatting` */
     @Nullable public DynamicRegistrationCapability formatting;
@@ -121,5 +122,26 @@ public class ClientCapabilities {
      * identifiers are linked, that is typing in one will update others too.
      */
     @Nullable public boolean snippetSupport;
+  }
+
+  public static class DocumentSymbolCapabilities extends DynamicRegistrationCapability {
+    @Nullable public SymbolKindCapabilities symbolKind;
+
+    /** The client support hierarchical document symbols. */
+    public boolean hierarchicalDocumentSymbolSupport;
+  }
+
+  /** Specific capabilities for the {@link SymbolKind}. */
+  public static class SymbolKindCapabilities {
+    /**
+     * The symbol kind values the client supports.
+     *
+     * <p>When this property exists the client also guarantees that it will handle values outside
+     * its set gracefully and falls back to a default value when unknown.
+     *
+     * <p>If this property is not present the client only supports the symbol kinds from `File` to
+     * `Array` as defined in the initial version of the protocol.
+     */
+    @Nullable public Set<SymbolKind> valueSet;
   }
 }

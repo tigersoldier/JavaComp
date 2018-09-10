@@ -31,6 +31,7 @@ import org.javacomp.server.handler.DefinitionTextDocumentHandler;
 import org.javacomp.server.handler.DidChangeTextDocumentHandler;
 import org.javacomp.server.handler.DidCloseTextDocumentHandler;
 import org.javacomp.server.handler.DidOpenTextDocumentHandler;
+import org.javacomp.server.handler.DocumentSymbolHandler;
 import org.javacomp.server.handler.ExitHandler;
 import org.javacomp.server.handler.HoverTextDocumentHandler;
 import org.javacomp.server.handler.InitializeHandler;
@@ -85,6 +86,7 @@ public class JavaComp implements Server {
             .registerHandler(new SignatureHelpTextDocumentHandler(this))
             .registerHandler(new HoverTextDocumentHandler(this))
             .registerHandler(new ResolveCompletionItemHandler(this, gson))
+            .registerHandler(new DocumentSymbolHandler(this))
             .setExecutor(executor)
             .build();
   }

@@ -1,0 +1,32 @@
+package org.javacomp.protocol;
+
+/** A symbol kind. */
+public enum SymbolKind {
+  UNKNOWN,
+  FILE,
+  MODULE,
+  NAMESPACE,
+  PACKAGE,
+  CLASS,
+  METHOD,
+  PROPERTY,
+  FIELD,
+  CONSTRUCTOR,
+  ENUM,
+  INTERFACE,
+  FUNCTION,
+  VARIABLE,
+  CONSTANT,
+  STRING,
+  NUMBER,
+  BOOLEAN,
+  ARRAY,
+  OBJECT,
+  KEY,
+  NULL,
+  ENUM_MEMBER,
+  STRUCT,
+  EVENT,
+  OPERATOR,
+  TYPE_PARAMETER,
+}

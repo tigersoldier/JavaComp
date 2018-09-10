@@ -1,7 +1,6 @@
 package org.javacomp.server.handler;
 
 import com.google.common.collect.ImmutableList;
-import com.sun.source.tree.LineMap;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Objects;
@@ -10,8 +9,6 @@ import org.javacomp.model.EntityScope;
 import org.javacomp.model.FileScope;
 import org.javacomp.project.Project;
 import org.javacomp.protocol.Location;
-import org.javacomp.protocol.Position;
-import org.javacomp.protocol.Range;
 import org.javacomp.protocol.TextDocumentPositionParams;
 import org.javacomp.server.Request;
 import org.javacomp.server.Server;
@@ -65,21 +62,8 @@ public class DefinitionTextDocumentHandler extends RequestHandler<TextDocumentPo
               if (!fileScope.getLineMap().isPresent()) {
                 return null;
               }
-              LineMap lineMap = fileScope.getLineMap().get();
 
-              Location location = new Location();
-              location.range =
-                  new Range(
-                      // Start
-                      new Position(
-                          (int) lineMap.getLineNumber(range.lowerEndpoint()) - 1,
-                          (int) lineMap.getColumnNumber(range.lowerEndpoint()) - 1),
-                      new Position(
-                          (int) lineMap.getLineNumber(range.upperEndpoint()) - 1,
-                          (int) lineMap.getColumnNumber(range.upperEndpoint()) - 1));
-              location.uri = Paths.get(fileScope.getFilename()).toUri();
-
-              return location;
+              return MessageUtils.buildLocationForFile(fileScope, range);
             })
         .filter(Objects::nonNull)
         .collect(ImmutableList.toImmutableList());
