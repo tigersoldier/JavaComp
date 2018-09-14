@@ -63,7 +63,7 @@ public class IndexStoreTest {
       PackageEntity deserialized, PackageEntity original, Deque<String> qualifiedName) {
     assertQualifiedName(deserialized, qualifiedName);
     assertThat(deserialized.getQualifiedName()).isEqualTo(original.getQualifiedName());
-    assertSameMemberEntities(deserialized.getChildScope(), original.getChildScope(), qualifiedName);
+    assertSameMemberEntities(deserialized.getScope(), original.getScope(), qualifiedName);
   }
 
   private void assertClassesEqual(

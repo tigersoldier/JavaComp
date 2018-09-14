@@ -2,6 +2,7 @@ package org.javacomp.model;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Range;
+import java.util.Optional;
 
 /** Represents null. */
 public class NullEntity extends Entity {
@@ -17,7 +18,12 @@ public class NullEntity extends Entity {
   }
 
   @Override
-  public EmptyScope getChildScope() {
+  public Optional<EntityScope> getParentScope() {
+    return Optional.empty();
+  }
+
+  @Override
+  public EmptyScope getScope() {
     return EmptyScope.INSTANCE;
   }
 

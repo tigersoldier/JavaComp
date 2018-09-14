@@ -203,7 +203,7 @@ public class IndexStore {
             .map(param -> serializeEntity(param))
             .collect(Collectors.toList());
     if (!entity.getSimpleName().equals("<init>")) {
-      ret.type = serializeTypeReference(entity.getReturnType(), entity.getChildScope());
+      ret.type = serializeTypeReference(entity.getReturnType(), entity.getScope());
     }
     if (!entity.getTypeParameters().isEmpty()) {
       ret.typeParameters =
@@ -218,7 +218,7 @@ public class IndexStore {
 
   private SerializedEntity serializeVariableEntity(VariableEntity entity) {
     SerializedEntity ret = new SerializedEntity();
-    ret.type = serializeTypeReference(entity.getType(), entity.getParentScope());
+    ret.type = serializeTypeReference(entity.getType(), entity.getParentScope().get());
     return ret;
   }
 

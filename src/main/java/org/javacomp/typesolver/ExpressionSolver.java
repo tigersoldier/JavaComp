@@ -141,7 +141,7 @@ public class ExpressionSolver {
           .solve(
               variableEntity.getType(),
               solvedTypeParameters,
-              variableEntity.getParentScope(),
+              variableEntity.getParentScope().get(),
               module)
           .map(solvedType -> EntityWithContext.from(solvedType).setInstanceContext(true).build())
           .orElse(null);
@@ -201,7 +201,7 @@ public class ExpressionSolver {
         baseClassEntities =
             new ExpressionDefinitionScanner(
                     module,
-                    ((ClassEntity) enclosingClass.getEntity()).getChildScope(),
+                    ((ClassEntity) enclosingClass.getEntity()).getScope(),
                     -1 /* position is useless for solving classes. */,
                     allowedEntityKinds)
                 .scan(node.getIdentifier(), null);

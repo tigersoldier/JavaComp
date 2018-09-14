@@ -33,6 +33,7 @@ public class ClassEntity extends Entity implements EntityScope {
   private final ImmutableList<TypeReference> interfaces;
   private final Map<String, ClassEntity> innerClasses;
   private final ImmutableList<TypeParameter> typeParameters;
+  private final List<EntityScope> childScopes;
 
   public ClassEntity(
       String simpleName,
@@ -58,6 +59,7 @@ public class ClassEntity extends Entity implements EntityScope {
     this.interfaces = ImmutableList.copyOf(interfaces);
     this.typeParameters = ImmutableList.copyOf(typeParameters);
     this.innerClasses = new HashMap<>();
+    this.childScopes = new ArrayList<>();
   }
 
   @Override
@@ -68,8 +70,13 @@ public class ClassEntity extends Entity implements EntityScope {
   }
 
   @Override
-  public ClassEntity getChildScope() {
+  public ClassEntity getScope() {
     return this;
+  }
+
+  @Override
+  public List<EntityScope> getChildScopes() {
+    return childScopes;
   }
 
   @Override
@@ -84,6 +91,7 @@ public class ClassEntity extends Entity implements EntityScope {
 
   @Override
   public void addEntity(Entity entity) {
+    childScopes.add(entity.getScope());
     if (entity instanceof ClassEntity) {
       innerClasses.put(entity.getSimpleName(), (ClassEntity) entity);
     } else if (entity instanceof MethodEntity) {
@@ -96,6 +104,20 @@ public class ClassEntity extends Entity implements EntityScope {
     } else {
       fields.put(entity.getSimpleName(), (VariableEntity) entity);
     }
+  }
+
+  @Override
+  public void addChildScope(EntityScope childScope) {
+    checkArgument(
+        !childScope.getDefiningEntity().isPresent(),
+        "Should call addEntity for adding entity %s",
+        childScope.getClass().getSimpleName());
+    childScopes.add(childScope);
+  }
+
+  @Override
+  public Optional<Entity> getDefiningEntity() {
+    return Optional.of(this);
   }
 
   public List<MethodEntity> getMethodsWithName(String simpleName) {

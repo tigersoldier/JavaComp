@@ -149,11 +149,13 @@ public class OverloadSolver {
           // The previous matched methods are better match than this method, skip it.
           continue;
         case 0:
-          // This method is as good as previously matched methods. Add it the the list of matched methods.
+          // This method is as good as previously matched methods. Add it the the list of matched
+          // methods.
           matchedMethods.add(method);
           break;
         case 1:
-          // The method is better than previously matched methods. Clear all matched methods and add it.
+          // The method is better than previously matched methods. Clear all matched methods and add
+          // it.
           previousMatchLevel = matchLevel;
           matchedMethods.clear();
           matchedMethods.add(method);
@@ -191,11 +193,11 @@ public class OverloadSolver {
     // Assuming we are at the highest possible match level. Downgrade once we find violations.
     SignatureMatchLevel matchLevel = SignatureMatchLevel.STRICT_INVOCATION;
 
-    // Check all parameters other than the last one. The last one will be checked against variable arity.
+    // Check all parameters other than the last one. The last one will be checked against variable
+    // arity.
     for (int i = 0; i < parameterTypes.size() - 1; i++) {
       Optional<SolvedType> solvedParameterType =
-          typeSolver.solve(
-              parameterTypes.get(i), method.getChildScope().getParentScope().get(), module);
+          typeSolver.solve(parameterTypes.get(i), method.getScope().getParentScope().get(), module);
       switch (matchArgumentType(argumentTypes.get(i), solvedParameterType, module)) {
         case NOT_MATCH:
           return SignatureMatchLevel.TYPE_NOT_MATCH;
@@ -217,7 +219,7 @@ public class OverloadSolver {
     Optional<SolvedType> lastParameterType =
         typeSolver.solve(
             parameterTypes.get(parameterTypes.size() - 1),
-            method.getChildScope().getParentScope().get(),
+            method.getScope().getParentScope().get(),
             module);
     if (!lastParameterType.isPresent()) {
       return SignatureMatchLevel.TYPE_NOT_MATCH;
@@ -265,7 +267,8 @@ public class OverloadSolver {
   private TypeMatchLevel matchArgumentType(
       Optional<SolvedType> argumentType, Optional<SolvedType> parameterType, Module module) {
     if (!argumentType.isPresent()) {
-      // Unknown type or untyped lambda, consider as a match since it's the same to all method overloads.
+      // Unknown type or untyped lambda, consider as a match since it's the same to all method
+      // overloads.
       return TypeMatchLevel.MATCH_WITHOUT_BOXING;
     }
     if (!parameterType.isPresent()) {
@@ -315,7 +318,8 @@ public class OverloadSolver {
               ((SolvedArrayType) parameterType).getBaseType(),
               ((SolvedArrayType) argumentType).getBaseType(),
               module);
-      // Array type are not compatible if auto-boxing or primitive widening are needed for matching base types.
+      // Array type are not compatible if auto-boxing or primitive widening are needed for matching
+      // base types.
       if (baseTypeMatch.getTypeMatchLevel() != TypeMatchLevel.MATCH_WITHOUT_BOXING
           || baseTypeMatch.getHasPrimitiveWidening()) {
         return resultBuilder.setTypeMatchLevel(TypeMatchLevel.NOT_MATCH).build();
@@ -495,18 +499,12 @@ public class OverloadSolver {
     List<Optional<SolvedType>> lhsParameterTypes =
         lhs.getParameters()
             .stream()
-            .map(
-                p ->
-                    typeSolver.solve(
-                        p.getType(), lhs.getChildScope().getParentScope().get(), module))
+            .map(p -> typeSolver.solve(p.getType(), lhs.getScope().getParentScope().get(), module))
             .collect(Collectors.toList());
     List<Optional<SolvedType>> rhsParameterTypes =
         rhs.getParameters()
             .stream()
-            .map(
-                p ->
-                    typeSolver.solve(
-                        p.getType(), rhs.getChildScope().getParentScope().get(), module))
+            .map(p -> typeSolver.solve(p.getType(), rhs.getScope().getParentScope().get(), module))
             .collect(Collectors.toList());
     if (methodMoreSpecific(
         lhs,

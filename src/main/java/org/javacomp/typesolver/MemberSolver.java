@@ -70,7 +70,7 @@ public class MemberSolver {
                       ((ClassEntity) baseEntity.getEntity()).getTypeParameters(),
                       ImmutableList.<TypeArgument>of(),
                       baseEntity.getSolvedTypeParameters(),
-                      baseEntity.getEntity().getChildScope(),
+                      baseEntity.getEntity().getScope(),
                       module))
               .build());
     }

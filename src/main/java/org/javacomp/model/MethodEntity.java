@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Range;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.javacomp.model.util.QualifiedNames;
@@ -19,6 +20,7 @@ public class MethodEntity extends Entity implements EntityScope {
   // Map of simple names -> entities.
   private final Multimap<String, Entity> entities;
   private final ClassEntity classEntity;
+  private final List<EntityScope> childScopes;
 
   public MethodEntity(
       String simpleName,
@@ -35,12 +37,13 @@ public class MethodEntity extends Entity implements EntityScope {
     this.typeParameters = ImmutableList.copyOf(typeParameters);
     this.entities = HashMultimap.create();
     this.classEntity = classEntity;
+    this.childScopes = new ArrayList<>();
   }
 
   /////////////// Entity methods ////////////////
 
   @Override
-  public MethodEntity getChildScope() {
+  public MethodEntity getScope() {
     return this;
   }
 
@@ -57,8 +60,24 @@ public class MethodEntity extends Entity implements EntityScope {
   }
 
   @Override
+  public Optional<Entity> getDefiningEntity() {
+    return Optional.of(this);
+  }
+
+  @Override
+  public List<EntityScope> getChildScopes() {
+    return ImmutableList.copyOf(childScopes);
+  }
+
+  @Override
   public void addEntity(Entity entity) {
     entities.put(entity.getSimpleName(), entity);
+    childScopes.add(entity.getScope());
+  }
+
+  @Override
+  public void addChildScope(EntityScope entityScope) {
+    childScopes.add(entityScope);
   }
 
   @Override

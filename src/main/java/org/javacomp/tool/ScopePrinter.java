@@ -110,7 +110,7 @@ public class ScopePrinter {
       System.out.println(formatEntity(entity, indent));
       // VariableEntity's child scope is the same as its parent scope, which is being visited.
       if (!(entity instanceof VariableEntity)) {
-        printScope(entity.getChildScope(), indent + 2);
+        printScope(entity.getScope(), indent + 2);
       }
     }
   }

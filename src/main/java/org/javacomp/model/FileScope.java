@@ -16,7 +16,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import javax.annotation.Nullable;
 
 /** Scope of entities in the scope of a Java source file. */
 public class FileScope implements EntityScope {
@@ -192,6 +191,12 @@ public class FileScope implements EntityScope {
     entities.put(entity.getSimpleName(), entity);
   }
 
+  @Override
+  public void addChildScope(EntityScope entityScope) {
+    throw new UnsupportedOperationException(
+        "Only classes can be added to a file. Found " + entityScope.getClass().getSimpleName());
+  }
+
   public void setScopeRangeMap(RangeMap<Integer, EntityScope> scopeRangeMap) {
     this.scopeRangeMap = scopeRangeMap;
   }
@@ -259,5 +264,19 @@ public class FileScope implements EntityScope {
   @Override
   public String toString() {
     return "FileScope<" + getFilename() + ", " + this.packageQualifiers + ">";
+  }
+
+  @Override
+  public Optional<Entity> getDefiningEntity() {
+    return Optional.empty();
+  }
+
+  @Override
+  public List<EntityScope> getChildScopes() {
+    return entities
+        .values()
+        .stream()
+        .map(entity -> entity.getScope())
+        .collect(ImmutableList.toImmutableList());
   }
 }

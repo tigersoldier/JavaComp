@@ -114,8 +114,7 @@ public class ExpressionSolverTest {
     fakeObjectClass = (ClassEntity) TestUtil.lookupEntity("java.lang.Object", fakeJdkModule);
     lambdaCallMethod =
         (MethodEntity) TestUtil.lookupEntity(TOP_LEVEL_CLASS_FULL_NAME + ".lambdaCall", module);
-    methodScope =
-        TestUtil.lookupEntity(TOP_LEVEL_CLASS_FULL_NAME + ".method", module).getChildScope();
+    methodScope = TestUtil.lookupEntity(TOP_LEVEL_CLASS_FULL_NAME + ".method", module).getScope();
   }
 
   @Test
@@ -137,9 +136,9 @@ public class ExpressionSolverTest {
   public void solveRedefinedTypeParameter() {
     Entity redefineTMethod =
         TestUtil.lookupEntity(TOP_LEVEL_CLASS_FULL_NAME + ".redefineTMethod", module);
-    assertThat(solveExpression("parameter", redefineTMethod.getChildScope()).getEntity())
+    assertThat(solveExpression("parameter", redefineTMethod.getScope()).getEntity())
         .isSameAs(innerBClass);
-    assertThat(solveExpression("typeParameterT", redefineTMethod.getChildScope()).getEntity())
+    assertThat(solveExpression("typeParameterT", redefineTMethod.getScope()).getEntity())
         .isSameAs(fakeObjectClass);
   }
 

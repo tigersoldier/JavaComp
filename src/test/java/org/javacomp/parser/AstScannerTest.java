@@ -126,7 +126,7 @@ public class AstScannerTest {
     EntityScope scopeAtEnd = getEntityScopeBefore("} // class TestData");
     EntityScope scopeAtField = getEntityScopeAfter("publicStaticIntField;");
     for (EntityScope scope : ImmutableList.of(scopeAtStart, scopeAtEnd, scopeAtField)) {
-      assertThat(scope).isEqualTo(lookupEntity(fileScope, "TestData").getChildScope());
+      assertThat(scope).isEqualTo(lookupEntity(fileScope, "TestData").getScope());
     }
   }
 
@@ -136,8 +136,7 @@ public class AstScannerTest {
     EntityScope scopeAtEnd = getEntityScopeBefore("} // PublicInnerEnum");
     EntityScope scopeAtField = getEntityScopeAfter("ENUM_VALUE1,");
     for (EntityScope scope : ImmutableList.of(scopeAtStart, scopeAtEnd, scopeAtField)) {
-      assertThat(scope)
-          .isEqualTo(lookupEntity(fileScope, "TestData.PublicInnerEnum").getChildScope());
+      assertThat(scope).isEqualTo(lookupEntity(fileScope, "TestData.PublicInnerEnum").getScope());
     }
   }
 
@@ -148,7 +147,7 @@ public class AstScannerTest {
     EntityScope scopeAtField = getEntityScopeAfter("interfaceMethod();");
     for (EntityScope scope : ImmutableList.of(scopeAtStart, scopeAtEnd, scopeAtField)) {
       assertThat(scope)
-          .isEqualTo(lookupEntity(fileScope, "TestData.PublicInnerInterface").getChildScope());
+          .isEqualTo(lookupEntity(fileScope, "TestData.PublicInnerInterface").getScope());
     }
   }
 
@@ -160,7 +159,7 @@ public class AstScannerTest {
     for (EntityScope scope : ImmutableList.of(scopeAtStart, scopeAtEnd, scopeAtField)) {
       MethodEntity methodEntity =
           (MethodEntity) lookupEntity(fileScope, "TestData.publicIfBlockMethod");
-      assertThat(scope).isEqualTo(methodEntity.getChildScope());
+      assertThat(scope).isEqualTo(methodEntity.getScope());
     }
   }
 
@@ -283,15 +282,14 @@ public class AstScannerTest {
   public void parameterNameRange() {
     Entity method = lookupEntity(fileScope, "TestData.protectedWhileBlockMethod");
     Entity parameter =
-        Iterables.getOnlyElement(method.getChildScope().getMemberEntities().get("number"));
+        Iterables.getOnlyElement(method.getScope().getMemberEntities().get("number"));
     assertEntityNameRange(parameter, "protected int protectedWhileBlockMethod(int number)");
   }
 
   @Test
   public void variableNameRange() {
     Entity method = lookupEntity(fileScope, "TestData.protectedWhileBlockMethod");
-    Entity parameter =
-        Iterables.getOnlyElement(method.getChildScope().getMemberEntities().get("ret"));
+    Entity parameter = Iterables.getOnlyElement(method.getScope().getMemberEntities().get("ret"));
     assertEntityNameRange(parameter, "int ret = 0;  // variable");
   }
 
@@ -457,7 +455,7 @@ public class AstScannerTest {
       Collection<Entity> entities = currentScope.getMemberEntities().get(qualifier);
       assertThat(entities).isNotEmpty();
       entity = Iterables.getFirst(entities, null);
-      currentScope = entity.getChildScope();
+      currentScope = entity.getScope();
     }
     return entity;
   }

@@ -3,6 +3,7 @@ package org.javacomp.model;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Range;
 import java.util.List;
+import java.util.Optional;
 import org.javacomp.model.util.QualifiedNames;
 
 /**
@@ -24,7 +25,8 @@ public abstract class Entity {
     // Each part of a pacakage qualifier
     // e.g org.javacomp has 2 qualifiers: org and javacomp
     QUALIFIER,
-    // A psuedo entity kind. Represents the a reference to a entity by name. May be resolved to its referencing entity.
+    // A psuedo entity kind. Represents the a reference to a entity by name. May be resolved to its
+    // referencing entity.
     REFERENCE,
     // A premitive type.
     PRIMITIVE,
@@ -89,9 +91,9 @@ public abstract class Entity {
     return !isStatic();
   }
 
-  /**
-   * @return a {@link EntityScope} that can be used to find entities visible to the scope of the
-   *     entity.
-   */
-  public abstract EntityScope getChildScope();
+  /** @return a {@link EntityScope} that this entity defines. */
+  public abstract EntityScope getScope();
+
+  /** @return a {@link EntityScope} that defines this entity. */
+  public abstract Optional<EntityScope> getParentScope();
 }

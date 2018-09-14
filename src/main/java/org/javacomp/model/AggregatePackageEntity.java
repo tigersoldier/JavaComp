@@ -1,6 +1,7 @@
 package org.javacomp.model;
 
 import java.util.List;
+import java.util.Optional;
 
 /** A {@link PackageEntity} that associates to {@link AggregatePackageScope}. */
 public class AggregatePackageEntity extends PackageEntity {
@@ -9,7 +10,12 @@ public class AggregatePackageEntity extends PackageEntity {
   }
 
   @Override
-  public AggregatePackageScope getChildScope() {
-    return (AggregatePackageScope) super.getChildScope();
+  public AggregatePackageScope getScope() {
+    return (AggregatePackageScope) super.getScope();
+  }
+
+  @Override
+  public Optional<EntityScope> getParentScope() {
+    return Optional.empty();
   }
 }

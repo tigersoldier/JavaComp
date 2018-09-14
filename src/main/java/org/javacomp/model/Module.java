@@ -68,7 +68,7 @@ public class Module {
     for (String qualifier : packageQualifiers) {
       Optional<PackageEntity> packageEntity = getPackageEntity(qualifier, currentPackage);
       if (packageEntity.isPresent()) {
-        currentPackage = packageEntity.get().getChildScope();
+        currentPackage = packageEntity.get().getScope();
       } else {
         PackageScope packageScope = new PackageScope();
         currentPackage.addEntity(new PackageEntity(qualifier, currentQualifiers, packageScope));
@@ -97,12 +97,12 @@ public class Module {
       }
       PackageEntity packageEntity = optionalPackageEntity.get();
       stack.addFirst(packageEntity);
-      currentPackage = packageEntity.getChildScope();
+      currentPackage = packageEntity.getScope();
     }
     currentPackage.removeFile(fileScope);
     while (!currentPackage.hasChildren() && !stack.isEmpty()) {
       PackageEntity packageEntity = stack.removeFirst();
-      currentPackage = stack.isEmpty() ? rootPackage : stack.peekFirst().getChildScope();
+      currentPackage = stack.isEmpty() ? rootPackage : stack.peekFirst().getScope();
       currentPackage.removePackage(packageEntity);
     }
   }

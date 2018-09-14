@@ -46,7 +46,7 @@ public class DefinitionTextDocumentHandler extends RequestHandler<TextDocumentPo
         .map(
             entity -> {
               com.google.common.collect.Range<Integer> range = entity.getSymbolRange();
-              EntityScope scope = entity.getChildScope();
+              EntityScope scope = entity.getScope();
               while (!(scope instanceof FileScope) && scope.getParentScope().isPresent()) {
                 scope = scope.getParentScope().get();
               }

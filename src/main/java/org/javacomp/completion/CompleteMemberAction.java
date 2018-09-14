@@ -64,7 +64,7 @@ class CompleteMemberAction implements CompletionAction {
     }
 
     return createCompletionCandidates(
-        solvedEntityWithContext.get().getEntity().getChildScope().getMemberEntities().values(),
+        solvedEntityWithContext.get().getEntity().getScope().getMemberEntities().values(),
         completionPrefix);
   }
 

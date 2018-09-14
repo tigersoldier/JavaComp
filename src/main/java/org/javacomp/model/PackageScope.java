@@ -3,9 +3,11 @@ package org.javacomp.model;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import com.google.common.collect.HashMultimap;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -38,6 +40,13 @@ public class PackageScope implements EntityScope {
     subPackages.put(entity.getSimpleName(), (PackageEntity) entity);
   }
 
+  @Override
+  public void addChildScope(EntityScope entityScope) {
+    throw new UnsupportedOperationException(
+        "Only sub package can be added to a package. Found "
+            + entityScope.getClass().getSimpleName());
+  }
+
   public void removePackage(PackageEntity entity) {
     subPackages.remove(entity.getSimpleName(), entity);
   }
@@ -57,6 +66,16 @@ public class PackageScope implements EntityScope {
 
   @Override
   public Optional<EntityScope> getParentScope() {
+    return Optional.empty();
+  }
+
+  @Override
+  public List<EntityScope> getChildScopes() {
+    return ImmutableList.<EntityScope>copyOf(files);
+  }
+
+  @Override
+  public Optional<Entity> getDefiningEntity() {
     return Optional.empty();
   }
 }

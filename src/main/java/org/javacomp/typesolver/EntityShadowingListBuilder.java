@@ -2,6 +2,7 @@ package org.javacomp.typesolver;
 
 import com.google.common.collect.ImmutableList;
 import java.util.ArrayList;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import javax.annotation.Nullable;
@@ -84,6 +85,7 @@ public class EntityShadowingListBuilder<E> {
    */
   public static class ForImportEntity extends Entity {
     private static Entity delegate;
+
     public ForImportEntity(Entity delegate) {
       super(
           delegate.getSimpleName(),
@@ -95,8 +97,13 @@ public class EntityShadowingListBuilder<E> {
     }
 
     @Override
-    public EntityScope getChildScope() {
-      return delegate.getChildScope();
+    public EntityScope getScope() {
+      return delegate.getScope();
+    }
+
+    @Override
+    public Optional<EntityScope> getParentScope() {
+      return delegate.getParentScope();
     }
   }
 }

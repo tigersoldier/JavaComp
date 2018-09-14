@@ -70,8 +70,13 @@ public class PrimitiveEntity extends Entity {
   }
 
   @Override
-  public EmptyScope getChildScope() {
+  public EmptyScope getScope() {
     return EmptyScope.INSTANCE;
+  }
+
+  @Override
+  public Optional<EntityScope> getParentScope() {
+    return Optional.empty();
   }
 
   @Override

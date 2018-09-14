@@ -101,7 +101,7 @@ public class TestUtil {
       Collection<Entity> entities = currentScope.getMemberEntities().get(qualifier);
       assertWithMessage(QUALIFIER_JOINER.join(currentQualifiers)).that(entities).isNotEmpty();
       entity = Iterables.getFirst(entities, null);
-      currentScope = entity.getChildScope();
+      currentScope = entity.getScope();
     }
     assertThat(entity).isNotNull();
     return entity;

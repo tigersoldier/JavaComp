@@ -151,7 +151,7 @@ class CompleteSymbolAction implements CompletionAction {
         continue;
       }
 
-      for (Entity member : enclosingClassOrPackage.getChildScope().getMemberEntities().values()) {
+      for (Entity member : enclosingClassOrPackage.getScope().getMemberEntities().values()) {
         if (member.isStatic() && allowedKinds.contains(member.getKind())) {
           builder.addEntity(member, CompletionCandidate.SortCategory.ACCESSIBLE_SYMBOL);
         }

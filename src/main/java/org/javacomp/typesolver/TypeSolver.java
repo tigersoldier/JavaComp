@@ -138,7 +138,7 @@ public class TypeSolver {
       if (!currentEntity.isPresent()) {
         break;
       }
-      currentScope = currentEntity.get().getChildScope();
+      currentScope = currentEntity.get().getScope();
     }
     if (currentEntity.isPresent()) {
       return currentEntity;
@@ -187,7 +187,7 @@ public class TypeSolver {
       currentEntity =
           findClassOrPackageInClassOrPackage(
               name, currentScope.get(), module, false /* useCanonicalName */);
-      currentScope = currentEntity.map(entity -> entity.getChildScope());
+      currentScope = currentEntity.map(entity -> entity.getScope());
     }
     return currentEntity.filter(entity -> entity instanceof ClassEntity);
   }
@@ -200,7 +200,7 @@ public class TypeSolver {
                     entity,
                     ImmutableList.<TypeArgument>of(),
                     SolvedTypeParameters.EMPTY,
-                    entity.getChildScope(),
+                    entity.getScope(),
                     module));
   }
 
@@ -373,8 +373,7 @@ public class TypeSolver {
 
   Optional<EntityWithContext> findDirectMember(
       String name, EntityWithContext entityWithContext, Set<Entity.Kind> allowedKinds) {
-    for (Entity member :
-        entityWithContext.getEntity().getChildScope().getMemberEntities().get(name)) {
+    for (Entity member : entityWithContext.getEntity().getScope().getMemberEntities().get(name)) {
       // Inner classes are considered non-instance member, regardless whether they are static or
       // not.
       if (allowedKinds.contains(member.getKind())
@@ -424,7 +423,7 @@ public class TypeSolver {
       foundClassOrPackage =
           findClassOrPackageInClassOrPackage(
               fullName.get(i),
-              foundClassOrPackage.get().getChildScope(),
+              foundClassOrPackage.get().getScope(),
               module,
               false /* useCanonicalName */);
     }
@@ -470,7 +469,7 @@ public class TypeSolver {
         findClassOrPackageInModule(JAVA_LANG_QUALIFIERS, module, true /* useCanonicalName */);
     if (javaLangPackage.isPresent()) {
       return findClassOrPackageInClassOrPackage(
-          name, javaLangPackage.get().getChildScope(), module, true /* useCanonicalName */);
+          name, javaLangPackage.get().getScope(), module, true /* useCanonicalName */);
     }
 
     return Optional.empty();
@@ -567,7 +566,7 @@ public class TypeSolver {
       if (classOrPackage.isPresent()) {
         Optional<Entity> foundClassOrPacakge =
             findClassOrPackageInClassOrPackage(
-                name, classOrPackage.get().getChildScope(), module, true /* useCanonicalName */);
+                name, classOrPackage.get().getScope(), module, true /* useCanonicalName */);
         if (foundClassOrPacakge.isPresent() && foundClassOrPacakge.get() instanceof ClassEntity) {
           return foundClassOrPacakge.map(entity -> (ClassEntity) entity);
         }
@@ -672,7 +671,7 @@ public class TypeSolver {
       PackageScope nextScope = null;
       for (Entity entity : currentScope.getMemberEntities().get(qualifier)) {
         if (entity instanceof PackageEntity) {
-          nextScope = (PackageScope) entity.getChildScope();
+          nextScope = (PackageScope) entity.getScope();
           break;
         }
       }
@@ -945,7 +944,7 @@ public class TypeSolver {
                       classReference
                           .subclassWithContext
                           .getEntity()
-                          .getChildScope()
+                          .getScope()
                           .getParentScope()
                           .get(),
                       module)
@@ -962,7 +961,7 @@ public class TypeSolver {
                       classReference
                           .subclassWithContext
                           .getEntity()
-                          .getChildScope()
+                          .getScope()
                           .getParentScope()
                           .get(),
                       module)

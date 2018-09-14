@@ -178,7 +178,7 @@ public class TypeSolverTest {
     SolvedTypeParameters innerClassTypeParameters =
         typeSolver.solveTypeParametersFromScope(
             TestUtil.lookupEntity(PARAMETERIZED_TYPE_FULL_NAME + ".InnerClass", testModule)
-                .getChildScope(),
+                .getScope(),
             testModule);
     assertThat(innerClassTypeParameters.getTypeVariableMap().keySet())
         .containsExactly("A", "B", "E");
@@ -197,14 +197,14 @@ public class TypeSolverTest {
     SolvedTypeParameters staticMethodTypeParameters =
         typeSolver.solveTypeParametersFromScope(
             TestUtil.lookupEntity(PARAMETERIZED_TYPE_FULL_NAME + ".staticMethod", testModule)
-                .getChildScope(),
+                .getScope(),
             testModule);
     assertThat(staticMethodTypeParameters.getTypeVariableMap().keySet()).containsExactly("D");
 
     SolvedTypeParameters staticInnerClassTypeParameters =
         typeSolver.solveTypeParametersFromScope(
             TestUtil.lookupEntity(PARAMETERIZED_TYPE_FULL_NAME + ".StaticInnerClass", testModule)
-                .getChildScope(),
+                .getScope(),
             testModule);
     assertThat(staticInnerClassTypeParameters.getTypeVariableMap().keySet()).containsExactly("F");
   }
@@ -243,7 +243,7 @@ public class TypeSolverTest {
     assertThat(method).named(qualifiedMethodName).isNotNull();
     TypeReference methodReturnType = method.getReturnType();
     Optional<SolvedEntityType> solvedType =
-        solveEntityType(methodReturnType, testModule, method.getChildScope());
+        solveEntityType(methodReturnType, testModule, method.getScope());
     Truth8.assertThat(solvedType).named(methodReturnType.toString()).isPresent();
     return solvedType.get();
   }
@@ -253,8 +253,7 @@ public class TypeSolverTest {
     assertThat(method).named(qualifiedMethodName).isNotNull();
     TypeReference methodReturnType = method.getReturnType();
     Optional<SolvedEntityType> solvedType =
-        solveEntityType(
-            methodReturnType, testModule, method.getChildScope().getParentScope().get());
+        solveEntityType(methodReturnType, testModule, method.getScope().getParentScope().get());
     Truth8.assertThat(solvedType).named(methodReturnType.toString()).isEmpty();
   }
 }

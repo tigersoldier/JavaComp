@@ -288,7 +288,9 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
         (currentScope instanceof MethodEntity)
             && (getCurrentPath().getParentPath().getLeaf() instanceof MethodTree);
     if (!isMethodBlock) {
-      currentScope = new BlockScope(currentScope);
+      BlockScope blockScope = new BlockScope(currentScope);
+      currentScope.addChildScope(blockScope);
+      currentScope = blockScope;
     }
     for (StatementTree statement : node.getStatements()) {
       this.scan(statement, currentScope);

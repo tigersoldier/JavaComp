@@ -44,12 +44,12 @@ public class AggregatePackageScope extends PackageScope {
       AggregatePackageScope aggregatePackageScope = null;
       AggregatePackageEntity aggregatePackageEntity =
           new AggregatePackageEntity(name, Iterables.getFirst(entities, null).getQualifiers());
-      aggregatePackageScope = aggregatePackageEntity.getChildScope();
+      aggregatePackageScope = aggregatePackageEntity.getScope();
       members.put(name, aggregatePackageEntity);
 
       // Aggregate all packages into one.
       for (PackageEntity packageEntity : entities) {
-        aggregatePackageScope.addPackageScope(packageEntity.getChildScope());
+        aggregatePackageScope.addPackageScope(packageEntity.getScope());
       }
     }
     return members;
