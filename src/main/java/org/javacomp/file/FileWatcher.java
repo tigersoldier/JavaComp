@@ -215,7 +215,8 @@ class FileWatcher {
           continue;
         }
         // There may be delay between the directory is created and the event is signaled.
-        // During such delay new files may be created. List all files in the directory and explicitly
+        // During such delay new files may be created. List all files in the directory and
+        // explicitly
         // call listeners and watch new subdirectories.
 
         try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(dir)) {

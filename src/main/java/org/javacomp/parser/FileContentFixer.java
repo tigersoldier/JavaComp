@@ -84,7 +84,8 @@ public class FileContentFixer {
       // If the second dot is followed by an identifier character, it's likely
       // the user is trying to complete between the two dots. Otherwise, the
       // user is likely in the process of typing the third dot.
-      if (errPos < content.length() - 1 && Character.isJavaIdentifierStart(content.charAt(errPos + 1))) {
+      if (errPos < content.length() - 1
+          && Character.isJavaIdentifierStart(content.charAt(errPos + 1))) {
         // Insert a dumbIdent between two dots so the Javac parser can parse it.
         insertions.add(Insertion.create(errPos, "dumbIdent"));
       }
