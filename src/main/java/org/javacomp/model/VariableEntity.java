@@ -18,6 +18,7 @@ public class VariableEntity extends Entity implements EntityScope {
 
   private final TypeReference type;
   private final EntityScope parentScope;
+  private final Range<Integer> definitionRange;
 
   public VariableEntity(
       String simpleName,
@@ -26,11 +27,13 @@ public class VariableEntity extends Entity implements EntityScope {
       boolean isStatic,
       TypeReference type,
       EntityScope parentScope,
-      Range<Integer> variableNameRange) {
+      Range<Integer> variableNameRange,
+      Range<Integer> definitionRange) {
     super(simpleName, kind, qualifiers, isStatic, variableNameRange);
     checkArgument(ALLOWED_KINDS.contains(kind), "Kind %s is not allowed for variables.", kind);
     this.type = type;
     this.parentScope = parentScope;
+    this.definitionRange = definitionRange;
   }
 
   public TypeReference getType() {
@@ -75,5 +78,10 @@ public class VariableEntity extends Entity implements EntityScope {
   @Override
   public Optional<Entity> getDefiningEntity() {
     return Optional.of(this);
+  }
+
+  @Override
+  public Range<Integer> getDefinitionRange() {
+    return definitionRange;
   }
 }

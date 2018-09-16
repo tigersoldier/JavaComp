@@ -6,6 +6,7 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
+import com.google.common.collect.Range;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -77,5 +78,10 @@ public class PackageScope implements EntityScope {
   @Override
   public Optional<Entity> getDefiningEntity() {
     return Optional.empty();
+  }
+
+  @Override
+  public Range<Integer> getDefinitionRange() {
+    return Range.closedOpen(0, 1);
   }
 }

@@ -21,6 +21,7 @@ public class MethodEntity extends Entity implements EntityScope {
   private final Multimap<String, Entity> entities;
   private final ClassEntity classEntity;
   private final List<EntityScope> childScopes;
+  private final Range<Integer> definitionRange;
 
   public MethodEntity(
       String simpleName,
@@ -30,7 +31,8 @@ public class MethodEntity extends Entity implements EntityScope {
       List<VariableEntity> parameters,
       List<TypeParameter> typeParameters,
       ClassEntity classEntity,
-      Range<Integer> methodNamelRange) {
+      Range<Integer> methodNamelRange,
+      Range<Integer> definitionRange) {
     super(simpleName, Entity.Kind.METHOD, qualifiers, isStatic, methodNamelRange);
     this.returnType = returnType;
     this.parameters = ImmutableList.copyOf(parameters);
@@ -38,6 +40,7 @@ public class MethodEntity extends Entity implements EntityScope {
     this.entities = HashMultimap.create();
     this.classEntity = classEntity;
     this.childScopes = new ArrayList<>();
+    this.definitionRange = definitionRange;
   }
 
   /////////////// Entity methods ////////////////
@@ -83,6 +86,11 @@ public class MethodEntity extends Entity implements EntityScope {
   @Override
   public Optional<EntityScope> getParentScope() {
     return Optional.of(classEntity);
+  }
+
+  @Override
+  public Range<Integer> getDefinitionRange() {
+    return definitionRange;
   }
 
   /////////////// Other methods ////////////////

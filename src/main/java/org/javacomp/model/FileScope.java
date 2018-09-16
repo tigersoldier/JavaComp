@@ -7,6 +7,7 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
+import com.google.common.collect.Range;
 import com.google.common.collect.RangeMap;
 import com.sun.source.tree.LineMap;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
@@ -278,5 +279,14 @@ public class FileScope implements EntityScope {
         .stream()
         .map(entity -> entity.getScope())
         .collect(ImmutableList.toImmutableList());
+  }
+
+  @Override
+  public Range<Integer> getDefinitionRange() {
+    if (compilationUnit.isPresent()) {
+      return Range.closed(0, compilationUnit.get().endPositions.getEndPos(compilationUnit.get()));
+    } else {
+      return Range.closed(0, 0);
+    }
   }
 }

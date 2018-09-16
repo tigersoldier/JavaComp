@@ -45,6 +45,7 @@ public class ResolveCompletionItemHandler extends RequestHandler<CompletionItem>
     }
 
     completionItem.data = null;
+    completionItem.documentation = "Simple documentation.\n\nThis is a test.";
     return completionItem;
   }
 

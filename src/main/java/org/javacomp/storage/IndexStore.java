@@ -269,6 +269,7 @@ public class IndexStore {
             superClass,
             interfaces,
             typeParameters,
+            EMPTY_RANGE,
             EMPTY_RANGE);
     if (serializedEntity.members != null) {
       List<String> childQualifiers =
@@ -316,6 +317,7 @@ public class IndexStore {
         parameters,
         typeParameters,
         classEntity,
+        EMPTY_RANGE,
         EMPTY_RANGE);
   }
 
@@ -335,6 +337,7 @@ public class IndexStore {
         serializedEntity.isStatic,
         type,
         parentScope,
+        EMPTY_RANGE,
         EMPTY_RANGE);
   }
 

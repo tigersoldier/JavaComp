@@ -34,6 +34,7 @@ public class ClassEntity extends Entity implements EntityScope {
   private final Map<String, ClassEntity> innerClasses;
   private final ImmutableList<TypeParameter> typeParameters;
   private final List<EntityScope> childScopes;
+  private final Range<Integer> definitionRange;
 
   public ClassEntity(
       String simpleName,
@@ -44,7 +45,8 @@ public class ClassEntity extends Entity implements EntityScope {
       Optional<TypeReference> superClass,
       List<TypeReference> interfaces,
       List<TypeParameter> typeParameters,
-      Range<Integer> classNameRage) {
+      Range<Integer> classNameRage,
+      Range<Integer> definitionRange) {
     super(simpleName, kind, qualifiers, isStatic, classNameRage);
     checkArgument(
         ALLOWED_KINDS.contains(kind),
@@ -60,6 +62,7 @@ public class ClassEntity extends Entity implements EntityScope {
     this.typeParameters = ImmutableList.copyOf(typeParameters);
     this.innerClasses = new HashMap<>();
     this.childScopes = new ArrayList<>();
+    this.definitionRange = definitionRange;
   }
 
   @Override
@@ -118,6 +121,11 @@ public class ClassEntity extends Entity implements EntityScope {
   @Override
   public Optional<Entity> getDefiningEntity() {
     return Optional.of(this);
+  }
+
+  @Override
+  public Range<Integer> getDefinitionRange() {
+    return definitionRange;
   }
 
   public List<MethodEntity> getMethodsWithName(String simpleName) {

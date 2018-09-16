@@ -118,8 +118,8 @@ public class DocumentSymbolHandler extends RequestHandler<DocumentSymbolParams> 
       newSymbol.kind = symbolKind;
       newSymbol.selectionRange =
           MessageUtils.buildRangeForFile(fileScope, entity.get().getSymbolRange());
-      // TODO(chencaibin): Add true range.
-      newSymbol.range = newSymbol.selectionRange;
+      newSymbol.range =
+          MessageUtils.buildRangeForFile(fileScope, entity.get().getScope().getDefinitionRange());
       symbols.add(newSymbol);
       children = new ImmutableList.Builder<>();
     }
@@ -188,7 +188,7 @@ public class DocumentSymbolHandler extends RequestHandler<DocumentSymbolParams> 
         break;
       case METHOD:
         if ((parentEntity.isPresent() && parentEntity.get() instanceof ClassEntity)
-            && (parentEntity.get().getSimpleName().equals(entity.getSimpleName()))) {
+            && (parentEntity.get().getSimpleName().equals("<init>"))) {
           symbolKind = SymbolKind.CONSTRUCTOR;
         } else {
           symbolKind = SymbolKind.METHOD;
@@ -198,7 +198,7 @@ public class DocumentSymbolHandler extends RequestHandler<DocumentSymbolParams> 
         symbolKind = SymbolKind.VARIABLE;
         break;
       default:
-        logger.fine("Unknown symbol kind for entity kind %s", entity.getKind());
+        logger.fine("", entity.getKind());
     }
     logger.fine("Symbol %s for %s", symbolKind, entity);
     return symbolKind;

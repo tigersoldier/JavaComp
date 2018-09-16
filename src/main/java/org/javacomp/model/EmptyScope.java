@@ -3,6 +3,7 @@ package org.javacomp.model;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
+import com.google.common.collect.Range;
 import java.util.List;
 import java.util.Optional;
 
@@ -40,5 +41,10 @@ public class EmptyScope implements EntityScope {
   @Override
   public Optional<Entity> getDefiningEntity() {
     return Optional.empty();
+  }
+
+  @Override
+  public Range<Integer> getDefinitionRange() {
+    return Range.closed(0, 0);
   }
 }

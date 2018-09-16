@@ -143,6 +143,7 @@ public class ClassModuleBuilder {
             Optional.of(signature.getSuperClass()),
             signature.getInterfaces(),
             signature.getTypeParameters(),
+            EMPTY_RANGE,
             EMPTY_RANGE);
 
     ImmutableList<String> classQualifiers =
@@ -176,6 +177,7 @@ public class ClassModuleBuilder {
               false /* isStatic */,
               parameterType,
               parentClass,
+              EMPTY_RANGE,
               EMPTY_RANGE));
     }
 
@@ -188,6 +190,7 @@ public class ClassModuleBuilder {
             parameters,
             signature.getTypeParameters(),
             parentClass,
+            EMPTY_RANGE,
             EMPTY_RANGE);
     return method;
   }
@@ -202,6 +205,7 @@ public class ClassModuleBuilder {
             parsedField.isStatic(),
             parsedField.getFieldType(),
             parentClass,
+            EMPTY_RANGE,
             EMPTY_RANGE);
     return field;
   }

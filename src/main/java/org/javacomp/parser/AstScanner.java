@@ -157,7 +157,7 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
     for (Tree implementClause : node.getImplementsClause()) {
       interfaceBuilder.add(typeReferenceScanner.getTypeReference(implementClause));
     }
-    Range<Integer> range = getClassNameRange((JCClassDecl) node);
+    Range<Integer> classNameRange = getClassNameRange((JCClassDecl) node);
     boolean isStatic =
         (currentScope instanceof FileScope) // Top-level class is considered static.
             || isStatic(node.getModifiers());
@@ -171,7 +171,8 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
             superClass,
             interfaceBuilder.build(),
             convertTypeParameters(node.getTypeParameters()),
-            range);
+            classNameRange,
+            getNodeRange(node));
     currentScope.addEntity(classEntity);
     addScopeRange((JCTree) node, classEntity);
     if (this.currentQualifiers != UNAVAILABLE_QUALIFIERS) {
@@ -236,7 +237,8 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
             parameterListBuilder.build(),
             typeParameters,
             (ClassEntity) currentScope,
-            range);
+            range,
+            getNodeRange(node));
     // TODO: distinguish between static and non-static methods.
     currentScope.addEntity(methodEntity);
     List<String> previousQualifiers = this.currentQualifiers;
@@ -276,7 +278,8 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
             isStatic(node.getModifiers()),
             variableType,
             currentScope,
-            range);
+            range,
+            getNodeRange(node));
     currentScope.addEntity(variableEntity);
     // TODO: add entity to module if it's a non-private static entity.
     return null;
@@ -288,7 +291,7 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
         (currentScope instanceof MethodEntity)
             && (getCurrentPath().getParentPath().getLeaf() instanceof MethodTree);
     if (!isMethodBlock) {
-      BlockScope blockScope = new BlockScope(currentScope);
+      BlockScope blockScope = new BlockScope(currentScope, getNodeRange(node));
       currentScope.addChildScope(blockScope);
       currentScope = blockScope;
     }
@@ -310,8 +313,10 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
     return ImmutableList.copyOf(stack);
   }
 
-  private Range<Integer> getNodeRange(JCTree node) {
-    return Range.closed(node.getStartPosition(), node.getEndPosition(endPosTable));
+  private Range<Integer> getNodeRange(Tree node) {
+    checkArgument(node instanceof JCTree, "%s is not a JCTree", node);
+    JCTree jcTree = (JCTree) node;
+    return Range.closed(jcTree.getStartPosition(), jcTree.getEndPosition(endPosTable));
   }
 
   private void addScopeRange(JCTree node, EntityScope scope) {
@@ -423,7 +428,8 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
           false /* isStatic */,
           type,
           currentScope,
-          range);
+          range,
+          getNodeRange(node));
     }
 
     @Override

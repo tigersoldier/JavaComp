@@ -4,6 +4,7 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
+import com.google.common.collect.Range;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -14,10 +15,12 @@ public class BlockScope implements EntityScope {
   private final Multimap<String, Entity> entities;
   private final EntityScope parentScope;
   private final ArrayList<EntityScope> childScopes = new ArrayList<>();
+  private final Range<Integer> definitionRange;
 
-  public BlockScope(EntityScope parentScope) {
+  public BlockScope(EntityScope parentScope, Range<Integer> definitionRange) {
     this.entities = HashMultimap.create();
     this.parentScope = parentScope;
+    this.definitionRange = definitionRange;
   }
 
   @Override
@@ -44,6 +47,11 @@ public class BlockScope implements EntityScope {
   @Override
   public Optional<Entity> getDefiningEntity() {
     return Optional.empty();
+  }
+
+  @Override
+  public Range<Integer> getDefinitionRange() {
+    return definitionRange;
   }
 
   @Override
