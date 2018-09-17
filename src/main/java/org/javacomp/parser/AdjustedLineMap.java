@@ -18,7 +18,7 @@ import java.util.Map;
  * map is the position in the fixed content, while the line and column numbers are the numbers in
  * the original line map.
  */
-class AdjustedLineMap implements LineMap {
+public class AdjustedLineMap implements LineMap {
   private static final Adjustment INITIAL_LINE_START_ADJUSTMENT = Adjustment.create(1, 0);
   private static final Adjustment INITIAL_COLUMN_ADJUSTMENT = Adjustment.create(1, 1);
   private static final List<Adjustment> DEFAULT_COLUMN_ADJUSTMENTS =
@@ -62,6 +62,10 @@ class AdjustedLineMap implements LineMap {
   @Override
   public long getLineNumber(long pos) {
     return getLineNumberAndPosDelta(pos).lineNumber;
+  }
+
+  public LineMap getOriginalLineMap() {
+    return originalLineMap;
   }
 
   private LineNumberAndPosDelta getLineNumberAndPosDelta(long pos) {

@@ -23,6 +23,7 @@ public class FileScope implements EntityScope {
   private static final String TYPE_INDEX_SCHEME = "type";
   private static final String TEST_SCHEME = "test";
   private static final Joiner FILE_PATH_JOINER = Joiner.on("/");
+  private static final Range<Integer> EMPTY_RANGE = Range.closed(0, 0);
 
   /** The type of the file that the {@link FileScope} is created from. */
   public enum FileType {
@@ -55,6 +56,7 @@ public class FileScope implements EntityScope {
   private final List<List<String>> onDemandStaticImportQualifiers;
   private final Optional<JCCompilationUnit> compilationUnit;
   private final FileType fileType;
+  private final Range<Integer> definitionRange;
   private RangeMap<Integer, EntityScope> scopeRangeMap = null;
   private Optional<LineMap> adjustedLineMap = Optional.empty();
 
@@ -62,7 +64,8 @@ public class FileScope implements EntityScope {
       String filename,
       List<String> packageQualifiers,
       JCCompilationUnit compilationUnit,
-      FileType fileType) {
+      FileType fileType,
+      Range<Integer> definitionRange) {
     checkArgument(
         (compilationUnit != null) == (fileType == FileType.SOURCE_CODE),
         "compilationUnit should be non-null iff fileType is SOURCE_CODE. "
@@ -78,17 +81,26 @@ public class FileScope implements EntityScope {
     this.onDemandStaticImportQualifiers = new ArrayList<>();
     this.compilationUnit = Optional.ofNullable(compilationUnit);
     this.fileType = fileType;
+    this.definitionRange = definitionRange;
   }
 
   public static FileScope createFromSource(
-      String filename, List<String> packageQualifiers, JCCompilationUnit compilationUnit) {
-    return new FileScope(filename, packageQualifiers, compilationUnit, FileType.SOURCE_CODE);
+      String filename,
+      List<String> packageQualifiers,
+      JCCompilationUnit compilationUnit,
+      int fileSize) {
+    return new FileScope(
+        filename,
+        packageQualifiers,
+        compilationUnit,
+        FileType.SOURCE_CODE,
+        Range.closed(0, fileSize));
   }
 
   public static FileScope createFromTypeIndex(List<String> packageQualifiers) {
     String filename = TYPE_INDEX_SCHEME + "://" + FILE_PATH_JOINER.join(packageQualifiers);
     return new FileScope(
-        filename, packageQualifiers, null /* compilationUnit */, FileType.TYPE_INDEX);
+        filename, packageQualifiers, null /* compilationUnit */, FileType.TYPE_INDEX, EMPTY_RANGE);
   }
 
   public static FileScope createFromClassFile(Path classFilePath, List<String> packageQualifiers) {
@@ -96,12 +108,14 @@ public class FileScope implements EntityScope {
         classFilePath.toString(),
         packageQualifiers,
         null /* compilationUnit */,
-        FileType.CLASS_FILE);
+        FileType.CLASS_FILE,
+        EMPTY_RANGE);
   }
 
   public static FileScope createForTesting(List<String> packageQualifiers) {
     String filename = TEST_SCHEME + "://" + FILE_PATH_JOINER.join(packageQualifiers);
-    return new FileScope(filename, packageQualifiers, null /* compilationUnit */, FileType.NONE);
+    return new FileScope(
+        filename, packageQualifiers, null /* compilationUnit */, FileType.NONE, EMPTY_RANGE);
   }
 
   @Override
@@ -283,10 +297,6 @@ public class FileScope implements EntityScope {
 
   @Override
   public Range<Integer> getDefinitionRange() {
-    if (compilationUnit.isPresent()) {
-      return Range.closed(0, compilationUnit.get().endPositions.getEndPos(compilationUnit.get()));
-    } else {
-      return Range.closed(0, 0);
-    }
+    return definitionRange;
   }
 }

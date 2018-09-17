@@ -6,6 +6,7 @@ java_library(
     name = "reference",
     srcs = glob(["*.java"]),
     deps = [
+        "//src/main/java/org/javacomp/file",
         "//src/main/java/org/javacomp/logging",
         "//src/main/java/org/javacomp/model",
         "//src/main/java/org/javacomp/parser",

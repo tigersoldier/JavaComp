@@ -18,6 +18,8 @@ import org.mockito.junit.MockitoRule;
 
 @RunWith(JUnit4.class)
 public class ModuleTest {
+  private final int EMPTY_FILE_LENGTH = 0;
+
   @Rule public MockitoRule mrule = MockitoJUnit.rule();
 
   @Mock private Entity entity1;
@@ -39,14 +41,17 @@ public class ModuleTest {
   @Test
   public void addFilesShouldCreatePackages() {
     FileScope fileScope1 =
-        FileScope.createFromSource("filename1", ImmutableList.of("foo", "bar"), compilationUnit);
+        FileScope.createFromSource(
+            "filename1", ImmutableList.of("foo", "bar"), compilationUnit, EMPTY_FILE_LENGTH);
     FileScope fileScope2 =
         FileScope.createFromSource(
-            "filename2", ImmutableList.of("foo", "bar", "baz"), compilationUnit);
+            "filename2", ImmutableList.of("foo", "bar", "baz"), compilationUnit, EMPTY_FILE_LENGTH);
     FileScope fileScope3 =
-        FileScope.createFromSource("filename3", ImmutableList.of("foo", "baz"), compilationUnit);
+        FileScope.createFromSource(
+            "filename3", ImmutableList.of("foo", "baz"), compilationUnit, EMPTY_FILE_LENGTH);
     FileScope fileScope4 =
-        FileScope.createFromSource("filename4", ImmutableList.of("fxx"), compilationUnit);
+        FileScope.createFromSource(
+            "filename4", ImmutableList.of("fxx"), compilationUnit, EMPTY_FILE_LENGTH);
     fileScope1.addEntity(entity1);
     fileScope2.addEntity(entity2);
     fileScope3.addEntity(entity3);
@@ -75,9 +80,11 @@ public class ModuleTest {
   @Test
   public void replaceFileWithSamePackageShouldNotRemovePackage() {
     FileScope fileScope1 =
-        FileScope.createFromSource("foobar", ImmutableList.of("foo", "bar"), compilationUnit);
+        FileScope.createFromSource(
+            "foobar", ImmutableList.of("foo", "bar"), compilationUnit, EMPTY_FILE_LENGTH);
     FileScope fileScope2 =
-        FileScope.createFromSource("foobar", ImmutableList.of("foo", "bar"), compilationUnit);
+        FileScope.createFromSource(
+            "foobar", ImmutableList.of("foo", "bar"), compilationUnit, EMPTY_FILE_LENGTH);
 
     fileScope1.addEntity(entity1);
     fileScope2.addEntity(entity2);
@@ -94,11 +101,13 @@ public class ModuleTest {
   public void replaceFileWithDifferentPackageShouldNotRemovePackage() {
     FileScope fileScope1 =
         FileScope.createFromSource(
-            "foobar", ImmutableList.of("foo", "bar", "baz"), compilationUnit);
+            "foobar", ImmutableList.of("foo", "bar", "baz"), compilationUnit, EMPTY_FILE_LENGTH);
     FileScope fileScope2 =
-        FileScope.createFromSource("foobar", ImmutableList.of("foo", "bar"), compilationUnit);
+        FileScope.createFromSource(
+            "foobar", ImmutableList.of("foo", "bar"), compilationUnit, EMPTY_FILE_LENGTH);
     FileScope fileScope3 =
-        FileScope.createFromSource("foobar", ImmutableList.of("fxx"), compilationUnit);
+        FileScope.createFromSource(
+            "foobar", ImmutableList.of("fxx"), compilationUnit, EMPTY_FILE_LENGTH);
 
     fileScope1.addEntity(entity1);
     fileScope2.addEntity(entity2);

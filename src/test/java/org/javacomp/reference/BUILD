@@ -5,6 +5,7 @@ java_library(
     data = glob(["testdata/**"]),
     deps = [
         "//src/main/java/org/javacomp/file",
+        "//src/main/java/org/javacomp/file:simplefilemanager",
         "//src/main/java/org/javacomp/model",
         "//src/main/java/org/javacomp/options",
         "//src/main/java/org/javacomp/parser",
@@ -28,6 +29,14 @@ java_test(
 
 java_test(
     name = "SignatureSolverTest",
+    size = "small",
+    runtime_deps = [
+        ":tests",
+    ],
+)
+
+java_test(
+    name = "ReferenceSolverTest",
     size = "small",
     runtime_deps = [
         ":tests",

@@ -7,7 +7,11 @@ import com.google.common.collect.Range;
 import com.sun.source.tree.BlockTree;
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.CompilationUnitTree;
+import com.sun.source.tree.EnhancedForLoopTree;
+import com.sun.source.tree.ExpressionStatementTree;
+import com.sun.source.tree.ForLoopTree;
 import com.sun.source.tree.IdentifierTree;
+import com.sun.source.tree.IfTree;
 import com.sun.source.tree.ImportTree;
 import com.sun.source.tree.MemberSelectTree;
 import com.sun.source.tree.MethodTree;
@@ -16,6 +20,7 @@ import com.sun.source.tree.StatementTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.tree.TypeParameterTree;
 import com.sun.source.tree.VariableTree;
+import com.sun.source.tree.WhileLoopTree;
 import com.sun.source.util.TreePathScanner;
 import com.sun.source.util.TreeScanner;
 import com.sun.tools.javac.tree.EndPosTable;
@@ -85,7 +90,9 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
     }
 
     JCCompilationUnit compilationUnit = (JCCompilationUnit) node;
-    this.fileScope = FileScope.createFromSource(filename, this.currentQualifiers, compilationUnit);
+    this.fileScope =
+        FileScope.createFromSource(
+            filename, this.currentQualifiers, compilationUnit, content.length());
     this.scopeRangeBuilder = new NestedRangeMapBuilder<>();
     this.endPosTable = compilationUnit.endPositions;
     addScopeRange(compilationUnit, this.fileScope);
@@ -281,6 +288,7 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
             range,
             getNodeRange(node));
     currentScope.addEntity(variableEntity);
+    addScopeRange((JCTree) node, variableEntity);
     // TODO: add entity to module if it's a non-private static entity.
     return null;
   }
@@ -313,10 +321,63 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
     return ImmutableList.copyOf(stack);
   }
 
+  @Override
+  public Void visitForLoop(ForLoopTree node, EntityScope currentScope) {
+    BlockScope blockScope = new BlockScope(currentScope, getNodeRange(node));
+    addScopeRange((JCTree) node, blockScope);
+    for (StatementTree initializer : node.getInitializer()) {
+      this.scan(initializer, blockScope);
+    }
+    this.scan(node.getCondition(), blockScope);
+    for (ExpressionStatementTree update : node.getUpdate()) {
+      this.scan(update, blockScope);
+    }
+    this.scan(node.getStatement(), blockScope);
+    return null;
+  }
+
+  @Override
+  public Void visitEnhancedForLoop(EnhancedForLoopTree node, EntityScope currentScope) {
+    BlockScope blockScope = new BlockScope(currentScope, getNodeRange(node));
+    addScopeRange((JCTree) node, blockScope);
+    this.scan(node.getVariable(), blockScope);
+    this.scan(node.getExpression(), blockScope);
+    this.scan(node.getStatement(), blockScope);
+    return null;
+  }
+
+  @Override
+  public Void visitWhileLoop(WhileLoopTree node, EntityScope currentScope) {
+    BlockScope blockScope = new BlockScope(currentScope, getNodeRange(node));
+    addScopeRange((JCTree) node, blockScope);
+    this.scan(node.getCondition(), blockScope);
+    this.scan(node.getStatement(), blockScope);
+    return null;
+  }
+
+  @Override
+  public Void visitIf(IfTree node, EntityScope currentScope) {
+    BlockScope blockScope = new BlockScope(currentScope, getNodeRange(node));
+    addScopeRange((JCTree) node, blockScope);
+    this.scan(node.getCondition(), blockScope);
+    this.scan(node.getThenStatement(), blockScope);
+    if (node.getElseStatement() != null) {
+      this.scan(node.getElseStatement(), blockScope);
+    }
+    return null;
+  }
+
   private Range<Integer> getNodeRange(Tree node) {
     checkArgument(node instanceof JCTree, "%s is not a JCTree", node);
     JCTree jcTree = (JCTree) node;
-    return Range.closed(jcTree.getStartPosition(), jcTree.getEndPosition(endPosTable));
+    int start = jcTree.getStartPosition();
+    int end = jcTree.getEndPosition(endPosTable);
+    if (end < 0) {
+      // The file is syntactically incorrect, likely incomplete blocks. Use
+      // length of 1 to avoid overlapping.
+      end = start + 1;
+    }
+    return Range.closed(start, end);
   }
 
   private void addScopeRange(JCTree node, EntityScope scope) {

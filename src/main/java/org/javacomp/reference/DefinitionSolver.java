@@ -73,7 +73,11 @@ public class DefinitionSolver {
       return ImmutableList.of();
     }
 
-    TreePath treePath = positionContext.get().getTreePath();
+    return getDefinitionEntities(module, positionContext.get());
+  }
+
+  List<? extends Entity> getDefinitionEntities(Module module, PositionContext positionContext) {
+    TreePath treePath = positionContext.getTreePath();
     Tree leafTree = treePath.getLeaf();
     TreePath parentPath = treePath.getParentPath();
     Tree parentTree = parentPath != null ? parentPath.getLeaf() : null;
@@ -96,9 +100,9 @@ public class DefinitionSolver {
       return expressionSolver
           .solveDefinitions(
               (ExpressionTree) leafTree,
-              positionContext.get().getModule(),
-              positionContext.get().getScopeAtPosition(),
-              positionContext.get().getPosition(),
+              positionContext.getModule(),
+              positionContext.getScopeAtPosition(),
+              positionContext.getPosition(),
               allowedKinds)
           .stream()
           .map(entityWithContext -> entityWithContext.getEntity())

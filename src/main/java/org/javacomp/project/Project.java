@@ -2,6 +2,8 @@ package org.javacomp.project;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Range;
 import com.sun.source.tree.LineMap;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -38,6 +40,7 @@ import org.javacomp.parser.classfile.ClassModuleBuilder;
 import org.javacomp.protocol.TextEdit;
 import org.javacomp.reference.DefinitionSolver;
 import org.javacomp.reference.MethodSignatures;
+import org.javacomp.reference.ReferenceSolver;
 import org.javacomp.reference.SignatureSolver;
 import org.javacomp.storage.IndexStore;
 
@@ -232,6 +235,11 @@ public class Project {
       }
     }
     return Optional.empty();
+  }
+
+  public synchronized Multimap<FileScope, Range<Integer>> findReferencesAtPosition(
+      Path filePath, int line, int column) {
+    return new ReferenceSolver(fileManager).findReferences(getModule(), filePath, line, column);
   }
 
   public Module getModule() {

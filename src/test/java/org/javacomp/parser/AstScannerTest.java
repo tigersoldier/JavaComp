@@ -124,8 +124,7 @@ public class AstScannerTest {
   public void topLevelClassScopeRange() {
     EntityScope scopeAtStart = getEntityScopeAfter("public class TestData {");
     EntityScope scopeAtEnd = getEntityScopeBefore("} // class TestData");
-    EntityScope scopeAtField = getEntityScopeAfter("publicStaticIntField;");
-    for (EntityScope scope : ImmutableList.of(scopeAtStart, scopeAtEnd, scopeAtField)) {
+    for (EntityScope scope : ImmutableList.of(scopeAtStart, scopeAtEnd)) {
       assertThat(scope).isEqualTo(lookupEntity(fileScope, "TestData").getScope());
     }
   }
@@ -155,8 +154,7 @@ public class AstScannerTest {
   public void methodScopeRange() {
     EntityScope scopeAtStart = getEntityScopeAfter("publicIfBlockMethod() {");
     EntityScope scopeAtEnd = getEntityScopeBefore("} // publicIfBlockMethod");
-    EntityScope scopeAtField = getEntityScopeAfter("methodScopeVar");
-    for (EntityScope scope : ImmutableList.of(scopeAtStart, scopeAtEnd, scopeAtField)) {
+    for (EntityScope scope : ImmutableList.of(scopeAtStart, scopeAtEnd)) {
       MethodEntity methodEntity =
           (MethodEntity) lookupEntity(fileScope, "TestData.publicIfBlockMethod");
       assertThat(scope).isEqualTo(methodEntity.getScope());
@@ -167,8 +165,7 @@ public class AstScannerTest {
   public void ifBlockScopeRange() {
     EntityScope scopeAtStart = getEntityScopeAfter("if (a == 1) {");
     EntityScope scopeAtEnd = getEntityScopeBefore("} else { // end of if");
-    EntityScope scopeAtField = getEntityScopeAfter("ifScopeVar");
-    for (EntityScope scope : ImmutableList.of(scopeAtStart, scopeAtEnd, scopeAtField)) {
+    for (EntityScope scope : ImmutableList.of(scopeAtStart, scopeAtEnd)) {
       Truth8.assertThat(getEntity(scope, "ifScopeVar", Entity.Kind.VARIABLE)).isPresent();
       assertThat(scope.getMemberEntities().get("elseScopeVar")).isEmpty();
     }
@@ -178,8 +175,7 @@ public class AstScannerTest {
   public void elseBlockScopeRange() {
     EntityScope scopeAtStart = getEntityScopeAfter("else {");
     EntityScope scopeAtEnd = getEntityScopeBefore("} // else");
-    EntityScope scopeAtField = getEntityScopeAfter("elseScopeVar");
-    for (EntityScope scope : ImmutableList.of(scopeAtStart, scopeAtEnd, scopeAtField)) {
+    for (EntityScope scope : ImmutableList.of(scopeAtStart, scopeAtEnd)) {
       Truth8.assertThat(getEntity(scope, "elseScopeVar", Entity.Kind.VARIABLE)).isPresent();
       assertThat(scope.getMemberEntities().get("ifScopeVar")).isEmpty();
     }
@@ -189,8 +185,7 @@ public class AstScannerTest {
   public void whileBlockScopeRange() {
     EntityScope scopeAtStart = getEntityScopeAfter("while (number > 0) {");
     EntityScope scopeAtEnd = getEntityScopeBefore("} // while loop");
-    EntityScope scopeAtField = getEntityScopeAfter("whileScopeVar");
-    for (EntityScope scope : ImmutableList.of(scopeAtStart, scopeAtEnd, scopeAtField)) {
+    for (EntityScope scope : ImmutableList.of(scopeAtStart, scopeAtEnd)) {
       Truth8.assertThat(getEntity(scope, "whileScopeVar", Entity.Kind.VARIABLE)).isPresent();
     }
   }
@@ -199,8 +194,7 @@ public class AstScannerTest {
   public void forBlockScopeRange() {
     EntityScope scopeAtStart = getEntityScopeAfter("for (String s : input) {");
     EntityScope scopeAtEnd = getEntityScopeBefore("} // for loop");
-    EntityScope scopeAtField = getEntityScopeAfter("forScopeVar");
-    for (EntityScope scope : ImmutableList.of(scopeAtStart, scopeAtEnd, scopeAtField)) {
+    for (EntityScope scope : ImmutableList.of(scopeAtStart, scopeAtEnd)) {
       Truth8.assertThat(getEntity(scope, "forScopeVar", Entity.Kind.VARIABLE)).isPresent();
     }
   }
@@ -209,8 +203,7 @@ public class AstScannerTest {
   public void switchBlockScopeRange() {
     EntityScope scopeAtStart = getEntityScopeAfter("switch (a) {");
     EntityScope scopeAtEnd = getEntityScopeBefore("} // switch");
-    EntityScope scopeAtField = getEntityScopeAfter("switchScopeVar");
-    for (EntityScope scope : ImmutableList.of(scopeAtStart, scopeAtEnd, scopeAtField)) {
+    for (EntityScope scope : ImmutableList.of(scopeAtStart, scopeAtEnd)) {
       Truth8.assertThat(getEntity(scope, "switchScopeVar", Entity.Kind.VARIABLE)).isPresent();
       assertThat(scope.getMemberEntities().get("caseScopeVar")).isEmpty();
     }
@@ -220,8 +213,7 @@ public class AstScannerTest {
   public void switchCaseBlockScopeRange() {
     EntityScope scopeAtStart = getEntityScopeBefore("{ // start of case block");
     EntityScope scopeAtEnd = getEntityScopeBefore("} // end of case block");
-    EntityScope scopeAtField = getEntityScopeAfter("caseScopeVar");
-    for (EntityScope scope : ImmutableList.of(scopeAtStart, scopeAtEnd, scopeAtField)) {
+    for (EntityScope scope : ImmutableList.of(scopeAtStart, scopeAtEnd)) {
       Truth8.assertThat(getEntity(scope, "caseScopeVar", Entity.Kind.VARIABLE)).isPresent();
     }
     EntityScope switchScope = getEntityScopeAfter("switch (a) {");
@@ -423,9 +415,14 @@ public class AstScannerTest {
   @Test
   public void typeOfVariableInMethod() {
     String varName = "fullyQualifiedVar";
-    EntityScope scopeEnclosingVar = getEntityScopeAfter(varName);
-    VariableEntity variable = (VariableEntity) lookupEntity(scopeEnclosingVar, varName);
-    assertThat(variable.getType().getFullName()).containsExactly("foo", "bar", "Baz").inOrder();
+    EntityScope varScope = getEntityScopeAfter(varName);
+    Optional<Entity> varEntity = varScope.getDefiningEntity();
+    Truth8.assertThat(varEntity).isPresent();
+    assertThat(varEntity.get().getSimpleName()).isEqualTo(varName);
+    assertThat(varEntity.get()).isInstanceOf(VariableEntity.class);
+    assertThat(((VariableEntity) varEntity.get()).getType().getFullName())
+        .containsExactly("foo", "bar", "Baz")
+        .inOrder();
   }
 
   @Test
