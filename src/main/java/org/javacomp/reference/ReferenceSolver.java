@@ -16,6 +16,7 @@ import org.javacomp.model.ClassEntity;
 import org.javacomp.model.Entity;
 import org.javacomp.model.EntityScope;
 import org.javacomp.model.FileScope;
+import org.javacomp.model.MethodEntity;
 import org.javacomp.model.Module;
 import org.javacomp.parser.AdjustedLineMap;
 import org.javacomp.parser.PositionContext;
@@ -69,6 +70,9 @@ public class ReferenceSolver {
       Module module, Entity entity, PositionContext positionContext) {
     ImmutableMultimap.Builder<FileScope, Range<Integer>> builder =
         new ImmutableMultimap.Builder<>();
+    if (entity instanceof ClassEntity) {
+      findClassConstructors(builder, (ClassEntity) entity);
+    }
     // Try to limit the search of reference in a private scope.
     Optional<EntityScope> definitionScope = entity.getParentScope();
     checkState(definitionScope.isPresent(), "Entity %s does not have definition scope", entity);
@@ -88,6 +92,14 @@ public class ReferenceSolver {
     }
 
     return builder.build();
+  }
+
+  private void findClassConstructors(
+      ImmutableMultimap.Builder<FileScope, Range<Integer>> builder, ClassEntity classEntity) {
+    FileScope fileScope = getDefiningFileScope(classEntity);
+    for (MethodEntity constructor : classEntity.getConstructors()) {
+      builder.put(fileScope, constructor.getSymbolRange());
+    }
   }
 
   private void findReferencesInScope(
@@ -146,9 +158,20 @@ public class ReferenceSolver {
     int position = start + 1; // make sure the position is inside of the entity name.
     PositionContext referenceContext =
         PositionContext.createForFixedPosition(module, fileScope, position);
-    List<? extends Entity> definition =
+    List<? extends Entity> definitions =
         definitionSolver.getDefinitionEntities(module, referenceContext);
-    return !definition.isEmpty() && definition.get(0) == entity;
+    if (definitions.isEmpty()) {
+      return false;
+    }
+
+    Entity definition = definitions.get(0);
+    if ((entity instanceof ClassEntity)
+        && (definition instanceof MethodEntity)
+        && ((MethodEntity) definition).isConstructor()) {
+      // Constructor is also considered reference to the class.
+      definition = ((MethodEntity) definition).getParentClass();
+    }
+    return entity == definition;
   }
 
   private Range<Integer> createRangeForUnfixedContent(
@@ -170,5 +193,14 @@ public class ReferenceSolver {
     int line = (int) originalLineMap.getLineNumber(unfixedPosition);
     int column = (int) originalLineMap.getColumnNumber(unfixedPosition);
     return (int) adjustedLineMap.getPosition(line, column);
+  }
+
+  private static FileScope getDefiningFileScope(Entity entity) {
+    Optional<EntityScope> scope = entity.getParentScope();
+    while (scope.isPresent() && !(scope.get() instanceof FileScope)) {
+      scope = scope.get().getParentScope();
+    }
+    checkState(scope.isPresent() && (scope.get() instanceof FileScope));
+    return (FileScope) scope.get();
   }
 }

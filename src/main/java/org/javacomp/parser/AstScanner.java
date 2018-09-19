@@ -228,8 +228,8 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
       returnType = typeReferenceScanner.getTypeReference(node.getReturnType());
     }
     ImmutableList<TypeParameter> typeParameters = convertTypeParameters(node.getTypeParameters());
-
-    Range<Integer> range = getMethodNameRange((JCMethodDecl) node);
+    ClassEntity classEntity = (ClassEntity) currentScope;
+    Range<Integer> range = getMethodNameRange((JCMethodDecl) node, classEntity.getSimpleName());
     MethodEntity methodEntity =
         new MethodEntity(
             node.getName().toString(),
@@ -238,7 +238,7 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
             returnType,
             ImmutableList.of() /* parameters */,
             typeParameters,
-            (ClassEntity) currentScope,
+            classEntity,
             range,
             getNodeRange(node));
     ImmutableList.Builder<VariableEntity> parameterListBuilder = new ImmutableList.Builder<>();
@@ -431,12 +431,16 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
     return getNodeNameRangeAfter(node, name, precedentNodes);
   }
 
-  private Range<Integer> getMethodNameRange(JCMethodDecl node) {
+  private Range<Integer> getMethodNameRange(JCMethodDecl node, String className) {
     if (node.getName() == null) {
       return getNodeRange(node);
     }
 
     String name = node.getName().toString();
+    if (name.equals("<init>")) {
+      // Constructor name is the class name.
+      name = className;
+    }
     List<JCTree> precedentNodes = new ArrayList<>();
     if (node.getModifiers() != null && node.getModifiers().getAnnotations() != null) {
       precedentNodes.addAll(node.getModifiers().getAnnotations());
@@ -458,7 +462,7 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
     }
     start = content.indexOf(name, start);
     if (start > -1 && start < node.getEndPosition(endPosTable)) {
-      return Range.closedOpen(start, start + name.length());
+      return Range.closed(start, start + name.length());
     }
 
     return getNodeRange(node);

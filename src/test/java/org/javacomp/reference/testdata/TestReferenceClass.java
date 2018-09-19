@@ -54,4 +54,10 @@ public class TestReferenceClass {
     this.publicField = 1;
     this.privateField = 2;
   }
+
+  private void withClassName() {
+    new TestReferenceClass();
+    Class<TestReferenceClass> klass = TestReferenceClass.class;
+    Object casted = ((TestReferenceClass) this);
+  }
 }

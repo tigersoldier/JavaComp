@@ -121,6 +121,19 @@ public class ReferenceSolverTest extends BaseTest {
         ref(TEST_REFERENCE_CLASS_FILE, "privateMethod();"));
   }
 
+  @Test
+  public void testClassName() {
+    assertReference(
+        TEST_REFERENCE_CLASS_FILE,
+        "class TestReferenceClass",
+        "TestReferenceClass",
+        ref(TEST_REFERENCE_CLASS_FILE, "public TestReferenceClass(int publicConstructor)"),
+        ref(TEST_REFERENCE_CLASS_FILE, "new TestReferenceClass();"),
+        ref(TEST_REFERENCE_CLASS_FILE, "Class<TestReferenceClass>"),
+        ref(TEST_REFERENCE_CLASS_FILE, "TestReferenceClass.class"),
+        ref(TEST_REFERENCE_CLASS_FILE, "((TestReferenceClass) this"));
+  }
+
   private static class ReferenceSpec {
     private final String filename;
     private final String symbolContext;
