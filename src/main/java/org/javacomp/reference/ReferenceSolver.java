@@ -25,9 +25,11 @@ public class ReferenceSolver {
   private static final JLogger logger = JLogger.createForEnclosingClass();
 
   private final FileManager fileManager;
+  private final DefinitionSolver definitionSolver;
 
   public ReferenceSolver(FileManager fileManager) {
     this.fileManager = fileManager;
+    this.definitionSolver = new DefinitionSolver();
   }
 
   public Multimap<FileScope, Range<Integer>> findReferences(
@@ -112,14 +114,41 @@ public class ReferenceSolver {
         entityName, entityScope, start, end, fileScope.getFilename());
     while (start < end) {
       start = actualFileContent.indexOf(entity.getSimpleName(), start);
-      if (start >= 0 && start < end) {
-        // TODO(chencaibin): Check that this is the actual reference.
-        builder.put(fileScope, createRangeForUnfixedContent(fileScope, start, entityName.length()));
-        start += entityName.length();
-      } else {
+      if (start < 0 || start >= end) {
         break;
       }
+      // We have string match now. Check if the match is actually referencing
+      // the entity.
+      //
+      // TODO(chencaibin): Add semantic checks.
+      Range<Integer> referenceRange =
+          createRangeForUnfixedContent(fileScope, start, entityName.length());
+      if (isExactEntityName(actualFileContent, start, start + entityName.length())
+          && isSameEntity(entity, module, fileScope, referenceRange.lowerEndpoint())) {
+        builder.put(fileScope, referenceRange);
+      }
+      start += entityName.length();
     }
+  }
+
+  /**
+   * Return true if the {@code content} starting from {@code start} to {@code end} is not a
+   * substring of a longer indentifier.
+   */
+  private static boolean isExactEntityName(String content, int start, int end) {
+    char beforeStart = (start > 0) ? content.charAt(start - 1) : ' ';
+    char afterEnd = (end < content.length()) ? content.charAt(end) : ' ';
+    return !Character.isJavaIdentifierPart(beforeStart)
+        && !Character.isJavaIdentifierPart(afterEnd);
+  }
+
+  private boolean isSameEntity(Entity entity, Module module, FileScope fileScope, int start) {
+    int position = start + 1; // make sure the position is inside of the entity name.
+    PositionContext referenceContext =
+        PositionContext.createForFixedPosition(module, fileScope, position);
+    List<? extends Entity> definition =
+        definitionSolver.getDefinitionEntities(module, referenceContext);
+    return !definition.isEmpty() && definition.get(0) == entity;
   }
 
   private Range<Integer> createRangeForUnfixedContent(

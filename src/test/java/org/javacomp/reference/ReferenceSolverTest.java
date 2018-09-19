@@ -20,7 +20,6 @@ public class ReferenceSolverTest extends BaseTest {
 
   private final ReferenceSolver referenceSolver = new ReferenceSolver(fileManager);
 
-  @Ignore("Not implemeneted yet")
   @Test
   public void testLocalVariableWithNameInStringAnOtherVariables() {
     // Must not contain the string "local" and the variable localRedefined.
@@ -28,11 +27,9 @@ public class ReferenceSolverTest extends BaseTest {
         TEST_REFERENCE_CLASS_FILE,
         "String local;",
         "local",
-        ref(TEST_REFERENCE_CLASS_FILE, "String local;"),
         ref(TEST_REFERENCE_CLASS_FILE, "local = \"local\""));
   }
 
-  @Ignore("Not implemented yet")
   @Test
   public void testLocalVariableRedefined() {
     // Must not contain localVariable in the if and for blocks.
@@ -40,8 +37,9 @@ public class ReferenceSolverTest extends BaseTest {
         TEST_REFERENCE_CLASS_FILE,
         "int localRedefined;",
         "localRedefined",
-        ref(TEST_REFERENCE_CLASS_FILE, "int localRedefined;"),
-        ref(TEST_REFERENCE_CLASS_FILE, "localRedefined = 3"));
+        ref(TEST_REFERENCE_CLASS_FILE, "localRedefined = 3"),
+        ref(TEST_REFERENCE_CLASS_FILE, "ocalRedefined = localRedefined;"),
+        ref(TEST_REFERENCE_CLASS_FILE, "scoped += localRedefined;"));
   }
 
   @Test
@@ -50,7 +48,6 @@ public class ReferenceSolverTest extends BaseTest {
         TEST_REFERENCE_CLASS_FILE,
         "int scoped = 4;",
         "scoped",
-        ref(TEST_REFERENCE_CLASS_FILE, "int scoped = 4;"),
         ref(TEST_REFERENCE_CLASS_FILE, "scoped += localRedefined"));
   }
 
@@ -61,7 +58,6 @@ public class ReferenceSolverTest extends BaseTest {
         TEST_REFERENCE_CLASS_FILE,
         "int scopeRedefined;",
         "scopeRedefined",
-        ref(TEST_REFERENCE_CLASS_FILE, "int scopeRedefined;"),
         ref(TEST_REFERENCE_CLASS_FILE, "scopeRedefined = 2;"),
         ref(TEST_REFERENCE_CLASS_FILE, "localRedefined = \"\" + scopeRedefined;"));
   }
@@ -72,7 +68,6 @@ public class ReferenceSolverTest extends BaseTest {
         TEST_REFERENCE_CLASS_FILE,
         "for (int scopeRedefined = 0;",
         "scopeRedefined",
-        ref(TEST_REFERENCE_CLASS_FILE, "for (int scopeRedefined = 0;"),
         ref(TEST_REFERENCE_CLASS_FILE, "copeRedefined = 0; scopeRedefined < 10;"),
         ref(TEST_REFERENCE_CLASS_FILE, "copeRedefined < 10; scopeRedefined++"),
         ref(TEST_REFERENCE_CLASS_FILE, "long forLoopLocal = scopeRedefined"));
@@ -81,7 +76,6 @@ public class ReferenceSolverTest extends BaseTest {
         TEST_REFERENCE_CLASS_FILE,
         "for (int scopeRedefined :",
         "scopeRedefined",
-        ref(TEST_REFERENCE_CLASS_FILE, "for (int scopeRedefined :"),
         ref(TEST_REFERENCE_CLASS_FILE, "long localRedefined = scopeRedefined"));
   }
 
@@ -93,20 +87,17 @@ public class ReferenceSolverTest extends BaseTest {
         TEST_REFERENCE_CLASS_FILE,
         returnLine,
         "param1",
-        ref(TEST_REFERENCE_CLASS_FILE, methodNameLine),
         ref(TEST_REFERENCE_CLASS_FILE, returnLine));
     assertReference(
         TEST_REFERENCE_CLASS_FILE,
         methodNameLine,
         "param1",
-        ref(TEST_REFERENCE_CLASS_FILE, methodNameLine),
         ref(TEST_REFERENCE_CLASS_FILE, returnLine));
 
     assertReference(
         TEST_REFERENCE_CLASS_FILE,
         methodNameLine,
         "methodParameter",
-        ref(TEST_REFERENCE_CLASS_FILE, methodNameLine),
         ref(TEST_REFERENCE_CLASS_FILE, returnLine));
   }
 
@@ -117,7 +108,6 @@ public class ReferenceSolverTest extends BaseTest {
         TEST_REFERENCE_CLASS_FILE,
         "public void publicMethod()",
         "publicMethod",
-        ref(TEST_REFERENCE_CLASS_FILE, "public void publicMethod()"),
         ref(TEST_REFERENCE_CLASS_FILE, "publicMethod();"),
         ref(TEST_REFERENCE_CLASS_FILE2, "new TestReferenceClass().publicMethod()"));
   }
@@ -128,7 +118,6 @@ public class ReferenceSolverTest extends BaseTest {
         TEST_REFERENCE_CLASS_FILE,
         "private void privateMethod()",
         "privateMethod",
-        ref(TEST_REFERENCE_CLASS_FILE, "private void privateMethod()"),
         ref(TEST_REFERENCE_CLASS_FILE, "privateMethod();"));
   }
 

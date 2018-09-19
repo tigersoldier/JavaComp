@@ -58,24 +58,31 @@ public abstract class PositionContext {
     if (!inputFileScope.get().getCompilationUnit().isPresent()) {
       return Optional.empty();
     }
-    JCCompilationUnit compilationUnit = inputFileScope.get().getCompilationUnit().get();
 
     LineMap lineMap = inputFileScope.get().getLineMap().get();
     int position = LineMapUtil.getPositionFromZeroBasedLineAndColumn(lineMap, line, column);
-    EntityScope scopeAtPosition = inputFileScope.get().getEntityScopeAt(position - 1);
+    return Optional.of(createForFixedPosition(module, inputFileScope.get(), position));
+  }
+
+  /**
+   * Creates a {@link PositionContext} instance based on the given position.
+   *
+   * @param module the module of the project
+   * @param filePath normalized path of the file to be completed
+   * @param position 0-based offset of the file content that may be updated by {@link
+   *     FileContentFixer}
+   */
+  public static PositionContext createForFixedPosition(
+      Module module, FileScope inputFileScope, int position) {
+    JCCompilationUnit compilationUnit = inputFileScope.getCompilationUnit().get();
+    EntityScope scopeAtPosition = inputFileScope.getEntityScopeAt(position - 1);
     PositionAstScanner scanner = new PositionAstScanner(compilationUnit.endPositions, position);
     logger.fine("Starting PositionAstScanner, position: %s", position);
     TreePath treePath = scanner.scan(compilationUnit, null);
     logger.fine("TreePath for position: %s", TreePathFormatter.formatTreePath(treePath));
 
-    return Optional.of(
-        new AutoValue_PositionContext(
-            scopeAtPosition,
-            module,
-            inputFileScope.get(),
-            treePath,
-            position,
-            compilationUnit.endPositions));
+    return new AutoValue_PositionContext(
+        scopeAtPosition, module, inputFileScope, treePath, position, compilationUnit.endPositions);
   }
 
   /** A {@link TreePathScanner} that returns the tree path enclosing the given position. */
