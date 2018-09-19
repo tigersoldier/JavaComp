@@ -227,11 +227,6 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
     } else {
       returnType = typeReferenceScanner.getTypeReference(node.getReturnType());
     }
-    ImmutableList.Builder<VariableEntity> parameterListBuilder = new ImmutableList.Builder<>();
-    for (Tree parameter : node.getParameters()) {
-      parameterListBuilder.add(parameterScanner.getParameter(parameter, currentScope));
-    }
-
     ImmutableList<TypeParameter> typeParameters = convertTypeParameters(node.getTypeParameters());
 
     Range<Integer> range = getMethodNameRange((JCMethodDecl) node);
@@ -241,11 +236,17 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
             this.currentQualifiers,
             isStatic(node.getModifiers()),
             returnType,
-            parameterListBuilder.build(),
+            ImmutableList.of() /* parameters */,
             typeParameters,
             (ClassEntity) currentScope,
             range,
             getNodeRange(node));
+    ImmutableList.Builder<VariableEntity> parameterListBuilder = new ImmutableList.Builder<>();
+    for (Tree parameter : node.getParameters()) {
+      parameterListBuilder.add(parameterScanner.getParameter(parameter, methodEntity));
+    }
+    methodEntity.setParameters(parameterListBuilder.build());
+
     // TODO: distinguish between static and non-static methods.
     currentScope.addEntity(methodEntity);
     List<String> previousQualifiers = this.currentQualifiers;
@@ -482,15 +483,18 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
       scan(node, null);
 
       Range<Integer> range = getVariableNameRange((JCVariableDecl) node);
-      return new VariableEntity(
-          name,
-          Entity.Kind.VARIABLE,
-          ImmutableList.of() /* qualifiers */,
-          false /* isStatic */,
-          type,
-          currentScope,
-          range,
-          getNodeRange(node));
+      VariableEntity variableEntity =
+          new VariableEntity(
+              name,
+              Entity.Kind.VARIABLE,
+              ImmutableList.of() /* qualifiers */,
+              false /* isStatic */,
+              type,
+              currentScope,
+              range,
+              getNodeRange(node));
+      addScopeRange((JCTree) node, variableEntity);
+      return variableEntity;
     }
 
     @Override

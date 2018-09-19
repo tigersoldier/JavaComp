@@ -15,13 +15,13 @@ public class MethodEntity extends Entity implements EntityScope {
   private static final String CONSTRUCTOR_NAME = "<init>";
 
   private final TypeReference returnType;
-  private final ImmutableList<VariableEntity> parameters;
   private final ImmutableList<TypeParameter> typeParameters;
   // Map of simple names -> entities.
   private final Multimap<String, Entity> entities;
   private final ClassEntity classEntity;
   private final List<EntityScope> childScopes;
   private final Range<Integer> definitionRange;
+  private ImmutableList<VariableEntity> parameters;
 
   public MethodEntity(
       String simpleName,
@@ -94,6 +94,10 @@ public class MethodEntity extends Entity implements EntityScope {
   }
 
   /////////////// Other methods ////////////////
+
+  public void setParameters(List<VariableEntity> parameters) {
+    this.parameters = ImmutableList.copyOf(parameters);
+  }
 
   public ImmutableList<VariableEntity> getParameters() {
     return parameters;

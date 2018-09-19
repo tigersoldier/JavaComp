@@ -85,6 +85,53 @@ public class ReferenceSolverTest extends BaseTest {
         ref(TEST_REFERENCE_CLASS_FILE, "long localRedefined = scopeRedefined"));
   }
 
+  @Test
+  public void testMethodParameter() {
+    String methodNameLine = "int withMethodParameter(int param1, String methodParameter)";
+    String returnLine = "return param1 + methodParameter.length();";
+    assertReference(
+        TEST_REFERENCE_CLASS_FILE,
+        returnLine,
+        "param1",
+        ref(TEST_REFERENCE_CLASS_FILE, methodNameLine),
+        ref(TEST_REFERENCE_CLASS_FILE, returnLine));
+    assertReference(
+        TEST_REFERENCE_CLASS_FILE,
+        methodNameLine,
+        "param1",
+        ref(TEST_REFERENCE_CLASS_FILE, methodNameLine),
+        ref(TEST_REFERENCE_CLASS_FILE, returnLine));
+
+    assertReference(
+        TEST_REFERENCE_CLASS_FILE,
+        methodNameLine,
+        "methodParameter",
+        ref(TEST_REFERENCE_CLASS_FILE, methodNameLine),
+        ref(TEST_REFERENCE_CLASS_FILE, returnLine));
+  }
+
+  @Ignore("Not implemented yet")
+  @Test
+  public void testPublicMethod() {
+    assertReference(
+        TEST_REFERENCE_CLASS_FILE,
+        "public void publicMethod()",
+        "publicMethod",
+        ref(TEST_REFERENCE_CLASS_FILE, "public void publicMethod()"),
+        ref(TEST_REFERENCE_CLASS_FILE, "publicMethod();"),
+        ref(TEST_REFERENCE_CLASS_FILE2, "new TestReferenceClass().publicMethod()"));
+  }
+
+  @Test
+  public void testPrivateMethod() {
+    assertReference(
+        TEST_REFERENCE_CLASS_FILE,
+        "private void privateMethod()",
+        "privateMethod",
+        ref(TEST_REFERENCE_CLASS_FILE, "private void privateMethod()"),
+        ref(TEST_REFERENCE_CLASS_FILE, "privateMethod();"));
+  }
+
   private static class ReferenceSpec {
     private final String filename;
     private final String symbolContext;

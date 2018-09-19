@@ -1,9 +1,10 @@
 package org.javacomp.reference.testdata;
 
-public class TestReferenceClass {
+public class TestReferenceClass2 {
   public int publicField;
+  protected bool protectedField;
+  long packagePrivateField;
   private short privateField;
-  private long localRedefined;
 
   public TestReferenceClass(int publicConstructor) {
   }
@@ -26,7 +27,6 @@ public class TestReferenceClass {
     }
 
     localRedefined = 3;
-    this.localRedefined = localRedefined;
     local = "local";
 
     for (int scopeRedefined : someList) {
@@ -45,6 +45,8 @@ public class TestReferenceClass {
   }
 
   private int withMethodParameter(int param1, String methodParameter) {
+    privateMethod();
+    publicMethod();
     return param1 + methodParameter.length();
   }
 
@@ -53,5 +55,7 @@ public class TestReferenceClass {
     publicMethod();
     this.publicField = 1;
     this.privateField = 2;
+    new TestReferenceClass().publicMethod();
+    new TestReferenceClass().publicField = 1;
   }
 }

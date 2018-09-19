@@ -30,12 +30,17 @@ import org.junit.Before;
 public class BaseTest {
   protected static final String TEST_DATA_DIR = "src/test/java/org/javacomp/reference/testdata/";
   protected static final String TEST_REFERENCE_CLASS_FILE = "TestReferenceClass.java";
+  protected static final String TEST_REFERENCE_CLASS_FILE2 = "TestReferenceClass2.java";
   protected static final String TEST_CLASS_FILE = "TestClass.java";
   protected static final String OTHER_CLASS_FILE = "OtherClass.java";
   protected static final String OTHER_PACKAGE_CLASS_FILE = "other/OtherPackageClass.java";
   protected static final List<String> ALL_FILES =
       ImmutableList.of(
-          TEST_CLASS_FILE, OTHER_CLASS_FILE, OTHER_PACKAGE_CLASS_FILE, TEST_REFERENCE_CLASS_FILE);
+          TEST_CLASS_FILE,
+          OTHER_CLASS_FILE,
+          OTHER_PACKAGE_CLASS_FILE,
+          TEST_REFERENCE_CLASS_FILE,
+          TEST_REFERENCE_CLASS_FILE2);
 
   protected static final String TEST_CLASS_FULL_NAME = "org.javacomp.reference.testdata.TestClass";
   protected static final String OTHER_CLASS_FULL_NAME =
