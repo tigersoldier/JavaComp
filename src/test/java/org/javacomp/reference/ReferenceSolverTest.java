@@ -10,7 +10,6 @@ import java.nio.file.Paths;
 import java.util.Optional;
 import org.javacomp.file.TextPosition;
 import org.javacomp.model.FileScope;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -101,7 +100,6 @@ public class ReferenceSolverTest extends BaseTest {
         ref(TEST_REFERENCE_CLASS_FILE, returnLine));
   }
 
-  @Ignore("Not implemented yet")
   @Test
   public void testPublicMethod() {
     assertReference(
@@ -131,7 +129,10 @@ public class ReferenceSolverTest extends BaseTest {
         ref(TEST_REFERENCE_CLASS_FILE, "new TestReferenceClass();"),
         ref(TEST_REFERENCE_CLASS_FILE, "Class<TestReferenceClass>"),
         ref(TEST_REFERENCE_CLASS_FILE, "TestReferenceClass.class"),
-        ref(TEST_REFERENCE_CLASS_FILE, "((TestReferenceClass) this"));
+        ref(TEST_REFERENCE_CLASS_FILE, "((TestReferenceClass) this"),
+        // References in other file
+        ref(TEST_REFERENCE_CLASS_FILE2, "new TestReferenceClass().publicMethod();"),
+        ref(TEST_REFERENCE_CLASS_FILE2, "new TestReferenceClass().publicField = 1;"));
   }
 
   private static class ReferenceSpec {

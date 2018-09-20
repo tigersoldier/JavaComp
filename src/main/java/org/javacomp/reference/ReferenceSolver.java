@@ -2,6 +2,7 @@ package org.javacomp.reference;
 
 import static com.google.common.base.Preconditions.checkState;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Range;
@@ -24,6 +25,8 @@ import org.javacomp.parser.PositionContext;
 /** Finds references of a symbol. */
 public class ReferenceSolver {
   private static final JLogger logger = JLogger.createForEnclosingClass();
+
+  private static final int MAX_SCOPES_TO_SEARCH = 500;
 
   private final FileManager fileManager;
   private final DefinitionSolver definitionSolver;
@@ -73,30 +76,37 @@ public class ReferenceSolver {
     if (entity instanceof ClassEntity) {
       findClassConstructors(builder, (ClassEntity) entity);
     }
+
     // Try to limit the search of reference in a private scope.
-    Optional<EntityScope> definitionScope = entity.getParentScope();
-    checkState(definitionScope.isPresent(), "Entity %s does not have definition scope", entity);
-    if (definitionScope.get() instanceof FileScope) {
-      // Top level class.
-      // TODO: real implementation.
-      findReferencesInScope(
-          builder, module, entity, positionContext.getFileScope(), positionContext);
-    } else if (!definitionScope.get().getDefiningEntity().isPresent()
-        || !(definitionScope.get().getDefiningEntity().get() instanceof ClassEntity)) {
-      // Not a direct member of a class. A local variable.
-      findReferencesInScope(builder, module, entity, definitionScope.get(), positionContext);
-    } else {
-      // TODO: real implementation.
-      findReferencesInScope(
-          builder, module, entity, positionContext.getFileScope(), positionContext);
+    List<? extends EntityScope> searchScopes = findSearchScopes(module, entity, positionContext);
+    for (EntityScope searchScope : searchScopes) {
+      findReferencesInScope(builder, module, entity, searchScope, positionContext);
     }
 
     return builder.build();
   }
 
+  private List<? extends EntityScope> findSearchScopes(
+      Module module, Entity entity, PositionContext positionContext) {
+    Optional<EntityScope> definitionScope = entity.getParentScope();
+    checkState(definitionScope.isPresent(), "Entity %s does not have definition scope", entity);
+    if (definitionScope.get() instanceof FileScope) {
+      // Top level class.
+      // TODO: limit search based on access level.
+      return module.getAllFiles();
+    } else if (!definitionScope.get().getDefiningEntity().isPresent()
+        || !(definitionScope.get().getDefiningEntity().get() instanceof ClassEntity)) {
+      // Not a direct member of a class. A local variable.
+      return ImmutableList.of(definitionScope.get());
+    } else {
+      // TODO: limit search based on access level.
+      return module.getAllFiles();
+    }
+  }
+
   private void findClassConstructors(
       ImmutableMultimap.Builder<FileScope, Range<Integer>> builder, ClassEntity classEntity) {
-    FileScope fileScope = getDefiningFileScope(classEntity);
+    FileScope fileScope = getDefiningFileScope((Entity) classEntity);
     for (MethodEntity constructor : classEntity.getConstructors()) {
       builder.put(fileScope, constructor.getSymbolRange());
     }
@@ -112,7 +122,7 @@ public class ReferenceSolver {
     if (entityName.isEmpty()) {
       return;
     }
-    FileScope fileScope = positionContext.getFileScope();
+    FileScope fileScope = getDefiningFileScope(entityScope);
     Optional<CharSequence> fileContent =
         fileManager.getFileContent(Paths.get(fileScope.getFilename()));
     if (!fileContent.isPresent()) {
@@ -197,10 +207,15 @@ public class ReferenceSolver {
 
   private static FileScope getDefiningFileScope(Entity entity) {
     Optional<EntityScope> scope = entity.getParentScope();
-    while (scope.isPresent() && !(scope.get() instanceof FileScope)) {
-      scope = scope.get().getParentScope();
+    checkState(scope.isPresent());
+    return getDefiningFileScope(scope.get());
+  }
+
+  private static FileScope getDefiningFileScope(EntityScope scope) {
+    while (!(scope instanceof FileScope)) {
+      checkState(scope.getParentScope().isPresent());
+      scope = scope.getParentScope().get();
     }
-    checkState(scope.isPresent() && (scope.get() instanceof FileScope));
-    return (FileScope) scope.get();
+    return (FileScope) scope;
   }
 }
