@@ -152,6 +152,12 @@ public class IndexStore {
     SerializedEntity ret = new SerializedEntity();
     ret.members =
         entity
+            .getConstructors()
+            .stream()
+            .map(constructor -> serializeEntity(constructor))
+            .collect(Collectors.toList());
+    ret.members.addAll(
+        entity
             .getMemberEntities()
             .values()
             .stream()
@@ -171,7 +177,7 @@ public class IndexStore {
                   return serializeEntity(childEntity);
                 })
             .sorted()
-            .collect(Collectors.toList());
+            .collect(Collectors.toList()));
     if (entity.getSuperClass().isPresent()) {
       ret.superClass =
           serializeTypeReference(entity.getSuperClass().get(), entity.getParentScope().get());

@@ -3,6 +3,7 @@ package org.javacomp.parser;
 import static com.google.common.base.Preconditions.checkArgument;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Range;
 import com.sun.source.tree.BlockTree;
 import com.sun.source.tree.ClassTree;
@@ -65,6 +66,7 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
   private NestedRangeMapBuilder<EntityScope> scopeRangeBuilder = null;
   private String filename = null;
   private String content = null;
+  private Set<Modifier> implicitModifiers = ImmutableSet.of();
 
   public AstScanner(IndexOptions indexOptions) {
     this.typeReferenceScanner = new TypeReferenceScanner();
@@ -133,8 +135,7 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
 
   @Override
   public Void visitClass(ClassTree node, EntityScope currentScope) {
-    if (!indexOptions.shouldIndexNonPublic()
-        && !node.getModifiers().getFlags().contains(Modifier.PUBLIC)) {
+    if (!shouldScanWithModifiers(currentScope, node.getModifiers().getFlags())) {
       return null;
     }
 
@@ -145,6 +146,7 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
         break;
       case INTERFACE:
         entityKind = Entity.Kind.INTERFACE;
+        // All members in interface are considered public by default.
         break;
       case ENUM:
         entityKind = Entity.Kind.ENUM;

@@ -3,6 +3,8 @@ package org.javacomp.storage.testdata;
 import org.javacomp.storage.testdata.other.OtherPackageClass;
 
 public class TestClass {
+  public TestClass() {}
+
   public interface InnerInterface {
     InnerClassB interfaceMethod();
   }
@@ -33,6 +35,7 @@ public class TestClass {
 
   public static class ParameterizedType<A, B extends A> {
     public A getA();
+
     public <C extends A & B> C getC();
   }
 }

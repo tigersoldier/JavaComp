@@ -4,6 +4,8 @@ import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.Multimap;
 import com.google.common.collect.Ordering;
 import java.util.ArrayDeque;
 import java.util.Collection;
@@ -71,6 +73,10 @@ public class IndexStoreTest {
     assertQualifiedName(deserialized, qualifiedName);
     assertThat(deserialized.getQualifiedName()).isEqualTo(original.getQualifiedName());
     assertThat(deserialized.isStatic()).named("isStatic").isEqualTo(original.isStatic());
+    assertSameEntities(
+        toMultimap(deserialized.getConstructors()),
+        toMultimap(original.getConstructors()),
+        qualifiedName);
     assertSameMemberEntities(deserialized, original, qualifiedName);
     assertTypesEqual(deserialized.getSuperClass(), original.getSuperClass(), qualifiedName);
 
@@ -89,6 +95,14 @@ public class IndexStoreTest {
 
     assertTypeParametersEqual(
         deserialized.getTypeParameters(), original.getTypeParameters(), qualifiedName);
+  }
+
+  private static Multimap<String, Entity> toMultimap(Collection<? extends Entity> entities) {
+    ImmutableMultimap.Builder<String, Entity> builder = new ImmutableMultimap.Builder<>();
+    for (Entity entity : entities) {
+      builder.put(entity.getSimpleName(), entity);
+    }
+    return builder.build();
   }
 
   private boolean methodsEqual(
@@ -249,15 +263,23 @@ public class IndexStoreTest {
 
   private void assertSameMemberEntities(
       EntityScope deserialized, EntityScope original, Deque<String> qualifiedName) {
-    assertThat(deserialized.getMemberEntities().keySet())
-        .named("Member entities of " + QUALIFIER_JOINER.join(qualifiedName))
-        .containsExactlyElementsIn(original.getMemberEntities().keySet());
+    assertSameEntities(
+        deserialized.getMemberEntities(), original.getMemberEntities(), qualifiedName);
+  }
 
-    for (String entityName : deserialized.getMemberEntities().keySet()) {
+  private void assertSameEntities(
+      Multimap<String, Entity> deserialized,
+      Multimap<String, Entity> original,
+      Deque<String> qualifiedName) {
+    assertThat(deserialized.keySet())
+        .named("Member entities of " + QUALIFIER_JOINER.join(qualifiedName))
+        .containsExactlyElementsIn(original.keySet());
+
+    for (String entityName : deserialized.keySet()) {
       qualifiedName.addLast(entityName);
-      Collection<Entity> deserializedMembers = deserialized.getMemberEntities().get(entityName);
+      Collection<Entity> deserializedMembers = deserialized.get(entityName);
       Set<Entity> originalMembers = new HashSet<>();
-      originalMembers.addAll(original.getMemberEntities().get(entityName));
+      originalMembers.addAll(original.get(entityName));
 
       assertThat(deserializedMembers)
           .named("entities named '" + entityName + "' in " + QUALIFIER_JOINER.join(qualifiedName))
