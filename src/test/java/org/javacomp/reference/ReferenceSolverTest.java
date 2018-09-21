@@ -120,12 +120,37 @@ public class ReferenceSolverTest extends BaseTest {
   }
 
   @Test
+  public void testPrivateField() {
+    assertReference(
+        TEST_REFERENCE_CLASS_FILE,
+        "private short privateField",
+        "privateField",
+        ref(TEST_REFERENCE_CLASS_FILE, "this.privateField = 1;"),
+        ref(TEST_REFERENCE_CLASS_FILE, "this.privateField = 2;"));
+    assertReference(
+        TEST_REFERENCE_CLASS_FILE,
+        "this.privateField = 1;",
+        "privateField",
+        ref(TEST_REFERENCE_CLASS_FILE, "this.privateField = 1;"),
+        ref(TEST_REFERENCE_CLASS_FILE, "this.privateField = 2;"));
+    assertReference(
+        TEST_REFERENCE_CLASS_FILE,
+        "this.privateField = 2;",
+        "privateField",
+        ref(TEST_REFERENCE_CLASS_FILE, "this.privateField = 1;"),
+        ref(TEST_REFERENCE_CLASS_FILE, "this.privateField = 2;"));
+  }
+
+  @Test
   public void testClassName() {
     assertReference(
         TEST_REFERENCE_CLASS_FILE,
         "class TestReferenceClass",
         "TestReferenceClass",
+        ref(TEST_REFERENCE_CLASS_FILE, "public TestReferenceClass()"),
         ref(TEST_REFERENCE_CLASS_FILE, "public TestReferenceClass(int publicConstructor)"),
+        ref(TEST_REFERENCE_CLASS_FILE, "private static TestReferenceClass create()"),
+        ref(TEST_REFERENCE_CLASS_FILE, "return new TestReferenceClass(1)"),
         ref(TEST_REFERENCE_CLASS_FILE, "new TestReferenceClass();"),
         ref(TEST_REFERENCE_CLASS_FILE, "Class<TestReferenceClass>"),
         ref(TEST_REFERENCE_CLASS_FILE, "TestReferenceClass.class"),
@@ -133,6 +158,22 @@ public class ReferenceSolverTest extends BaseTest {
         // References in other file
         ref(TEST_REFERENCE_CLASS_FILE2, "new TestReferenceClass().publicMethod();"),
         ref(TEST_REFERENCE_CLASS_FILE2, "new TestReferenceClass().publicField = 1;"));
+  }
+
+  @Test
+  public void testConstructor() {
+    assertReference(
+        TEST_REFERENCE_CLASS_FILE,
+        "public TestReferenceClass()",
+        "TestReferenceClass",
+        ref(TEST_REFERENCE_CLASS_FILE, "new TestReferenceClass()"),
+        ref(TEST_REFERENCE_CLASS_FILE2, "new TestReferenceClass().publicMethod()"),
+        ref(TEST_REFERENCE_CLASS_FILE2, "new TestReferenceClass().publicField = 1"));
+    assertReference(
+        TEST_REFERENCE_CLASS_FILE,
+        "public TestReferenceClass(int publicConstructor)",
+        "TestReferenceClass",
+        ref(TEST_REFERENCE_CLASS_FILE, "return new TestReferenceClass(1)"));
   }
 
   private static class ReferenceSpec {

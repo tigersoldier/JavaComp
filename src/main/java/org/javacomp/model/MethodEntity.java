@@ -33,7 +33,12 @@ public class MethodEntity extends Entity implements EntityScope {
       ClassEntity classEntity,
       Range<Integer> methodNamelRange,
       Range<Integer> definitionRange) {
-    super(simpleName, Entity.Kind.METHOD, qualifiers, isStatic, methodNamelRange);
+    super(
+        getRealSimpleName(simpleName, classEntity),
+        Entity.Kind.METHOD,
+        qualifiers,
+        isStatic,
+        methodNamelRange);
     this.returnType = returnType;
     this.parameters = ImmutableList.copyOf(parameters);
     this.typeParameters = ImmutableList.copyOf(typeParameters);
@@ -41,6 +46,14 @@ public class MethodEntity extends Entity implements EntityScope {
     this.classEntity = classEntity;
     this.childScopes = new ArrayList<>();
     this.definitionRange = definitionRange;
+  }
+
+  private static String getRealSimpleName(String simpleName, ClassEntity classEntity) {
+    if (CONSTRUCTOR_NAME.equals(simpleName)) {
+      return classEntity.getSimpleName();
+    } else {
+      return simpleName;
+    }
   }
 
   /////////////// Entity methods ////////////////
@@ -116,7 +129,7 @@ public class MethodEntity extends Entity implements EntityScope {
   }
 
   public boolean isConstructor() {
-    return CONSTRUCTOR_NAME.equals(getSimpleName());
+    return getSimpleName().equals(classEntity.getSimpleName());
   }
 
   @Override

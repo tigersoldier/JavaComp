@@ -5,7 +5,15 @@ public class TestReferenceClass {
   private short privateField;
   private long localRedefined;
 
+  public TestReferenceClass() {
+  }
+
   public TestReferenceClass(int publicConstructor) {
+    this.privateField = 1;
+  }
+
+  private static TestReferenceClass create() {
+    return new TestReferenceClass(1);
   }
 
   private void privateMethod() {
