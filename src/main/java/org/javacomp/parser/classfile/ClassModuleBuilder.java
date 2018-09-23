@@ -49,31 +49,35 @@ public class ClassModuleBuilder {
     this.parsedInnerClassFileMap = ArrayListMultimap.create();
   }
 
-  public void processClassFile(Path classFilePath) throws IOException {
-    InputStream input = Files.newInputStream(classFilePath);
-    ClassFileInfo classFileInfo = parser.parse(classFilePath);
-    ParsedClassFile parsedClassFile = classInfoConverter.convert(classFileInfo);
+  public void processClassFile(Path classFilePath) {
+    try{
+      InputStream input = Files.newInputStream(classFilePath);
+      ClassFileInfo classFileInfo = parser.parse(classFilePath);
+      ParsedClassFile parsedClassFile = classInfoConverter.convert(classFileInfo);
 
-    EntityScope parentScope = null;
-    if (parsedClassFile.getOuterClassBinaryName().isPresent()) {
-      String outerClassBinaryName = parsedClassFile.getOuterClassBinaryName().get();
-      if (classEntityMap.containsKey(outerClassBinaryName)) {
-        parentScope = classEntityMap.get(outerClassBinaryName);
+      EntityScope parentScope = null;
+      if (parsedClassFile.getOuterClassBinaryName().isPresent()) {
+        String outerClassBinaryName = parsedClassFile.getOuterClassBinaryName().get();
+        if (classEntityMap.containsKey(outerClassBinaryName)) {
+          parentScope = classEntityMap.get(outerClassBinaryName);
+        }
+      } else {
+        PackageScope packageScope = module.getOrCreatePackage(parsedClassFile.getClassQualifiers());
+        FileScope fileScope =
+            FileScope.createFromClassFile(classFilePath, parsedClassFile.getClassQualifiers());
+        module.addOrReplaceFileScope(fileScope);
+        parentScope = fileScope;
       }
-    } else {
-      PackageScope packageScope = module.getOrCreatePackage(parsedClassFile.getClassQualifiers());
-      FileScope fileScope =
-          FileScope.createFromClassFile(classFilePath, parsedClassFile.getClassQualifiers());
-      module.addOrReplaceFileScope(fileScope);
-      parentScope = fileScope;
-    }
 
-    if (parentScope != null) {
-      ClassEntity classEntity = createClassEntity(parsedClassFile, parentScope);
-      addClassEntity(parsedClassFile.getClassBinaryName(), classEntity);
-    } else {
-      // It's an inner class and its outer class is not processed yet.
-      parsedInnerClassFileMap.put(parsedClassFile.getOuterClassBinaryName().get(), parsedClassFile);
+      if (parentScope != null) {
+        ClassEntity classEntity = createClassEntity(parsedClassFile, parentScope);
+        addClassEntity(parsedClassFile.getClassBinaryName(), classEntity);
+      } else {
+        // It's an inner class and its outer class is not processed yet.
+        parsedInnerClassFileMap.put(parsedClassFile.getOuterClassBinaryName().get(), parsedClassFile);
+      }
+    } catch (Throwable t) {
+      throw new RuntimeException("Unable to process class file " + classFilePath, t);
     }
   }
 

@@ -2,7 +2,6 @@ package org.javacomp.parser.classfile;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import java.nio.file.DirectoryStream;
@@ -39,14 +38,7 @@ public class ClassModuleBuilderTest {
   private final ClassModuleBuilder classModuleBuilder = new ClassModuleBuilder(module);
   private final ImmutableMap<String, Consumer<Path>> extensionHandlers =
       ImmutableMap.<String, Consumer<Path>>of(
-          ".class",
-          path -> {
-            try {
-              classModuleBuilder.processClassFile(path);
-            } catch (Throwable t) {
-              throw Throwables.propagate(t);
-            }
-          });
+          ".class", path -> classModuleBuilder.processClassFile(path));
 
   @Test
   public void createModuleFromJarFile() throws Exception {

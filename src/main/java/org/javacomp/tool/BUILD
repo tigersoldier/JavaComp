@@ -34,6 +34,7 @@ java_binary(
         "//src/main/java/org/javacomp/model/util",
         "//src/main/java/org/javacomp/options",
         "//src/main/java/org/javacomp/parser",
+        "//src/main/java/org/javacomp/parser/classfile",
         "//src/main/java/org/javacomp/project",
         "//src/main/java/org/javacomp/storage",
         "//third_party:guava",
