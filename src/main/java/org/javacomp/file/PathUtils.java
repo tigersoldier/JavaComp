@@ -1,15 +1,29 @@
 package org.javacomp.file;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import java.io.IOException;
+import java.net.URI;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.nio.file.Paths;
+import java.nio.file.ProviderMismatchException;
+import java.util.Deque;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
+import org.javacomp.logging.JLogger;
 
 /** Utilities for dealing with paths. */
 public class PathUtils {
+  private static final JLogger logger = JLogger.createForEnclosingClass();
+
   public static final ImmutableList<PathMatcher> DEFAULT_IGNORE_MATCHERS;
   private static final Path PSUEDO_ROOT_PATH = Paths.get("/");
 
@@ -48,7 +62,15 @@ public class PathUtils {
     }
 
     Path pathName = entryPath.getFileName();
-    Path relativePath = projectRootPath.relativize(entryPath);
+    Path relativePath;
+    try {
+      relativePath = projectRootPath.relativize(entryPath);
+    } catch (ProviderMismatchException e) {
+      // entryPath and projectRootPath are not provided by the same filesystem,
+      // e.g. entryPath is a path in a .jar file while the projectRootPath is in
+      // the default filesystem.
+      return false;
+    }
     Path pseudoAbsolutePath = PSUEDO_ROOT_PATH.resolve(relativePath);
 
     for (PathMatcher matcher : ignorePathMatchers) {
@@ -61,5 +83,57 @@ public class PathUtils {
     }
 
     return false;
+  }
+
+  /**
+   * @param rootPath the root path to walk through
+   * @param extensionHandlers map of extension (with leading dot) to consumers The consumers will be
+   *     called when accessing files with corresponding extensions. The consumers are only called on
+   *     files, not directories
+   * @param ignorePredicate a predicate to determine whether a path should be ignored. If it returns
+   *     true, the path will not be consumed by {@code extensionHandlers} if its a file, or walked
+   *     through if it's a directory
+   */
+  public static void walkDirectory(
+      Path rootPath,
+      Map<String, Consumer<Path>> extensionHandlers,
+      Predicate<Path> ignorePredicate) {
+    Deque<Path> queue = new LinkedList<>();
+    queue.add(rootPath);
+    while (!queue.isEmpty()) {
+      Path baseDir = queue.remove();
+      try (Stream<Path> entryStream = Files.list(baseDir)) {
+        entryStream.forEach(
+            entryPath -> {
+              if (ignorePredicate.test(entryPath)) {
+                logger.info("Ignoring path %s", entryPath);
+                return;
+              }
+              if (Files.isDirectory(entryPath)) {
+                queue.add(entryPath);
+                return;
+              }
+
+              for (Map.Entry<String, Consumer<Path>> entry : extensionHandlers.entrySet()) {
+                if (entryPath.toString().endsWith(entry.getKey())) {
+                  entry.getValue().accept(entryPath);
+                  return;
+                }
+              }
+            });
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    }
+  }
+
+  /** Returns a {@link Path} that can be use for walking through its content. */
+  public static Path getRootPathForJarFile(Path jarFilePath) throws IOException {
+    // JAR specific URI pattern.
+    // See https://docs.oracle.com/javase/8/docs/technotes/guides/io/fsp/zipfilesystemprovider.html
+    logger.fine("Parsing jar file: %s", jarFilePath);
+    String jarUri = "jar:file:" + jarFilePath.toAbsolutePath().normalize().toString();
+    FileSystem fs = FileSystems.newFileSystem(URI.create(jarUri), ImmutableMap.of() /* env */);
+    return fs.getPath("/");
   }
 }

@@ -4,6 +4,7 @@ java_library(
     srcs = glob(["*.java"]),
     data = glob(["testdata/*"]),
     deps = [
+        "//src/main/java/org/javacomp/file",
         "//src/main/java/org/javacomp/model",
         "//src/main/java/org/javacomp/parser/classfile",
         "//src/main/java/org/javacomp/testing",

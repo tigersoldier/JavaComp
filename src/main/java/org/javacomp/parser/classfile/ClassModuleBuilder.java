@@ -1,24 +1,15 @@
 package org.javacomp.parser.classfile;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Range;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
-import java.nio.file.DirectoryStream;
-import java.nio.file.FileSystem;
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
-import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Deque;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -41,69 +32,24 @@ public class ClassModuleBuilder {
 
   private static final Range<Integer> EMPTY_RANGE = Range.closedOpen(0, 0);
 
-  private final Path rootDirectory;
-  private final ClassFileParser parser = new ClassFileParser();
-  private final ClassInfoConverter classInfoConverter = new ClassInfoConverter();
+  private final ClassFileParser parser;
+  private final ClassInfoConverter classInfoConverter;
+  private final Module module;
 
   /** Map from class binary name to class entity. */
-  private Map<String, ClassEntity> classEntityMap;
+  private final Map<String, ClassEntity> classEntityMap;
   /** Map from parent class binary name to parsed class file. */
-  private Multimap<String, ParsedClassFile> parsedInnerClassFileMap;
+  private final Multimap<String, ParsedClassFile> parsedInnerClassFileMap;
 
-  private Module module;
-
-  public static ClassModuleBuilder createForJarFile(Path jarFilePath) throws IOException {
-    // JAR specific URI pattern.
-    // See https://docs.oracle.com/javase/8/docs/technotes/guides/io/fsp/zipfilesystemprovider.html
-    logger.fine("Parsing jar file: %s", jarFilePath);
-    String jarUri = "jar:file:" + jarFilePath.toAbsolutePath().normalize().toString();
-    FileSystem fs = FileSystems.newFileSystem(URI.create(jarUri), ImmutableMap.of());
-    Path jarRootPath = fs.getPath("/");
-    return new ClassModuleBuilder(jarRootPath);
+  public ClassModuleBuilder(Module module) {
+    this.parser = new ClassFileParser();
+    this.classInfoConverter = new ClassInfoConverter();
+    this.module = module;
+    this.classEntityMap = new HashMap<>();
+    this.parsedInnerClassFileMap = ArrayListMultimap.create();
   }
 
-  public ClassModuleBuilder(Path rootDirectory) {
-    this.rootDirectory = rootDirectory;
-  }
-
-  public Module createModule() {
-    try {
-      return processDirectory(rootDirectory);
-    } catch (IOException e) {
-      throw new RuntimeException(
-          "Failed to list root directory for creating Module for .class files, root directory is "
-              + rootDirectory,
-          e);
-    }
-  }
-
-  @VisibleForTesting
-  Module processDirectory(Path rootDirectory) throws IOException {
-    module = new Module();
-    classEntityMap = new HashMap<>();
-    parsedInnerClassFileMap = ArrayListMultimap.create();
-    Deque<Path> dirs = new LinkedList<>();
-    dirs.add(rootDirectory);
-    while (!dirs.isEmpty()) {
-      Path dir = dirs.removeFirst();
-      try (DirectoryStream<Path> stream = Files.newDirectoryStream(dir)) {
-        for (Path path : stream) {
-          try {
-            if (Files.isRegularFile(path) && path.toString().endsWith(".class")) {
-              processClassFile(path);
-            } else if (Files.isDirectory(path, LinkOption.NOFOLLOW_LINKS)) {
-              dirs.addLast(path);
-            }
-          } catch (Throwable t) {
-            logger.warning(t, "Failed to process .class file: %s", path);
-          }
-        }
-      }
-    }
-    return module;
-  }
-
-  private void processClassFile(Path classFilePath) throws IOException {
+  public void processClassFile(Path classFilePath) throws IOException {
     InputStream input = Files.newInputStream(classFilePath);
     ClassFileInfo classFileInfo = parser.parse(classFilePath);
     ParsedClassFile parsedClassFile = classInfoConverter.convert(classFileInfo);

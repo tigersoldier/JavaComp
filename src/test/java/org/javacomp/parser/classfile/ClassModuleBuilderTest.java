@@ -2,12 +2,17 @@ package org.javacomp.parser.classfile;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Iterator;
 import java.util.Optional;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
+import org.javacomp.file.PathUtils;
 import org.javacomp.model.ClassEntity;
 import org.javacomp.model.Entity;
 import org.javacomp.model.MethodEntity;
@@ -28,24 +33,35 @@ public class ClassModuleBuilderTest {
   private static final String TEST_DATA_DIR =
       "src/test/java/org/javacomp/parser/classfile/testdata/";
 
-  @Test
-  public void createModuleFromJarFile() throws Exception {
-    Path jarPath = Paths.get(TEST_DATA_DIR, "testdata.jar");
-    Module module = ClassModuleBuilder.createForJarFile(jarPath).createModule();
-    assertModuleIsExpected(module);
-  }
+  private static final Predicate<Path> DO_NOT_IGNORE_PATH = path -> false;
+
+  private final Module module = new Module();
+  private final ClassModuleBuilder classModuleBuilder = new ClassModuleBuilder(module);
+  private final ImmutableMap<String, Consumer<Path>> extensionHandlers =
+      ImmutableMap.<String, Consumer<Path>>of(
+          ".class",
+          path -> {
+            try {
+              classModuleBuilder.processClassFile(path);
+            } catch (Throwable t) {
+              throw Throwables.propagate(t);
+            }
+          });
 
   @Test
-  public void createModuleFromDirectory() throws Exception {
-    Path rootPath = Paths.get(TEST_DATA_DIR);
-    Module module = new ClassModuleBuilder(rootPath).createModule();
+  public void createModuleFromJarFile() throws Exception {
+    Path jarPath = PathUtils.getRootPathForJarFile(Paths.get(TEST_DATA_DIR, "testdata.jar"));
+    PathUtils.walkDirectory(jarPath, extensionHandlers, DO_NOT_IGNORE_PATH);
     assertModuleIsExpected(module);
   }
 
   @Test
   public void addInnerClassesFirst() throws Exception {
     Path rootPath = Paths.get(TEST_DATA_DIR);
-    Module module = new ClassModuleBuilder(rootPath).processDirectory(rootPath);
+    Path innerClassFilePath =
+        Paths.get(TEST_DATA_DIR, "TestClass$InnerClass$InnerClass2$InnerClass3.class");
+    classModuleBuilder.processClassFile(innerClassFilePath);
+    PathUtils.walkDirectory(rootPath, extensionHandlers, path -> innerClassFilePath.equals(path));
     assertModuleIsExpected(module);
   }
 

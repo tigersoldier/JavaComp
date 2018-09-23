@@ -15,6 +15,7 @@ java_library(
     name = "file",
     srcs = PUBLIC_INTERFACES,
     deps = [
+        "//src/main/java/org/javacomp/logging",
         "//third_party:auto_value",
         "//third_party:guava",
     ],

@@ -2,11 +2,11 @@ package org.javacomp.project;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Range;
 import com.sun.source.tree.LineMap;
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URI;
 import java.nio.file.Files;
@@ -21,12 +21,13 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Stream;
+import java.util.function.Consumer;
 import org.javacomp.completion.CompletionCandidate;
 import org.javacomp.completion.Completor;
 import org.javacomp.completion.TextEdits;
 import org.javacomp.file.FileChangeListener;
 import org.javacomp.file.FileManager;
+import org.javacomp.file.PathUtils;
 import org.javacomp.logging.JLogger;
 import org.javacomp.model.Entity;
 import org.javacomp.model.FileScope;
@@ -50,6 +51,7 @@ public class Project {
 
   private static final String JAVA_EXTENSION = ".java";
   private static final String JAR_EXTENSION = ".jar";
+  private static final String CLASS_EXTENSION = ".class";
   private static final String JDK_RESOURCE_PATH = "/resources/jdk/index.json";
 
   private final Module projectModule;
@@ -118,34 +120,17 @@ public class Project {
   }
 
   private void walkDirectory(Path rootDir) {
-    Deque<Path> queue = new LinkedList<>();
-    queue.add(rootDir);
-    while (!queue.isEmpty()) {
-      Path baseDir = queue.remove();
-      try (Stream<Path> entryStream = Files.list(baseDir)) {
-        entryStream.forEach(
-            entryPath -> {
-              if (fileManager.shouldIgnorePath(entryPath)) {
-                logger.info("Ignoring path %s", entryPath);
-                return;
-              }
-              if (Files.isDirectory(entryPath)) {
-                queue.add(entryPath);
-              } else if (!fileManager.shouldIgnorePath(entryPath)) {
-                if (isJavaFile(entryPath)) {
-                  addOrUpdateFile(entryPath);
-                } else if (isJarFile(entryPath)) {
-                  addJarModule(entryPath);
-                }
-              }
-            });
-      } catch (IOException e) {
-        throw new RuntimeException(e);
-      }
-    }
+    ImmutableMap<String, Consumer<Path>> handlers =
+        ImmutableMap.<String, Consumer<Path>>of(
+            JAVA_EXTENSION,
+            path -> addOrUpdateFile(projectModule, path),
+            JAR_EXTENSION,
+            path -> addJarModule(path));
+
+    PathUtils.walkDirectory(rootDir, handlers, path -> fileManager.shouldIgnorePath(path));
   }
 
-  private synchronized void addOrUpdateFile(Path filePath) {
+  private synchronized void addOrUpdateFile(Module module, Path filePath) {
     try {
       Optional<CharSequence> optionalContent = fileManager.getFileContent(filePath);
       if (!optionalContent.isPresent()) {
@@ -166,7 +151,7 @@ public class Project {
       if (adjustedLineMap != null) {
         fileScope.setAdjustedLineMap(adjustedLineMap);
       }
-      projectModule.addOrReplaceFileScope(fileScope);
+      module.addOrReplaceFileScope(fileScope);
     } catch (Throwable e) {
       logger.warning(e, "Failed to process file %s", filePath);
     }
@@ -175,7 +160,21 @@ public class Project {
   private synchronized void addJarModule(Path filePath) {
     logger.fine("Adding JAR module for %s", filePath);
     try {
-      Module jarModule = ClassModuleBuilder.createForJarFile(filePath).createModule();
+      Module jarModule = new Module();
+      ClassModuleBuilder classModuleBuilder = new ClassModuleBuilder(jarModule);
+      Path rootJarPath = PathUtils.getRootPathForJarFile(filePath);
+      ImmutableMap<String, Consumer<Path>> handlers =
+          ImmutableMap.<String, Consumer<Path>>of(
+              JAVA_EXTENSION, path -> addOrUpdateFile(jarModule, path),
+              CLASS_EXTENSION,
+                  path -> {
+                    try {
+                      classModuleBuilder.processClassFile(path);
+                    } catch (Throwable t) {
+                      logger.warning(t, "Failed to process .class file: %s", path);
+                    }
+                  });
+      PathUtils.walkDirectory(rootJarPath, handlers, /* ignorePathPredicate= */ path -> false);
       projectModule.addDependingModule(jarModule);
     } catch (Throwable t) {
       logger.warning(t, "Failed to create module for JAR file %s", filePath);
@@ -195,7 +194,7 @@ public class Project {
       Path filePath, int line, int column) {
     if (!filePath.equals(lastCompletedFile)) {
       lastCompletedFile = filePath;
-      addOrUpdateFile(filePath);
+      addOrUpdateFile(projectModule, filePath);
     }
     return completor.getCompletionCandidates(projectModule, filePath, line, column);
   }
@@ -252,10 +251,6 @@ public class Project {
     return filePath.toString().endsWith(JAVA_EXTENSION) && !Files.isDirectory(filePath);
   }
 
-  private static boolean isJarFile(Path filePath) {
-    return filePath.toString().endsWith(JAR_EXTENSION) && !Files.isDirectory(filePath);
-  }
-
   private class ProjectFileChangeListener implements FileChangeListener {
     @Override
     public void onFileChange(Path filePath, WatchEvent.Kind<?> changeKind) {
@@ -263,7 +258,7 @@ public class Project {
       if (changeKind == StandardWatchEventKinds.ENTRY_CREATE
           || changeKind == StandardWatchEventKinds.ENTRY_MODIFY) {
         if (isJavaFile(filePath)) {
-          addOrUpdateFile(filePath);
+          addOrUpdateFile(projectModule, filePath);
         }
       } else if (changeKind == StandardWatchEventKinds.ENTRY_DELETE) {
         // Do not check if the file is a java source file here. Deleted file is not a regular file.

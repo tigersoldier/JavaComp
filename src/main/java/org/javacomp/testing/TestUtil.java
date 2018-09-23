@@ -1,7 +1,6 @@
 package org.javacomp.testing;
 
 import static com.google.common.truth.Truth.assertThat;
-import static com.google.common.truth.Truth.assertWithMessage;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.base.Joiner;
@@ -99,7 +98,9 @@ public class TestUtil {
     for (String qualifier : qualifiers) {
       currentQualifiers.add(qualifier);
       Collection<Entity> entities = currentScope.getMemberEntities().get(qualifier);
-      assertWithMessage(QUALIFIER_JOINER.join(currentQualifiers)).that(entities).isNotEmpty();
+      assertThat(entities)
+          .named("Entities for '%s'", QUALIFIER_JOINER.join(currentQualifiers))
+          .isNotEmpty();
       entity = Iterables.getFirst(entities, null);
       currentScope = entity.getScope();
     }
