@@ -51,6 +51,7 @@ public class Project {
 
   private static final String JAVA_EXTENSION = ".java";
   private static final String JAR_EXTENSION = ".jar";
+  private static final String SRCJAR_EXTENSION = ".srcjar";
   private static final String CLASS_EXTENSION = ".class";
   private static final String JDK_RESOURCE_PATH = "/resources/jdk/index.json";
 
@@ -125,6 +126,8 @@ public class Project {
             JAVA_EXTENSION,
             path -> addOrUpdateFile(projectModule, path),
             JAR_EXTENSION,
+            path -> addJarModule(path),
+            SRCJAR_EXTENSION,
             path -> addJarModule(path));
 
     PathUtils.walkDirectory(rootDir, handlers, path -> fileManager.shouldIgnorePath(path));

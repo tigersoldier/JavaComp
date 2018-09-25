@@ -55,11 +55,13 @@ public class Indexer {
               ".java",
               subpath -> addJavaFile(subpath, project.getModule(), fileManager));
       if (Files.isDirectory(path)) {
+        System.out.println("Indexing directory: " + inputPath.toString());
         PathUtils.walkDirectory(
             path,
             handlers,
             /* ignorePredicate= */ subpath -> fileManager.shouldIgnorePath(subpath));
-      } else if (inputPath.endsWith(".jar")) {
+      } else if (inputPath.endsWith(".jar") || inputPath.endsWith(".srcjar")) {
+        System.out.println("Indexing JAR file: " + inputPath.toString());
         try {
           PathUtils.walkDirectory(
               PathUtils.getRootPathForJarFile(path),
@@ -76,6 +78,7 @@ public class Indexer {
     if (withJdk) {
       project.loadJdkModule();
     }
+    System.out.println("Writing index file to " + outputPath);
     new IndexStore().writeModuleToFile(project.getModule(), Paths.get(outputPath));
   }
 

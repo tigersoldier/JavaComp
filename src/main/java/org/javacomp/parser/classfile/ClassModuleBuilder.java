@@ -4,7 +4,6 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Range;
-import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -50,7 +49,7 @@ public class ClassModuleBuilder {
   }
 
   public void processClassFile(Path classFilePath) {
-    try{
+    try {
       InputStream input = Files.newInputStream(classFilePath);
       ClassFileInfo classFileInfo = parser.parse(classFilePath);
       ParsedClassFile parsedClassFile = classInfoConverter.convert(classFileInfo);
@@ -74,7 +73,8 @@ public class ClassModuleBuilder {
         addClassEntity(parsedClassFile.getClassBinaryName(), classEntity);
       } else {
         // It's an inner class and its outer class is not processed yet.
-        parsedInnerClassFileMap.put(parsedClassFile.getOuterClassBinaryName().get(), parsedClassFile);
+        parsedInnerClassFileMap.put(
+            parsedClassFile.getOuterClassBinaryName().get(), parsedClassFile);
       }
     } catch (Throwable t) {
       throw new RuntimeException("Unable to process class file " + classFilePath, t);
