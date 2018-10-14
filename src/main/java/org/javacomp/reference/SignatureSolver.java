@@ -16,8 +16,8 @@ import java.util.Set;
 import org.javacomp.logging.JLogger;
 import org.javacomp.model.Entity;
 import org.javacomp.model.MethodEntity;
-import org.javacomp.model.Module;
-import org.javacomp.parser.PositionContext;
+import org.javacomp.project.ModuleManager;
+import org.javacomp.project.PositionContext;
 import org.javacomp.typesolver.ExpressionSolver;
 import org.javacomp.typesolver.MemberSolver;
 import org.javacomp.typesolver.OverloadSolver;
@@ -42,15 +42,17 @@ public class SignatureSolver {
   }
 
   /**
-   * @param module the module of the project
+   * @param moduleManager the module manager of the project
    * @param filePath normalized path of the file to be completed
    * @param line 0-based line number of the completion point
    * @param column 0-based character offset from the beginning of the line to the completion point
    */
-  public MethodSignatures getMethodSignatures(Module module, Path filePath, int line, int column) {
+  public MethodSignatures getMethodSignatures(
+      ModuleManager moduleManager, Path filePath, int line, int column) {
     Optional<PositionContext> positionContext =
-        PositionContext.createForPosition(module, filePath, line, column);
+        PositionContext.createForPosition(moduleManager, filePath, line, column);
 
+    logger.severe("[DEBUG] getMethodSignature: %s %s %s", moduleManager, filePath, positionContext);
     if (!positionContext.isPresent()) {
       return emptySignature();
     }
@@ -86,6 +88,7 @@ public class SignatureSolver {
 
   private MethodSignatures getMethodSignatures(
       PositionContext positionContext, MethodInvocationTree method, Tree childNode) {
+    logger.severe("[DEBUG] getMethodSignature: %s %s %s", positionContext, method, childNode);
     List<MethodEntity> methods =
         expressionSolver
             .solveDefinitions(

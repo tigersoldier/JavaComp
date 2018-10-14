@@ -59,7 +59,7 @@ public class SimpleFileManager implements FileManager {
 
   @Override
   public void closeFileForSnapshot(URI fileUri) {
-    // No-op
+    snapshots.remove(Paths.get(fileUri));
   }
 
   @Override

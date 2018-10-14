@@ -10,6 +10,8 @@ java_library(
         "//src/main/java/org/javacomp/logging",
         "//src/main/java/org/javacomp/model",
         "//src/main/java/org/javacomp/parser",
+        "//src/main/java/org/javacomp/project:modulemanager",
+        "//src/main/java/org/javacomp/project:positioncontext",
         "//src/main/java/org/javacomp/typesolver",
         "//third_party:auto_value",
         "//third_party:guava",

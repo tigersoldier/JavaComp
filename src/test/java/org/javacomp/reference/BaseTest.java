@@ -7,7 +7,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Range;
 import com.sun.source.tree.LineMap;
-import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -15,15 +14,12 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.function.BiConsumer;
 import org.javacomp.file.FileManager;
-import org.javacomp.file.SimpleFileManager;
 import org.javacomp.file.TextPosition;
 import org.javacomp.model.FileScope;
 import org.javacomp.model.MethodEntity;
 import org.javacomp.model.Module;
 import org.javacomp.model.VariableEntity;
-import org.javacomp.options.IndexOptions;
-import org.javacomp.parser.AstScanner;
-import org.javacomp.parser.ParserContext;
+import org.javacomp.project.SimpleModuleManager;
 import org.javacomp.testing.TestUtil;
 import org.junit.Before;
 
@@ -48,7 +44,8 @@ public class BaseTest {
   protected static final String OTHER_PACKAGE_CLASS_FULL_NAME =
       "org.javacomp.reference.testdata.other.OtherPackageClass";
 
-  protected final FileManager fileManager = new SimpleFileManager();
+  protected final SimpleModuleManager moduleManager = new SimpleModuleManager();
+  protected final FileManager fileManager = moduleManager.getFileManager();
 
   protected Module module;
   protected VariableEntity innerAParam;
@@ -57,18 +54,13 @@ public class BaseTest {
 
   @Before
   public final void parseJavaFiles() throws Exception {
-    ParserContext parserContext = new ParserContext();
-    module = new Module();
     for (String filename : ALL_FILES) {
       String content = getFileContent(filename);
-      JCCompilationUnit compilationUnit = parserContext.parse(filename, content);
-      FileScope fileScope =
-          new AstScanner(IndexOptions.FULL_INDEX_BUILDER.build())
-              .startScan(compilationUnit, filename, content);
-      module.addOrReplaceFileScope(fileScope);
-      fileManager.openFileForSnapshot(Paths.get(filename).toUri(), content);
+      Path path = Paths.get(filename);
+      fileManager.openFileForSnapshot(path.toUri(), content);
+      moduleManager.addOrUpdateFile(Paths.get(filename), /* fixContentForParsing= */ false);
     }
-
+    module = moduleManager.getModule();
     MethodEntity testMethod =
         (MethodEntity) TestUtil.lookupEntity(TEST_CLASS_FULL_NAME + ".testMethod", module);
     innerAParam =

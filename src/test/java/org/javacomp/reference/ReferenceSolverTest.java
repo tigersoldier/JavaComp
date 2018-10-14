@@ -204,7 +204,7 @@ public class ReferenceSolverTest extends BaseTest {
     Multimap<FileScope, Range<Integer>> expectedLocations = builder.build();
     Multimap<FileScope, Range<Integer>> actualLocations =
         referenceSolver.findReferences(
-            module, Paths.get(filename), pos.getLine(), pos.getCharacter());
+            moduleManager, Paths.get(filename), pos.getLine(), pos.getCharacter());
     assertThat(actualLocations)
         .named(
             String.format(

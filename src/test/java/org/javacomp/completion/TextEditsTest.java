@@ -3,11 +3,12 @@ package org.javacomp.completion;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.truth.Truth8;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Optional;
 import org.javacomp.file.FileSnapshot;
-import org.javacomp.model.Module;
+import org.javacomp.project.SimpleModuleManager;
 import org.javacomp.protocol.TextEdit;
-import org.javacomp.testing.TestUtil;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -76,10 +77,13 @@ public class TextEditsTest {
   }
 
   private void assertImportClass(String original, String importClassName, String expectedResult) {
-    Module module = TestUtil.parseContent(original);
+    SimpleModuleManager moduleManager = new SimpleModuleManager();
+    Path dummyPath = Paths.get("Foo.java");
+    moduleManager.getFileManager().openFileForSnapshot(dummyPath.toUri(), original);
+    moduleManager.addOrUpdateFile(dummyPath, /* fixContentForParsing= */ false);
     TextEdits textEdits = new TextEdits();
     Optional<TextEdit> textEdit =
-        textEdits.forImportClass(module, TestUtil.DUMMY_PATH, importClassName);
+        textEdits.forImportClass(moduleManager, dummyPath, importClassName);
     Truth8.assertThat(textEdit).isPresent();
 
     FileSnapshot snapshot = FileSnapshot.createFromContent(original);

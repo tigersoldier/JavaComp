@@ -222,7 +222,10 @@ public class DefinitionSolverTest extends BaseTest {
     TextPosition pos = locateSymbol(symbolLocator);
     assertThat(
             definitionSolver.getDefinitionEntities(
-                module, Paths.get(symbolLocator.filename), pos.getLine(), pos.getCharacter()))
+                moduleManager,
+                Paths.get(symbolLocator.filename),
+                pos.getLine(),
+                pos.getCharacter()))
         .named(symbolLocator.toString())
         .containsExactly(expected);
   }

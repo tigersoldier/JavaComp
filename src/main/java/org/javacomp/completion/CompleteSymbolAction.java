@@ -17,7 +17,7 @@ import org.javacomp.model.MethodEntity;
 import org.javacomp.model.Module;
 import org.javacomp.model.PackageScope;
 import org.javacomp.model.VariableEntity;
-import org.javacomp.parser.PositionContext;
+import org.javacomp.project.PositionContext;
 import org.javacomp.typesolver.ExpressionSolver;
 import org.javacomp.typesolver.TypeSolver;
 

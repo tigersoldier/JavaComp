@@ -2,10 +2,8 @@ package org.javacomp.project;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Range;
-import com.sun.source.tree.LineMap;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.URI;
@@ -15,29 +13,18 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardWatchEventKinds;
 import java.nio.file.WatchEvent;
-import java.util.Deque;
-import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
-import java.util.function.Consumer;
 import org.javacomp.completion.CompletionCandidate;
 import org.javacomp.completion.Completor;
 import org.javacomp.completion.TextEdits;
 import org.javacomp.file.FileChangeListener;
 import org.javacomp.file.FileManager;
-import org.javacomp.file.PathUtils;
 import org.javacomp.logging.JLogger;
 import org.javacomp.model.Entity;
 import org.javacomp.model.FileScope;
 import org.javacomp.model.Module;
 import org.javacomp.options.IndexOptions;
-import org.javacomp.parser.AstScanner;
-import org.javacomp.parser.FileContentFixer;
-import org.javacomp.parser.FileContentFixer.FixedContent;
-import org.javacomp.parser.ParserContext;
-import org.javacomp.parser.classfile.ClassModuleBuilder;
 import org.javacomp.protocol.TextEdit;
 import org.javacomp.reference.DefinitionSolver;
 import org.javacomp.reference.MethodSignatures;
@@ -49,35 +36,28 @@ import org.javacomp.storage.IndexStore;
 public class Project {
   private static final JLogger logger = JLogger.createForEnclosingClass();
 
-  private static final String JAVA_EXTENSION = ".java";
-  private static final String JAR_EXTENSION = ".jar";
-  private static final String SRCJAR_EXTENSION = ".srcjar";
-  private static final String CLASS_EXTENSION = ".class";
   private static final String JDK_RESOURCE_PATH = "/resources/jdk/index.json";
+  private static final String JAVA_EXTENSION = ".java";
 
-  private final Module projectModule;
-  private final IndexOptions indexOptions;
+  private final FileManager fileManager;
   private final Completor completor;
   private final DefinitionSolver definitionSolver;
   private final SignatureSolver signatureSolver;
-  private final FileManager fileManager;
-  private final URI rootUri;
-  private final ParserContext parserContext;
-  private final FileContentFixer fileContentFixer;
+  private final ModuleManager moduleManager;
   private Path lastCompletedFile = null;
 
   private boolean initialized;
 
   public Project(FileManager fileManager, URI rootUri, IndexOptions indexOptions) {
-    projectModule = new Module();
+    this(new FileSystemModuleManager(fileManager, Paths.get(rootUri), indexOptions), fileManager);
+  }
+
+  public Project(ModuleManager moduleManager, FileManager fileManager) {
     completor = new Completor(fileManager);
-    parserContext = new ParserContext();
-    fileContentFixer = new FileContentFixer(parserContext);
-    this.indexOptions = indexOptions;
     this.fileManager = fileManager;
-    this.rootUri = rootUri;
     this.definitionSolver = new DefinitionSolver();
     this.signatureSolver = new SignatureSolver();
+    this.moduleManager = moduleManager;
   }
 
   public synchronized void initialize() {
@@ -88,8 +68,7 @@ public class Project {
     initialized = true;
 
     fileManager.setFileChangeListener(new ProjectFileChangeListener());
-
-    walkDirectory(Paths.get(rootUri));
+    moduleManager.initialize();
   }
 
   public synchronized void loadJdkModule() {
@@ -97,7 +76,7 @@ public class Project {
     try (BufferedReader reader =
         new BufferedReader(
             new InputStreamReader(this.getClass().getResourceAsStream(JDK_RESOURCE_PATH), UTF_8))) {
-      projectModule.addDependingModule(new IndexStore().readModule(reader));
+      moduleManager.addDependingModule(new IndexStore().readModule(reader));
       logger.info("JDK module loaded");
     } catch (Throwable t) {
       logger.warning(t, "Unable to load JDK module");
@@ -111,7 +90,7 @@ public class Project {
       Module module =
           indexStore.readModuleFromFile(
               fileManager.getProjectRootPath().resolve(Paths.get(typeIndexFile)));
-      projectModule.addDependingModule(module);
+      moduleManager.addDependingModule(module);
       logger.info("Loaded type index file %s", typeIndexFile);
     } catch (NoSuchFileException nsfe) {
       logger.warning("Unable to load type index file %s: file doesn't exist", typeIndexFile);
@@ -120,72 +99,10 @@ public class Project {
     }
   }
 
-  private void walkDirectory(Path rootDir) {
-    ImmutableMap<String, Consumer<Path>> handlers =
-        ImmutableMap.<String, Consumer<Path>>of(
-            JAVA_EXTENSION,
-            path -> addOrUpdateFile(projectModule, path),
-            JAR_EXTENSION,
-            path -> addJarModule(path),
-            SRCJAR_EXTENSION,
-            path -> addJarModule(path));
-
-    PathUtils.walkDirectory(rootDir, handlers, path -> fileManager.shouldIgnorePath(path));
-  }
-
-  private synchronized void addOrUpdateFile(Module module, Path filePath) {
-    try {
-      Optional<CharSequence> optionalContent = fileManager.getFileContent(filePath);
-      if (!optionalContent.isPresent()) {
-        return;
-      }
-      CharSequence content = optionalContent.get();
-      LineMap adjustedLineMap = null;
-
-      if (lastCompletedFile != null && lastCompletedFile.equals(filePath)) {
-        FixedContent fixedContent = fileContentFixer.fixFileContent(content);
-        content = fixedContent.getContent();
-        adjustedLineMap = fixedContent.getAdjustedLineMap();
-      }
-      FileScope fileScope =
-          new AstScanner(indexOptions)
-              .startScan(
-                  parserContext.parse(filePath.toString(), content), filePath.toString(), content);
-      if (adjustedLineMap != null) {
-        fileScope.setAdjustedLineMap(adjustedLineMap);
-      }
-      module.addOrReplaceFileScope(fileScope);
-    } catch (Throwable e) {
-      logger.warning(e, "Failed to process file %s", filePath);
-    }
-  }
-
-  private synchronized void addJarModule(Path filePath) {
-    logger.fine("Adding JAR module for %s", filePath);
-    try {
-      Module jarModule = new Module();
-      ClassModuleBuilder classModuleBuilder = new ClassModuleBuilder(jarModule);
-      Path rootJarPath = PathUtils.getRootPathForJarFile(filePath);
-      ImmutableMap<String, Consumer<Path>> handlers =
-          ImmutableMap.<String, Consumer<Path>>of(
-              JAVA_EXTENSION, path -> addOrUpdateFile(jarModule, path),
-              CLASS_EXTENSION,
-                  path -> {
-                    try {
-                      classModuleBuilder.processClassFile(path);
-                    } catch (Throwable t) {
-                      logger.warning(t, "Failed to process .class file: %s", path);
-                    }
-                  });
-      PathUtils.walkDirectory(rootJarPath, handlers, /* ignorePathPredicate= */ path -> false);
-      projectModule.addDependingModule(jarModule);
-    } catch (Throwable t) {
-      logger.warning(t, "Failed to create module for JAR file %s", filePath);
-    }
-  }
-
-  private void removeFile(Path filePath) {
-    projectModule.removeFile(filePath);
+  private synchronized void addOrUpdateFile(Path filePath) {
+    // Only fix content for files that are under completion.
+    boolean fixContentForParsing = lastCompletedFile != null && lastCompletedFile.equals(filePath);
+    moduleManager.addOrUpdateFile(filePath, fixContentForParsing);
   }
 
   /**
@@ -197,9 +114,9 @@ public class Project {
       Path filePath, int line, int column) {
     if (!filePath.equals(lastCompletedFile)) {
       lastCompletedFile = filePath;
-      addOrUpdateFile(projectModule, filePath);
+      addOrUpdateFile(filePath);
     }
-    return completor.getCompletionCandidates(projectModule, filePath, line, column);
+    return completor.getCompletionCandidates(moduleManager, filePath, line, column);
   }
 
   /**
@@ -208,44 +125,24 @@ public class Project {
    * @param column 0-based character offset of the line
    */
   public synchronized List<? extends Entity> findDefinitions(Path filePath, int line, int column) {
-    return definitionSolver.getDefinitionEntities(projectModule, filePath, line, column);
+    return definitionSolver.getDefinitionEntities(moduleManager, filePath, line, column);
   }
 
   public synchronized MethodSignatures findMethodSignatures(Path filePath, int line, int column) {
-    return signatureSolver.getMethodSignatures(projectModule, filePath, line, column);
+    return signatureSolver.getMethodSignatures(moduleManager, filePath, line, column);
   }
 
   public synchronized TextEdit textEditForImport(Path filePath, String fullClassName) {
-    return new TextEdits().forImportClass(projectModule, filePath, fullClassName).orElse(null);
+    return new TextEdits().forImportClass(moduleManager, filePath, fullClassName).orElse(null);
   }
 
-  public synchronized Optional<FileScope> findFileScope(Path filePath) {
-    Deque<Module> queue = new LinkedList<>();
-    Set<Module> visitedModules = new HashSet<>();
-    queue.addLast(getModule());
-    while (!queue.isEmpty()) {
-      Module module = queue.removeFirst();
-      Optional<FileScope> fileScope = module.getFileScope(filePath.toString());
-      if (fileScope.isPresent()) {
-        return fileScope;
-      }
-      for (Module dependency : module.getDependingModules()) {
-        if (!visitedModules.contains(module)) {
-          visitedModules.add(module);
-          queue.addLast(module);
-        }
-      }
-    }
-    return Optional.empty();
+  public synchronized Optional<FileItem> getFileItem(Path filePath) {
+    return moduleManager.getFileItem(filePath);
   }
 
   public synchronized Multimap<FileScope, Range<Integer>> findReferencesAtPosition(
       Path filePath, int line, int column) {
-    return new ReferenceSolver(fileManager).findReferences(getModule(), filePath, line, column);
-  }
-
-  public Module getModule() {
-    return projectModule;
+    return new ReferenceSolver(fileManager).findReferences(moduleManager, filePath, line, column);
   }
 
   private static boolean isJavaFile(Path filePath) {
@@ -261,12 +158,12 @@ public class Project {
       if (changeKind == StandardWatchEventKinds.ENTRY_CREATE
           || changeKind == StandardWatchEventKinds.ENTRY_MODIFY) {
         if (isJavaFile(filePath)) {
-          addOrUpdateFile(projectModule, filePath);
+          addOrUpdateFile(filePath);
         }
       } else if (changeKind == StandardWatchEventKinds.ENTRY_DELETE) {
         // Do not check if the file is a java source file here. Deleted file is not a regular file.
         // The module handles nonexistence file correctly.
-        removeFile(filePath);
+        moduleManager.removeFile(filePath);
       }
     }
   }

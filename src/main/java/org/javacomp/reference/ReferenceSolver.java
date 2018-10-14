@@ -20,7 +20,8 @@ import org.javacomp.model.FileScope;
 import org.javacomp.model.MethodEntity;
 import org.javacomp.model.Module;
 import org.javacomp.parser.AdjustedLineMap;
-import org.javacomp.parser.PositionContext;
+import org.javacomp.project.ModuleManager;
+import org.javacomp.project.PositionContext;
 
 /** Finds references of a symbol. */
 public class ReferenceSolver {
@@ -37,9 +38,9 @@ public class ReferenceSolver {
   }
 
   public Multimap<FileScope, Range<Integer>> findReferences(
-      Module module, Path filePath, int line, int column) {
+      ModuleManager moduleManager, Path filePath, int line, int column) {
     Optional<PositionContext> positionContext =
-        PositionContext.createForPosition(module, filePath, line, column);
+        PositionContext.createForPosition(moduleManager, filePath, line, column);
     if (!positionContext.isPresent()) {
       return ImmutableMultimap.of();
     }
@@ -47,7 +48,8 @@ public class ReferenceSolver {
     if (!entity.isPresent()) {
       // Not at any definition of entity. Try to get definition of the symbol at point.
       List<? extends Entity> definitions =
-          new DefinitionSolver().getDefinitionEntities(module, positionContext.get());
+          new DefinitionSolver()
+              .getDefinitionEntities(positionContext.get().getModule(), positionContext.get());
       if (!definitions.isEmpty()) {
         entity = Optional.of(definitions.get(0));
       }
@@ -55,7 +57,8 @@ public class ReferenceSolver {
     if (!entity.isPresent()) {
       return ImmutableMultimap.of();
     }
-    return findReferencesForEntity(module, entity.get(), positionContext.get());
+    return findReferencesForEntity(
+        positionContext.get().getModule(), entity.get(), positionContext.get());
   }
 
   /** Finds the {@link Entity} whose name is defined a given position. */

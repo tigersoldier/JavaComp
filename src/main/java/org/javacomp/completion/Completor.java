@@ -13,9 +13,9 @@ import java.util.Optional;
 import org.javacomp.file.FileManager;
 import org.javacomp.logging.JLogger;
 import org.javacomp.model.FileScope;
-import org.javacomp.model.Module;
 import org.javacomp.parser.LineMapUtil;
-import org.javacomp.parser.PositionContext;
+import org.javacomp.project.ModuleManager;
+import org.javacomp.project.PositionContext;
 import org.javacomp.typesolver.ExpressionSolver;
 import org.javacomp.typesolver.MemberSolver;
 import org.javacomp.typesolver.OverloadSolver;
@@ -47,7 +47,7 @@ public class Completor {
    * @param column 0-based character offset from the beginning of the line to the completion point
    */
   public List<CompletionCandidate> getCompletionCandidates(
-      Module module, Path filePath, int line, int column) {
+      ModuleManager moduleManager, Path filePath, int line, int column) {
     // PositionContext gets the tree path whose leaf node includes the position
     // (position < node's endPosition). However, for completions, we want the leaf node either
     // includes the position, or just before the position (position == node's endPosition).
@@ -55,7 +55,7 @@ public class Completor {
     // adjustedPosition == node's endPosition - 1 if the node is just before the actual position.
     int contextColumn = column > 0 ? column - 1 : 0;
     Optional<PositionContext> positionContext =
-        PositionContext.createForPosition(module, filePath, line, contextColumn);
+        PositionContext.createForPosition(moduleManager, filePath, line, contextColumn);
 
     if (!positionContext.isPresent()) {
       return ImmutableList.of();

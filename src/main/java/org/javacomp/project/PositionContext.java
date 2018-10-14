@@ -1,4 +1,4 @@
-package org.javacomp.parser;
+package org.javacomp.project;
 
 import com.google.auto.value.AutoValue;
 import com.sun.source.tree.ErroneousTree;
@@ -15,6 +15,8 @@ import org.javacomp.logging.JLogger;
 import org.javacomp.model.EntityScope;
 import org.javacomp.model.FileScope;
 import org.javacomp.model.Module;
+import org.javacomp.parser.LineMapUtil;
+import org.javacomp.parser.TreePathFormatter;
 
 /** All information inferred from a given cursor position of a file. */
 @AutoValue
@@ -39,6 +41,15 @@ public abstract class PositionContext {
   public abstract int getPosition();
 
   public abstract EndPosTable getEndPosTable();
+
+  public static Optional<PositionContext> createForPosition(
+      ModuleManager moduleManger, Path filePath, int line, int column) {
+    Optional<FileItem> fileItem = moduleManger.getFileItem(filePath);
+    if (!fileItem.isPresent()) {
+      return Optional.empty();
+    }
+    return createForPosition(fileItem.get().getModule(), filePath, line, column);
+  }
 
   /**
    * Creates a {@link PositionContext} instance based on the given file path and position.

@@ -1,7 +1,7 @@
 package org.javacomp.completion;
 
 import com.google.common.collect.ImmutableList;
-import org.javacomp.parser.PositionContext;
+import org.javacomp.project.PositionContext;
 
 /** Action to perform the requested completion. */
 interface CompletionAction {

@@ -25,7 +25,8 @@ import org.javacomp.model.Module;
 import org.javacomp.model.SolvedEntityType;
 import org.javacomp.model.SolvedType;
 import org.javacomp.model.VariableEntity;
-import org.javacomp.parser.PositionContext;
+import org.javacomp.project.ModuleManager;
+import org.javacomp.project.PositionContext;
 import org.javacomp.typesolver.ExpressionSolver;
 import org.javacomp.typesolver.MemberSolver;
 import org.javacomp.typesolver.OverloadSolver;
@@ -59,21 +60,21 @@ public class DefinitionSolver {
   }
 
   /**
-   * @param module the module of the project
+   * @param moduleManager the module manager of the project
    * @param filePath normalized path of the file to be completed
    * @param line 0-based line number of the completion point
    * @param column 0-based character offset from the beginning of the line to the completion point
    */
   public List<? extends Entity> getDefinitionEntities(
-      Module module, Path filePath, int line, int column) {
+      ModuleManager moduleManager, Path filePath, int line, int column) {
     Optional<PositionContext> positionContext =
-        PositionContext.createForPosition(module, filePath, line, column);
+        PositionContext.createForPosition(moduleManager, filePath, line, column);
 
     if (!positionContext.isPresent()) {
       return ImmutableList.of();
     }
 
-    return getDefinitionEntities(module, positionContext.get());
+    return getDefinitionEntities(positionContext.get().getModule(), positionContext.get());
   }
 
   List<? extends Entity> getDefinitionEntities(Module module, PositionContext positionContext) {

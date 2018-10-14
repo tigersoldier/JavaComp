@@ -1,7 +1,6 @@
 package org.javacomp.completion;
 
 import static com.google.common.truth.Truth.assertThat;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.HashMultimap;
@@ -10,8 +9,6 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;
 import com.sun.source.tree.LineMap;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -21,10 +18,9 @@ import org.javacomp.model.FileScope;
 import org.javacomp.model.Module;
 import org.javacomp.options.IndexOptions;
 import org.javacomp.parser.AstScanner;
-import org.javacomp.parser.FileContentFixer;
-import org.javacomp.parser.FileContentFixer.FixedContent;
 import org.javacomp.parser.ParserContext;
-import org.javacomp.parser.PositionContext;
+import org.javacomp.project.PositionContext;
+import org.javacomp.project.SimpleModuleManager;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -35,6 +31,7 @@ public class CompletorTest {
   private static final String COMPLETION_POINT_MARK = "/** @complete */";
   private static final String INSERTION_POINT_MARK = "/** @insert */";
 
+  private final SimpleModuleManager moduleManager = new SimpleModuleManager();
   private final SimpleFileManager fileManager = new SimpleFileManager();
 
   private Path getInputFilePath(String filename) {
@@ -42,11 +39,7 @@ public class CompletorTest {
   }
 
   private String getFileContent(String filename) {
-    try {
-      return new String(Files.readAllBytes(getInputFilePath(filename)), UTF_8);
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
+    return fileManager.getFileContent(getInputFilePath(filename)).get().toString();
   }
 
   private List<CompletionCandidate> completeTestFile(String filename) {
@@ -58,13 +51,12 @@ public class CompletorTest {
       String inputFilename, String testDataContent, String... otherFiles) {
 
     Path inputFilePath = getInputFilePath(inputFilename);
-    fileManager.openFileForSnapshot(inputFilePath.toUri(), testDataContent);
     ParserContext parserContext = new ParserContext();
-    FileContentFixer fileContentFixer = new FileContentFixer(parserContext);
-    parserContext.setupLoggingSource(inputFilename);
+    // FileContentFixer fileContentFixer = new FileContentFixer(parserContext);
+    // parserContext.setupLoggingSource(inputFilename);
 
+    assertThat(testDataContent).contains(COMPLETION_POINT_MARK);
     int completionPoint = testDataContent.indexOf(COMPLETION_POINT_MARK);
-    assertThat(completionPoint).named("Index of " + COMPLETION_POINT_MARK).isGreaterThan(-1);
     testDataContent = testDataContent.replace(COMPLETION_POINT_MARK, "");
 
     LineMap lineMap = parserContext.tokenize(testDataContent, false).getLineMap();
@@ -72,21 +64,13 @@ public class CompletorTest {
     int line = (int) lineMap.getLineNumber(completionPoint) - 1;
     int column = (int) lineMap.getColumnNumber(completionPoint) - 1;
 
-    FixedContent fixedContent = fileContentFixer.fixFileContent(testDataContent);
-
-    JCCompilationUnit compilationUnit =
-        parserContext.parse(inputFilePath.toString(), fixedContent.getContent());
-    FileScope inputFileScope =
-        new AstScanner(IndexOptions.FULL_INDEX_BUILDER.build())
-            .startScan(compilationUnit, inputFilePath.toString(), fixedContent.getContent());
-    inputFileScope.setAdjustedLineMap(fixedContent.getAdjustedLineMap());
-    Module module = new Module();
-    module.addOrReplaceFileScope(inputFileScope);
+    moduleManager.getFileManager().openFileForSnapshot(inputFilePath.toUri(), testDataContent);
+    moduleManager.addOrUpdateFile(inputFilePath, /* fixContentForParsing= */ true);
 
     Module otherModule = new Module();
-    module.addDependingModule(otherModule);
+    moduleManager.addDependingModule(otherModule);
 
-    otherModule.addDependingModule(module);
+    otherModule.addDependingModule(moduleManager.getModule());
 
     List<String> otherFilesWithObject =
         new ImmutableList.Builder<String>().add(otherFiles).add("Object.java").build();
@@ -99,15 +83,15 @@ public class CompletorTest {
       otherModule.addOrReplaceFileScope(fileScope);
     }
 
-    return new CompletionParams(module, line, column);
+    return new CompletionParams(line, column);
   }
 
   private List<CompletionCandidate> completeContent(
       String inputFilename, String testDataContent, String... otherFiles) {
     CompletionParams params = createCompletionParams(inputFilename, testDataContent, otherFiles);
-    return new Completor(fileManager)
+    return new Completor(moduleManager.getFileManager())
         .getCompletionCandidates(
-            params.module, getInputFilePath(inputFilename), params.line, params.column);
+            moduleManager, getInputFilePath(inputFilename), params.line, params.column);
   }
 
   private static List<String> getCandidateNames(List<CompletionCandidate> candidates) {
@@ -347,23 +331,22 @@ public class CompletorTest {
   private String extractCompletionPrefixWithContent(String filename, String toInsert) {
     String testDataContent = getFileContent(filename);
     String newContent = testDataContent.replace(INSERTION_POINT_MARK, toInsert);
+    assertThat(newContent).contains(COMPLETION_POINT_MARK);
     CompletionParams params = createCompletionParams(filename, newContent);
     Path filePath = getInputFilePath(filename);
     PositionContext positionContext =
-        PositionContext.createForPosition(params.module, filePath, params.line, params.column)
+        PositionContext.createForPosition(moduleManager, filePath, params.line, params.column)
             .get();
-    return new Completor(fileManager)
+    return new Completor(moduleManager.getFileManager())
         .extractCompletionPrefix(
             positionContext.getFileScope(), filePath, params.line, params.column);
   }
 
   private static class CompletionParams {
-    private final Module module;
     private final int line;
     private final int column;
 
-    private CompletionParams(Module module, int line, int column) {
-      this.module = module;
+    private CompletionParams(int line, int column) {
       this.line = line;
       this.column = column;
     }

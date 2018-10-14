@@ -16,7 +16,8 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Optional;
 import org.javacomp.model.FileScope;
-import org.javacomp.model.Module;
+import org.javacomp.project.FileItem;
+import org.javacomp.project.ModuleManager;
 import org.javacomp.protocol.Position;
 import org.javacomp.protocol.Range;
 import org.javacomp.protocol.TextEdit;
@@ -26,15 +27,20 @@ public class TextEdits {
   private static final Joiner QUALIFIER_JOINER = Joiner.on(".");
   private static final long INVALID_POS = -1;
 
-  public Optional<TextEdit> forImportClass(Module module, Path filePath, String fullClassName) {
-    Optional<FileScope> fileScope = module.getFileScope(filePath.toString());
+  public Optional<TextEdit> forImportClass(
+      ModuleManager moduleManager, Path filePath, String fullClassName) {
+    Optional<FileItem> fileItem = moduleManager.getFileItem(filePath);
+    if (!fileItem.isPresent()) {
+      return Optional.empty();
+    }
+    FileScope fileScope = fileItem.get().getFileScope();
 
-    if (!fileScope.isPresent() || !fileScope.get().getCompilationUnit().isPresent()) {
+    if (!fileScope.getCompilationUnit().isPresent()) {
       return Optional.empty();
     }
 
-    JCCompilationUnit complationUnit = fileScope.get().getCompilationUnit().get();
-    LineMap lineMap = fileScope.get().getLineMap().get();
+    JCCompilationUnit complationUnit = fileScope.getCompilationUnit().get();
+    LineMap lineMap = fileScope.getLineMap().get();
     EndPosTable endPosTable = complationUnit.endPositions;
 
     ImportClassScanner scanner = new ImportClassScanner(fullClassName, lineMap, endPosTable);

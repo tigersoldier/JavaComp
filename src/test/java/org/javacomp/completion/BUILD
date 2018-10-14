@@ -10,6 +10,8 @@ java_library(
         "//src/main/java/org/javacomp/model",
         "//src/main/java/org/javacomp/options",
         "//src/main/java/org/javacomp/parser",
+        "//src/main/java/org/javacomp/project:positioncontext",
+        "//src/main/java/org/javacomp/project:simplemodulemanager",
         "//src/main/java/org/javacomp/protocol",
         "//src/main/java/org/javacomp/testing",
         "//third_party:guava",

@@ -12,6 +12,7 @@ import org.javacomp.model.ClassEntity;
 import org.javacomp.model.Entity;
 import org.javacomp.model.EntityScope;
 import org.javacomp.model.FileScope;
+import org.javacomp.project.FileItem;
 import org.javacomp.protocol.ClientCapabilities;
 import org.javacomp.protocol.ClientCapabilities.DocumentSymbolCapabilities;
 import org.javacomp.protocol.DocumentSymbol;
@@ -62,9 +63,9 @@ public class DocumentSymbolHandler extends RequestHandler<DocumentSymbolParams> 
   @Override
   public List<? extends DocumentSymbolInformation> handleRequest(
       Request<DocumentSymbolParams> request) throws Exception {
-    Optional<FileScope> fileScope =
-        server.getProject().findFileScope(Paths.get(request.getParams().textDocument.uri));
-    if (!fileScope.isPresent()) {
+    Optional<FileItem> fileItem =
+        server.getProject().getFileItem(Paths.get(request.getParams().textDocument.uri));
+    if (!fileItem.isPresent()) {
       return ImmutableList.of();
     }
 
@@ -83,16 +84,17 @@ public class DocumentSymbolHandler extends RequestHandler<DocumentSymbolParams> 
       }
     }
 
+    FileScope fileScope = fileItem.get().getFileScope();
     if (supportDocumentSymbol) {
       ImmutableList.Builder<DocumentSymbol> symbols = new ImmutableList.Builder<>();
-      addDocumentSymbolsInScope(symbols, fileScope.get(), fileScope.get(), supportedSymbolKinds);
+      addDocumentSymbolsInScope(symbols, fileScope, fileScope, supportedSymbolKinds);
       return symbols.build();
     } else {
       ImmutableList.Builder<SymbolInformation> symbols = new ImmutableList.Builder<>();
       addSymbolInformationsInScope(
           symbols,
-          /* scope= */ fileScope.get(),
-          /* fileScope= */ fileScope.get(),
+          /* scope= */ fileScope,
+          /* fileScope= */ fileScope,
           supportedSymbolKinds,
           /* containerName1= */ null);
       return symbols.build();

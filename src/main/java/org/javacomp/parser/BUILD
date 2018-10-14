@@ -3,6 +3,7 @@ java_library(
     srcs = glob(["*.java"]),
     visibility = ["//visibility:public"],
     deps = [
+        "//src/main/java/org/javacomp/file",
         "//src/main/java/org/javacomp/logging",
         "//src/main/java/org/javacomp/model",
         "//src/main/java/org/javacomp/model/util",

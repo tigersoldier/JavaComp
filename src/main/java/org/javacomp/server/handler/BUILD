@@ -11,6 +11,7 @@ java_library(
         "//src/main/java/org/javacomp/logging",
         "//src/main/java/org/javacomp/model",
         "//src/main/java/org/javacomp/project",
+        "//src/main/java/org/javacomp/project:modulemanager",
         "//src/main/java/org/javacomp/protocol",
         "//src/main/java/org/javacomp/reference",
         "//src/main/java/org/javacomp/server",

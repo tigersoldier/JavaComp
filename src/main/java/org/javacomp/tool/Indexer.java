@@ -19,6 +19,7 @@ import org.javacomp.parser.AstScanner;
 import org.javacomp.parser.ParserContext;
 import org.javacomp.parser.classfile.ClassModuleBuilder;
 import org.javacomp.project.Project;
+import org.javacomp.project.SimpleModuleManager;
 import org.javacomp.storage.IndexStore;
 
 /**
@@ -38,22 +39,21 @@ public class Indexer {
       List<String> ignorePaths,
       List<String> dependIndexFiles,
       boolean withJdk) {
-    Project project =
-        new Project(
-            new SimpleFileManager(Paths.get(inputPaths.get(0)), ignorePaths),
-            Paths.get(inputPaths.get(0)).toUri(),
-            IndexOptions.PUBLIC_READONLY_BUILDER.build());
     // Do not initialize the project. We handle the files on our own.
+    SimpleModuleManager moduleManager = new SimpleModuleManager();
+    Project project = new Project(moduleManager, moduleManager.getFileManager());
     for (String inputPath : inputPaths) {
       Path path = Paths.get(inputPath);
+      // Do not use module manager's file manager because we need to setup root
+      // path and ignore paths per directory.
       FileManager fileManager = new SimpleFileManager(path, ignorePaths);
-      ClassModuleBuilder classModuleBuilder = new ClassModuleBuilder(project.getModule());
+      ClassModuleBuilder classModuleBuilder = new ClassModuleBuilder(moduleManager.getModule());
       ImmutableMap<String, Consumer<Path>> handlers =
           ImmutableMap.<String, Consumer<Path>>of(
               ".class",
               subpath -> classModuleBuilder.processClassFile(subpath),
               ".java",
-              subpath -> addJavaFile(subpath, project.getModule(), fileManager));
+              subpath -> addJavaFile(subpath, moduleManager.getModule(), fileManager));
       if (Files.isDirectory(path)) {
         System.out.println("Indexing directory: " + inputPath.toString());
         PathUtils.walkDirectory(
@@ -79,7 +79,7 @@ public class Indexer {
       project.loadJdkModule();
     }
     System.out.println("Writing index file to " + outputPath);
-    new IndexStore().writeModuleToFile(project.getModule(), Paths.get(outputPath));
+    new IndexStore().writeModuleToFile(moduleManager.getModule(), Paths.get(outputPath));
   }
 
   private void addJavaFile(Path path, Module module, FileManager fileManager) {

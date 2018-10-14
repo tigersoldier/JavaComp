@@ -36,6 +36,7 @@ java_binary(
         "//src/main/java/org/javacomp/parser",
         "//src/main/java/org/javacomp/parser/classfile",
         "//src/main/java/org/javacomp/project",
+        "//src/main/java/org/javacomp/project:simplemodulemanager",
         "//src/main/java/org/javacomp/storage",
         "//third_party:guava",
         "//third_party:javac",

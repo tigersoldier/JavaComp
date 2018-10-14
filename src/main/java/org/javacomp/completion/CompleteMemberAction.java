@@ -12,7 +12,7 @@ import org.javacomp.logging.JLogger;
 import org.javacomp.model.ClassEntity;
 import org.javacomp.model.Entity;
 import org.javacomp.model.EntityWithContext;
-import org.javacomp.parser.PositionContext;
+import org.javacomp.project.PositionContext;
 import org.javacomp.typesolver.ExpressionSolver;
 import org.javacomp.typesolver.TypeSolver;
 
