@@ -7,12 +7,12 @@ import com.google.auto.value.AutoValue;
 public abstract class IndexOptions {
   /** Indexes everything possible. */
   public static final IndexOptions.Builder FULL_INDEX_BUILDER =
-      IndexOptions.builder().setShouldIndexMethodContent(true).setShouldIndexNonPublic(true);
+      IndexOptions.builder().setShouldIndexMethodContent(true).setShouldIndexPrivate(true);
   /** Indexes only public classes/methods/etc... without indexing the contents. */
-  public static final IndexOptions.Builder PUBLIC_READONLY_BUILDER =
-      IndexOptions.builder().setShouldIndexNonPublic(false).setShouldIndexMethodContent(false);
+  public static final IndexOptions.Builder NON_PRIVATE_BUILDER =
+      IndexOptions.builder().setShouldIndexPrivate(false).setShouldIndexMethodContent(false);
 
-  public abstract boolean shouldIndexNonPublic();
+  public abstract boolean shouldIndexPrivate();
 
   public abstract boolean shouldIndexMethodContent();
 
@@ -24,7 +24,7 @@ public abstract class IndexOptions {
   public abstract static class Builder {
     public abstract IndexOptions build();
 
-    public abstract Builder setShouldIndexNonPublic(boolean value);
+    public abstract Builder setShouldIndexPrivate(boolean value);
 
     public abstract Builder setShouldIndexMethodContent(boolean value);
   }

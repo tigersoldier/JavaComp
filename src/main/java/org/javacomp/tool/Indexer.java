@@ -85,7 +85,7 @@ public class Indexer {
   private void addJavaFile(Path path, Module module, FileManager fileManager) {
     Optional<CharSequence> content = fileManager.getFileContent(path);
     FileScope fileScope =
-        new AstScanner(IndexOptions.PUBLIC_READONLY_BUILDER.build())
+        new AstScanner(IndexOptions.NON_PRIVATE_BUILDER.build())
             .startScan(
                 parserContext.parse(path.toString(), content.get()),
                 path.toString(),

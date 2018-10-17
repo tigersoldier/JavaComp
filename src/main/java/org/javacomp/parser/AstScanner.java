@@ -396,7 +396,7 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
         return true;
       }
     }
-    if (!indexOptions.shouldIndexNonPublic() && !modifiers.contains(Modifier.PUBLIC)) {
+    if (!indexOptions.shouldIndexPrivate() && modifiers.contains(Modifier.PRIVATE)) {
       return false;
     }
     return true;
