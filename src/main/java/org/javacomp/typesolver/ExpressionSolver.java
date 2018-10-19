@@ -10,6 +10,7 @@ import com.sun.source.tree.LiteralTree;
 import com.sun.source.tree.MemberSelectTree;
 import com.sun.source.tree.MethodInvocationTree;
 import com.sun.source.tree.NewClassTree;
+import com.sun.source.tree.ParameterizedTypeTree;
 import com.sun.source.tree.PrimitiveTypeTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.tree.TypeCastTree;
@@ -206,6 +207,9 @@ public class ExpressionSolver {
                     allowedEntityKinds)
                 .scan(node.getIdentifier(), null);
       } else {
+        logger.severe(
+            "[DEBUG] visit class %s %s",
+            node.getIdentifier(), node.getIdentifier().getClass().getSimpleName());
         baseClassEntities = scan(node.getIdentifier(), null);
       }
 
@@ -248,6 +252,12 @@ public class ExpressionSolver {
 
       constructors = overloadSolver.prioritizeMatchedMethod(constructors, arguments, module);
       return applyTypeArguments(constructors, node.getTypeArguments());
+    }
+
+    @Override
+    public List<EntityWithContext> visitParameterizedType(ParameterizedTypeTree node, Void unused) {
+      // TODO: solve type parameters, handle diamond operator.
+      return scan(node.getType(), null);
     }
 
     @Override

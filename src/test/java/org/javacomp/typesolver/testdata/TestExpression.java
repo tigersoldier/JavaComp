@@ -16,6 +16,8 @@ public class TestExpression<T> {
 
   public InnerB baseMethod(int foo);
 
+  public TestExpression<T> baseMethod(TestExpression<T> value);
+
   public TestClass getTestClass();
 
   public LambdaStub lambdaCall(LambdaStub in);

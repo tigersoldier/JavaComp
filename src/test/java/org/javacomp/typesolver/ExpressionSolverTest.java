@@ -222,6 +222,8 @@ public class ExpressionSolverTest {
     assertThat(solveExpression("baseMethod(42)", topLevelClass).getEntity()).isEqualTo(innerBClass);
     assertThat(solveExpression("this.baseMethod()", topLevelClass).getEntity())
         .isEqualTo(innerCClass);
+    assertThat(solveExpression("baseMethod(new TestExpression<>())", topLevelClass).getEntity())
+        .isEqualTo(topLevelClass);
   }
 
   @Test
