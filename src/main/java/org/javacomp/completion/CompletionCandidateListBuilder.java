@@ -18,12 +18,6 @@ import org.javacomp.typesolver.EntityShadowingListBuilder;
  */
 public class CompletionCandidateListBuilder {
   private static final GetElementFunction GET_ELEMENT_FUNCTION = new GetElementFunction();
-  private static final Comparator<CompletionCandidateWithMatchLevel> CANDIDATE_COMPARATOR =
-      Comparator.comparing(
-              (CompletionCandidateWithMatchLevel candidateWithLevel) ->
-                  candidateWithLevel.getCompletionCandidate().getSortCategory().ordinal())
-          .thenComparing(
-              (candidateWithLevel) -> candidateWithLevel.getCompletionCandidate().getName());
 
   private final Map<String, EntityShadowingListBuilder<CompletionCandidateWithMatchLevel>>
       candidateMap;

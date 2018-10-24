@@ -1,11 +1,22 @@
 package org.javacomp.completion;
 
 import com.google.auto.value.AutoValue;
+import java.util.Comparator;
 
 /** A wrapper of {@link CompletionCandidate} and {@link CompletionPrefixMatcher#MatchLevel}. */
 @AutoValue
 public abstract class CompletionCandidateWithMatchLevel
     implements Comparable<CompletionCandidateWithMatchLevel> {
+  private static final Comparator<CompletionCandidateWithMatchLevel> COMPARATOR =
+      Comparator.comparing(
+          (CompletionCandidateWithMatchLevel candidateWithLevel) ->
+                  candidateWithLevel.getCompletionCandidate().getSortCategory().ordinal())
+          .thenComparing(
+              candidateWithLevel ->
+                  candidateWithLevel.getMatchLevel().ordinal())
+          .thenComparing(
+              candidateWithLevel -> candidateWithLevel.getCompletionCandidate().getName());
+
   public abstract CompletionCandidate getCompletionCandidate();
 
   public abstract CompletionPrefixMatcher.MatchLevel getMatchLevel();
@@ -17,11 +28,6 @@ public abstract class CompletionCandidateWithMatchLevel
 
   @Override
   public int compareTo(CompletionCandidateWithMatchLevel other) {
-    if (this.getMatchLevel().ordinal() != other.getMatchLevel().ordinal()) {
-      return other.getMatchLevel().ordinal() - this.getMatchLevel().ordinal();
-    }
-    return this.getCompletionCandidate()
-        .getName()
-        .compareTo(other.getCompletionCandidate().getName());
+    return COMPARATOR.compare(this, other);
   }
 }

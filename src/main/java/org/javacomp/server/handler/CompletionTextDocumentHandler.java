@@ -66,8 +66,7 @@ public class CompletionTextDocumentHandler extends RequestHandler<TextDocumentPo
 
       // The sort text of a candidate is the candidate label prefixed with its
       // sort category ordinal.
-      char sortPrefix = (char) ('a' + candidate.getSortCategory().ordinal());
-      item.sortText = sortPrefix + item.label;
+      item.sortText = String.format("%05d", i);
 
       fillInsertText(item, candidate);
       fillData(item, candidate);
