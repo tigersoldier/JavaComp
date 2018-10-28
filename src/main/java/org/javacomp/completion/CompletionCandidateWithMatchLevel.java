@@ -9,11 +9,9 @@ public abstract class CompletionCandidateWithMatchLevel
     implements Comparable<CompletionCandidateWithMatchLevel> {
   private static final Comparator<CompletionCandidateWithMatchLevel> COMPARATOR =
       Comparator.comparing(
-          (CompletionCandidateWithMatchLevel candidateWithLevel) ->
+              (CompletionCandidateWithMatchLevel candidateWithLevel) ->
                   candidateWithLevel.getCompletionCandidate().getSortCategory().ordinal())
-          .thenComparing(
-              candidateWithLevel ->
-                  candidateWithLevel.getMatchLevel().ordinal())
+          .thenComparing(candidateWithLevel -> candidateWithLevel.getMatchLevel().ordinal())
           .thenComparing(
               candidateWithLevel -> candidateWithLevel.getCompletionCandidate().getName());
 
