@@ -1,7 +1,10 @@
-package org.javacomp.protocol;
+package org.javacomp.protocol.textdocument;
 
 import java.util.List;
 import javax.annotation.Nullable;
+import org.javacomp.protocol.Range;
+import org.javacomp.protocol.RequestParams;
+import org.javacomp.protocol.VersionedTextDocumentIdentifier;
 
 /**
  * Parameters for "textDocument/didChange" notification.

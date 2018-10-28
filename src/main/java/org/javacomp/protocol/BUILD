@@ -5,7 +5,7 @@ package(
 java_library(
     name = "protocol",
     srcs = glob(
-        ["*.java"],
+        ["**/*.java"],
         exclude = ["ReuestParams.java"],
     ),
     deps = [

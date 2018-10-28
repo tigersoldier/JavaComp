@@ -1,4 +1,4 @@
-package org.javacomp.server.handler;
+package org.javacomp.server.handler.textdocument;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -22,9 +22,11 @@ import org.javacomp.protocol.SymbolInformation;
 import org.javacomp.protocol.SymbolKind;
 import org.javacomp.server.Request;
 import org.javacomp.server.Server;
+import org.javacomp.server.handler.RequestHandler;
+import org.javacomp.server.handler.utils.MessageUtils;
 
 /**
- * Handles "textDocument/hover" notification.
+ * Handles "textDocument/documentSymbol" notification.
  *
  * <p>See
  * https://github.com/Microsoft/language-server-protocol/blob/master/protocol.md#textDocument_hover

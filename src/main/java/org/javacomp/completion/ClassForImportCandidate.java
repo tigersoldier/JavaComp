@@ -6,9 +6,9 @@ import java.nio.file.Paths;
 import java.util.Map;
 import java.util.Optional;
 import org.javacomp.model.ClassEntity;
-import org.javacomp.protocol.CompletionItem.ResolveAction;
-import org.javacomp.protocol.CompletionItem.ResolveActionParams;
-import org.javacomp.protocol.CompletionItem.ResolveAddImportTextEditsParams;
+import org.javacomp.protocol.textdocument.CompletionItem.ResolveAction;
+import org.javacomp.protocol.textdocument.CompletionItem.ResolveActionParams;
+import org.javacomp.protocol.textdocument.CompletionItem.ResolveAddImportTextEditsParams;
 import org.javacomp.typesolver.EntityShadowingListBuilder.ForImportEntity;
 
 /** A candidate with import class edit actions. */

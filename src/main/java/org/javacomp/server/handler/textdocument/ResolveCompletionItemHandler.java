@@ -1,14 +1,15 @@
-package org.javacomp.server.handler;
+package org.javacomp.server.handler.textdocument;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import org.javacomp.protocol.CompletionItem;
-import org.javacomp.protocol.CompletionItem.ResolveAddImportTextEditsParams;
-import org.javacomp.protocol.CompletionItem.ResolveData;
+import org.javacomp.protocol.textdocument.CompletionItem;
+import org.javacomp.protocol.textdocument.CompletionItem.ResolveAddImportTextEditsParams;
+import org.javacomp.protocol.textdocument.CompletionItem.ResolveData;
 import org.javacomp.server.Request;
 import org.javacomp.server.Server;
+import org.javacomp.server.handler.RequestHandler;
 
 /**
  * Handles "completionItem/resolve" method.

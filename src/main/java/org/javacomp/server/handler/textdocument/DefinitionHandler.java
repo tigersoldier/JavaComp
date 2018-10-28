@@ -1,4 +1,4 @@
-package org.javacomp.server.handler;
+package org.javacomp.server.handler.textdocument;
 
 import com.google.common.collect.ImmutableList;
 import java.nio.file.Paths;
@@ -12,6 +12,8 @@ import org.javacomp.protocol.Location;
 import org.javacomp.protocol.TextDocumentPositionParams;
 import org.javacomp.server.Request;
 import org.javacomp.server.Server;
+import org.javacomp.server.handler.RequestHandler;
+import org.javacomp.server.handler.utils.MessageUtils;
 
 /**
  * Handles "textDocument/definition" notification.
@@ -19,10 +21,10 @@ import org.javacomp.server.Server;
  * <p>See
  * https://github.com/Microsoft/language-server-protocol/blob/master/protocol.md#textDocument_definition
  */
-public class DefinitionTextDocumentHandler extends RequestHandler<TextDocumentPositionParams> {
+public class DefinitionHandler extends RequestHandler<TextDocumentPositionParams> {
   private final Server server;
 
-  public DefinitionTextDocumentHandler(Server server) {
+  public DefinitionHandler(Server server) {
     super("textDocument/definition", TextDocumentPositionParams.class);
     this.server = server;
   }

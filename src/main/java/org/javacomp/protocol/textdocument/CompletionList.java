@@ -1,6 +1,7 @@
-package org.javacomp.protocol;
+package org.javacomp.protocol.textdocument;
 
 import java.util.List;
+import org.javacomp.protocol.RequestParams;
 
 /**
  * Represents a collection of {@link CompletionItem} instances to be presented in the editor.

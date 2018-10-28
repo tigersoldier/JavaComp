@@ -1,4 +1,4 @@
-package org.javacomp.server.handler;
+package org.javacomp.server.handler.textdocument;
 
 import com.google.common.collect.ImmutableList;
 import java.nio.file.Paths;
@@ -12,10 +12,11 @@ import org.javacomp.model.MethodEntity;
 import org.javacomp.model.TypeReference;
 import org.javacomp.model.VariableEntity;
 import org.javacomp.project.Project;
-import org.javacomp.protocol.Hover;
 import org.javacomp.protocol.TextDocumentPositionParams;
+import org.javacomp.protocol.textdocument.Hover;
 import org.javacomp.server.Request;
 import org.javacomp.server.Server;
+import org.javacomp.server.handler.RequestHandler;
 
 /**
  * Handles "textDocument/hover" notification.
@@ -23,12 +24,12 @@ import org.javacomp.server.Server;
  * <p>See
  * https://github.com/Microsoft/language-server-protocol/blob/master/protocol.md#textDocument_hover
  */
-public class HoverTextDocumentHandler extends RequestHandler<TextDocumentPositionParams> {
+public class HoverHandler extends RequestHandler<TextDocumentPositionParams> {
   private static final JLogger logger = JLogger.createForEnclosingClass();
 
   private final Server server;
 
-  public HoverTextDocumentHandler(Server server) {
+  public HoverHandler(Server server) {
     super("textDocument/hover", TextDocumentPositionParams.class);
     this.server = server;
   }

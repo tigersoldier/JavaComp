@@ -1,6 +1,7 @@
-package org.javacomp.protocol;
+package org.javacomp.protocol.textdocument;
 
 import java.net.URI;
+import org.javacomp.protocol.RequestParams;
 
 /**
  * Parameters for "textDocument/didOpen" notification.

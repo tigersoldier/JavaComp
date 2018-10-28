@@ -1,9 +1,12 @@
-package org.javacomp.protocol;
+package org.javacomp.protocol.textdocument;
 
 import com.google.gson.JsonElement;
 import java.net.URI;
 import java.util.List;
 import javax.annotation.Nullable;
+import org.javacomp.protocol.Command;
+import org.javacomp.protocol.RequestParams;
+import org.javacomp.protocol.TextEdit;
 
 public class CompletionItem implements RequestParams {
   /**

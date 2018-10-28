@@ -26,19 +26,19 @@ import org.javacomp.options.JavaCompOptions;
 import org.javacomp.project.Project;
 import org.javacomp.protocol.ClientCapabilities;
 import org.javacomp.protocol.InitializeParams;
-import org.javacomp.server.handler.CompletionTextDocumentHandler;
-import org.javacomp.server.handler.DefinitionTextDocumentHandler;
-import org.javacomp.server.handler.DidChangeTextDocumentHandler;
-import org.javacomp.server.handler.DidCloseTextDocumentHandler;
-import org.javacomp.server.handler.DidOpenTextDocumentHandler;
-import org.javacomp.server.handler.DocumentSymbolHandler;
 import org.javacomp.server.handler.ExitHandler;
-import org.javacomp.server.handler.HoverTextDocumentHandler;
 import org.javacomp.server.handler.InitializeHandler;
-import org.javacomp.server.handler.ReferencesHandler;
-import org.javacomp.server.handler.ResolveCompletionItemHandler;
 import org.javacomp.server.handler.ShutdownHandler;
 import org.javacomp.server.handler.SignatureHelpTextDocumentHandler;
+import org.javacomp.server.handler.textdocument.CompletionHandler;
+import org.javacomp.server.handler.textdocument.DefinitionHandler;
+import org.javacomp.server.handler.textdocument.DidChangeHandler;
+import org.javacomp.server.handler.textdocument.DidCloseHandler;
+import org.javacomp.server.handler.textdocument.DidOpenHandler;
+import org.javacomp.server.handler.textdocument.DocumentSymbolHandler;
+import org.javacomp.server.handler.textdocument.HoverHandler;
+import org.javacomp.server.handler.textdocument.ReferencesHandler;
+import org.javacomp.server.handler.textdocument.ResolveCompletionItemHandler;
 import org.javacomp.server.io.RequestReader;
 import org.javacomp.server.io.ResponseWriter;
 
@@ -79,13 +79,13 @@ public class JavaComp implements Server {
             .registerHandler(new ShutdownHandler(this))
             .registerHandler(new ExitHandler(this))
             // Text document manipulation
-            .registerHandler(new DidOpenTextDocumentHandler(this))
-            .registerHandler(new DidChangeTextDocumentHandler(this))
-            .registerHandler(new DidCloseTextDocumentHandler(this))
-            .registerHandler(new CompletionTextDocumentHandler(this, gson))
-            .registerHandler(new DefinitionTextDocumentHandler(this))
+            .registerHandler(new DidOpenHandler(this))
+            .registerHandler(new DidChangeHandler(this))
+            .registerHandler(new DidCloseHandler(this))
+            .registerHandler(new CompletionHandler(this, gson))
+            .registerHandler(new DefinitionHandler(this))
             .registerHandler(new SignatureHelpTextDocumentHandler(this))
-            .registerHandler(new HoverTextDocumentHandler(this))
+            .registerHandler(new HoverHandler(this))
             .registerHandler(new ResolveCompletionItemHandler(this, gson))
             .registerHandler(new DocumentSymbolHandler(this))
             .registerHandler(new ReferencesHandler(this))

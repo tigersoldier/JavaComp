@@ -4,7 +4,7 @@ package(
 
 java_library(
     name = "handler",
-    srcs = glob(["*.java"]),
+    srcs = glob(["**/*.java"]),
     deps = [
         "//src/main/java/org/javacomp/completion",
         "//src/main/java/org/javacomp/file",

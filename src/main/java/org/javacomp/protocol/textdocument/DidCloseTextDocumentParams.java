@@ -1,4 +1,7 @@
-package org.javacomp.protocol;
+package org.javacomp.protocol.textdocument;
+
+import org.javacomp.protocol.RequestParams;
+import org.javacomp.protocol.TextDocumentIdentifier;
 
 /**
  * Parameters for "textDocument/didClose" notification.

@@ -1,7 +1,8 @@
-package org.javacomp.protocol;
+package org.javacomp.protocol.textdocument;
 
 import java.util.List;
 import javax.annotation.Nullable;
+import org.javacomp.protocol.Range;
 
 /** The result of a hover request. */
 public class Hover {

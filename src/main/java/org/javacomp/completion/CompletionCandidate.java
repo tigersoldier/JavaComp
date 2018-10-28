@@ -3,8 +3,8 @@ package org.javacomp.completion;
 import com.google.common.collect.ImmutableMap;
 import java.util.Map;
 import java.util.Optional;
-import org.javacomp.protocol.CompletionItem.ResolveAction;
-import org.javacomp.protocol.CompletionItem.ResolveActionParams;
+import org.javacomp.protocol.textdocument.CompletionItem.ResolveAction;
+import org.javacomp.protocol.textdocument.CompletionItem.ResolveActionParams;
 
 public interface CompletionCandidate {
   public enum Kind {

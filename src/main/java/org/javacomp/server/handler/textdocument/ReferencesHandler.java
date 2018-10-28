@@ -1,4 +1,4 @@
-package org.javacomp.server.handler;
+package org.javacomp.server.handler.textdocument;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multimap;
@@ -11,6 +11,8 @@ import org.javacomp.protocol.Location;
 import org.javacomp.protocol.ReferenceParams;
 import org.javacomp.server.Request;
 import org.javacomp.server.Server;
+import org.javacomp.server.handler.RequestHandler;
+import org.javacomp.server.handler.utils.MessageUtils;
 
 /**
  * Handles "textDocument/references" notification.

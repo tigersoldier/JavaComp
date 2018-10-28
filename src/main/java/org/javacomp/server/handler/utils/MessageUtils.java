@@ -1,4 +1,4 @@
-package org.javacomp.server.handler;
+package org.javacomp.server.handler.utils;
 
 import static com.google.common.base.Preconditions.checkState;
 

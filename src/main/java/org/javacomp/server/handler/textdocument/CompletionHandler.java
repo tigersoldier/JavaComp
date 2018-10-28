@@ -1,4 +1,4 @@
-package org.javacomp.server.handler;
+package org.javacomp.server.handler.textdocument;
 
 import com.google.gson.Gson;
 import java.nio.file.Paths;
@@ -9,16 +9,17 @@ import java.util.Optional;
 import org.javacomp.completion.CompletionCandidate;
 import org.javacomp.project.Project;
 import org.javacomp.protocol.ClientCapabilities;
-import org.javacomp.protocol.CompletionItem;
-import org.javacomp.protocol.CompletionItem.CompletionItemKind;
-import org.javacomp.protocol.CompletionItem.InsertTextFormat;
-import org.javacomp.protocol.CompletionItem.ResolveAction;
-import org.javacomp.protocol.CompletionItem.ResolveActionParams;
-import org.javacomp.protocol.CompletionItem.ResolveData;
-import org.javacomp.protocol.CompletionList;
 import org.javacomp.protocol.TextDocumentPositionParams;
+import org.javacomp.protocol.textdocument.CompletionItem;
+import org.javacomp.protocol.textdocument.CompletionItem.CompletionItemKind;
+import org.javacomp.protocol.textdocument.CompletionItem.InsertTextFormat;
+import org.javacomp.protocol.textdocument.CompletionItem.ResolveAction;
+import org.javacomp.protocol.textdocument.CompletionItem.ResolveActionParams;
+import org.javacomp.protocol.textdocument.CompletionItem.ResolveData;
+import org.javacomp.protocol.textdocument.CompletionList;
 import org.javacomp.server.Request;
 import org.javacomp.server.Server;
+import org.javacomp.server.handler.RequestHandler;
 
 /**
  * Handles "textDocument/completion" notification.
@@ -26,13 +27,13 @@ import org.javacomp.server.Server;
  * <p>See
  * https://github.com/Microsoft/language-server-protocol/blob/master/protocol.md#completion-request
  */
-public class CompletionTextDocumentHandler extends RequestHandler<TextDocumentPositionParams> {
+public class CompletionHandler extends RequestHandler<TextDocumentPositionParams> {
   private static final int MAX_CANDIDATES = 30;
 
   private final Server server;
   private final Gson gson;
 
-  public CompletionTextDocumentHandler(Server server, Gson gson) {
+  public CompletionHandler(Server server, Gson gson) {
     super("textDocument/completion", TextDocumentPositionParams.class);
     this.server = server;
     this.gson = gson;

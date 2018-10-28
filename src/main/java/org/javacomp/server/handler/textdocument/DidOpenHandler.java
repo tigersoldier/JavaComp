@@ -1,8 +1,9 @@
-package org.javacomp.server.handler;
+package org.javacomp.server.handler.textdocument;
 
-import org.javacomp.protocol.DidOpenTextDocumentParams;
+import org.javacomp.protocol.textdocument.DidOpenTextDocumentParams;
 import org.javacomp.server.Request;
 import org.javacomp.server.Server;
+import org.javacomp.server.handler.NotificationHandler;
 
 /**
  * Handles "textDocument/didOpen" notification.
@@ -10,10 +11,10 @@ import org.javacomp.server.Server;
  * <p>See
  * https://github.com/Microsoft/language-server-protocol/blob/master/protocol.md#didopentextdocument-notification
  */
-public class DidOpenTextDocumentHandler extends NotificationHandler<DidOpenTextDocumentParams> {
+public class DidOpenHandler extends NotificationHandler<DidOpenTextDocumentParams> {
   private final Server server;
 
-  public DidOpenTextDocumentHandler(Server server) {
+  public DidOpenHandler(Server server) {
     super("textDocument/didOpen", DidOpenTextDocumentParams.class);
     this.server = server;
   }

@@ -1,12 +1,13 @@
-package org.javacomp.server.handler;
+package org.javacomp.server.handler.textdocument;
 
 import java.net.URI;
 import java.util.Optional;
 import org.javacomp.file.FileManager;
 import org.javacomp.logging.JLogger;
-import org.javacomp.protocol.DidChangeTextDocumentParams;
+import org.javacomp.protocol.textdocument.DidChangeTextDocumentParams;
 import org.javacomp.server.Request;
 import org.javacomp.server.Server;
+import org.javacomp.server.handler.NotificationHandler;
 
 /**
  * Handles "textDocument/didChange" notification.
@@ -14,12 +15,12 @@ import org.javacomp.server.Server;
  * <p>See
  * https://github.com/Microsoft/language-server-protocol/blob/master/protocol.md#didchangetextdocument-notification
  */
-public class DidChangeTextDocumentHandler extends NotificationHandler<DidChangeTextDocumentParams> {
+public class DidChangeHandler extends NotificationHandler<DidChangeTextDocumentParams> {
   private static final JLogger logger = JLogger.createForEnclosingClass();
 
   private final Server server;
 
-  public DidChangeTextDocumentHandler(Server server) {
+  public DidChangeHandler(Server server) {
     super("textDocument/didChange", DidChangeTextDocumentParams.class);
     this.server = server;
   }
