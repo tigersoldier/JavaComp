@@ -9,6 +9,7 @@ PUBLIC_INTERFACES = [
     "PathUtils.java",
     "TextPosition.java",
     "TextRange.java",
+    "EditHistory.java",
 ]
 
 java_library(
@@ -30,6 +31,7 @@ java_library(
     deps = [
         ":file",
         "//src/main/java/org/javacomp/logging",
+        "//third_party:auto_value",
         "//third_party:guava",
     ],
 )

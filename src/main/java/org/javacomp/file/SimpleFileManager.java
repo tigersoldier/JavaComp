@@ -73,6 +73,11 @@ public class SimpleFileManager implements FileManager {
   }
 
   @Override
+  public Optional<EditHistory> getFileEditHistory(Path filePath) {
+    throw new RuntimeException("Not supported");
+  }
+
+  @Override
   public Optional<CharSequence> getFileContent(Path filePath) {
     if (snapshots.containsKey(filePath.toAbsolutePath())) {
       return Optional.of(snapshots.get(filePath.toAbsolutePath()));

@@ -7,16 +7,20 @@ import com.google.common.base.Strings;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.tools.SimpleJavaFileObject;
+import org.javacomp.file.EditHistory.AppliedEdit;
 
 /** Snapshot of the content of a file. */
 public class FileSnapshot extends SimpleJavaFileObject {
   private static final Pattern LINE_END_PATTERN = Pattern.compile("$", Pattern.MULTILINE);
 
+  private CharSequence originalContent;
+  private List<AppliedEdit> appliedEdits;
   private StringBuilder content;
   /** Maps line number to the position of the start of the line in the content string. */
   private final List<Integer> lineNumberMap;
@@ -24,7 +28,9 @@ public class FileSnapshot extends SimpleJavaFileObject {
   private FileSnapshot(URI fileUri, String content) {
     super(fileUri, Kind.SOURCE);
     this.content = new StringBuilder(content);
+    this.originalContent = this.content;
     this.lineNumberMap = new ArrayList<>();
+    this.appliedEdits = new LinkedList<>();
     remapLines();
   }
 
@@ -45,6 +51,10 @@ public class FileSnapshot extends SimpleJavaFileObject {
     return content.toString();
   }
 
+  public EditHistory getEditHistory() {
+    return EditHistory.create(originalContent.toString(), appliedEdits);
+  }
+
   /**
    * Applies a change to the content.
    *
@@ -53,6 +63,11 @@ public class FileSnapshot extends SimpleJavaFileObject {
    * @param newText the new content to replace the original content with {@code editRange}
    */
   public void applyEdit(TextRange editRange, Optional<Integer> rangeLength, String newText) {
+    if (this.originalContent == this.content) {
+      this.originalContent = this.content.toString();
+    }
+    appliedEdits.add(AppliedEdit.create(editRange, rangeLength, newText));
+
     int start = getPositionOffset(editRange.getStart());
     int end = getPositionOffset(editRange.getEnd());
     checkArgument(start <= end, "Range start is after range end.");

@@ -10,6 +10,7 @@ java_library(
         "//src/main/java/org/javacomp/file",
         "//src/main/java/org/javacomp/logging",
         "//src/main/java/org/javacomp/model",
+        "//src/main/java/org/javacomp/parser",
         "//src/main/java/org/javacomp/project",
         "//src/main/java/org/javacomp/project:modulemanager",
         "//src/main/java/org/javacomp/protocol",

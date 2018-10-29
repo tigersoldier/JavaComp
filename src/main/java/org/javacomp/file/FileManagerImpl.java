@@ -168,6 +168,15 @@ public class FileManagerImpl implements FileManager {
   }
 
   @Override
+  public Optional<EditHistory> getFileEditHistory(Path filePath) {
+    Path normalizedPath = filePath.normalize();
+    if (fileSnapshots.containsKey(normalizedPath)) {
+      return Optional.of(fileSnapshots.get(normalizedPath).getEditHistory());
+    }
+    return Optional.empty();
+  }
+
+  @Override
   public void shutdown() {
     fileSnapshots.clear();
   }

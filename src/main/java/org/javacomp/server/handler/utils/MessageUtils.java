@@ -4,10 +4,12 @@ import static com.google.common.base.Preconditions.checkState;
 
 import com.sun.source.tree.LineMap;
 import java.nio.file.Paths;
+import org.javacomp.file.EditHistory.AppliedEdit;
 import org.javacomp.model.FileScope;
 import org.javacomp.protocol.Location;
 import org.javacomp.protocol.Position;
 import org.javacomp.protocol.Range;
+import org.javacomp.protocol.TextEdit;
 
 /** Utility functions for building protocol messages. */
 public final class MessageUtils {
@@ -56,5 +58,12 @@ public final class MessageUtils {
 
     return new Position(
         (int) lineMap.getLineNumber(offset) - 1, (int) lineMap.getColumnNumber(offset) - 1);
+  }
+
+  public static TextEdit buildTextEdit(AppliedEdit appliedEdit) {
+    TextEdit ret = new TextEdit();
+    ret.range = Range.createFromTextRange(appliedEdit.getTextRange());
+    ret.newText = appliedEdit.getNewText();
+    return ret;
   }
 }

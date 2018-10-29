@@ -59,6 +59,13 @@ public interface FileManager {
   Optional<CharSequence> getFileContent(Path filePath);
 
   /**
+   * Gets the edit history of a file.
+   *
+   * <p>It's only present if the file is opened for snapshotting.
+   */
+  Optional<EditHistory> getFileEditHistory(Path filePath);
+
+  /**
    * Shuts down the file manager.
    *
    * <p>All snapshotted files opened by {@link #openForSnapshot} will be closed.

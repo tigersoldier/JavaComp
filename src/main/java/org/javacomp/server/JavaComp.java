@@ -30,6 +30,7 @@ import org.javacomp.server.handler.ExitHandler;
 import org.javacomp.server.handler.InitializeHandler;
 import org.javacomp.server.handler.ShutdownHandler;
 import org.javacomp.server.handler.SignatureHelpTextDocumentHandler;
+import org.javacomp.server.handler.javacomp.DocumentContentHandler;
 import org.javacomp.server.handler.textdocument.CompletionHandler;
 import org.javacomp.server.handler.textdocument.DefinitionHandler;
 import org.javacomp.server.handler.textdocument.DidChangeHandler;
@@ -89,6 +90,8 @@ public class JavaComp implements Server {
             .registerHandler(new ResolveCompletionItemHandler(this, gson))
             .registerHandler(new DocumentSymbolHandler(this))
             .registerHandler(new ReferencesHandler(this))
+            // JavaComp custom handlers
+            .registerHandler(new DocumentContentHandler(this))
             .setExecutor(executor)
             .build();
   }
