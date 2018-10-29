@@ -11,7 +11,9 @@ public abstract class CompletionCandidateWithMatchLevel
       Comparator.comparing(
               (CompletionCandidateWithMatchLevel candidateWithLevel) ->
                   candidateWithLevel.getCompletionCandidate().getSortCategory().ordinal())
-          .thenComparing(candidateWithLevel -> candidateWithLevel.getMatchLevel().ordinal())
+          .thenComparing(
+              candidateWithLevel -> candidateWithLevel.getMatchLevel().ordinal(),
+              Comparator.reverseOrder())
           .thenComparing(
               candidateWithLevel -> candidateWithLevel.getCompletionCandidate().getName());
 
