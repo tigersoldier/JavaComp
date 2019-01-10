@@ -8,7 +8,6 @@ import com.sun.source.tree.MemberSelectTree;
 import com.sun.source.util.TreePath;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.Optional;
 import org.javacomp.file.FileManager;
 import org.javacomp.logging.JLogger;
@@ -46,7 +45,7 @@ public class Completor {
    * @param line 0-based line number of the completion point
    * @param column 0-based character offset from the beginning of the line to the completion point
    */
-  public List<CompletionCandidate> getCompletionCandidates(
+  public CompletionResult getCompletionCandidates(
       ModuleManager moduleManager, Path filePath, int line, int column) {
     // PositionContext gets the tree path whose leaf node includes the position
     // (position < node's endPosition). However, for completions, we want the leaf node either
@@ -58,7 +57,12 @@ public class Completor {
         PositionContext.createForPosition(moduleManager, filePath, line, contextColumn);
 
     if (!positionContext.isPresent()) {
-      return ImmutableList.of();
+      return CompletionResult.builder()
+          .candidates(ImmutableList.of())
+          .prefixLine(line)
+          .prefixStartColumn(column)
+          .prefixEndColumn(column)
+          .build();
     }
 
     String prefix =
@@ -78,7 +82,12 @@ public class Completor {
               .build();
     }
     // TODO: limit the number of the candidates.
-    return candidates;
+    return CompletionResult.builder()
+        .candidates(candidates)
+        .prefixLine(line)
+        .prefixStartColumn(column - prefix.length())
+        .prefixEndColumn(column)
+        .build();
   }
 
   private ImmutableList<CompletionCandidate> computeCompletionCandidates(

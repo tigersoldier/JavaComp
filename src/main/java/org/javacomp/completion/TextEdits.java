@@ -48,27 +48,27 @@ public class TextEdits {
 
     int numNewLineBefore = 0;
     int numNewLineAfter = 0;
-    TextEdit textEdit = new TextEdit();
+    Range range;
 
     if (scanner.afterImportPos != INVALID_POS) {
       // New line, then insert import statement;
-      textEdit.range = createRange(scanner.afterImportPos, lineMap);
+      range = createRange(scanner.afterImportPos, lineMap);
       numNewLineBefore = 1;
     } else if (scanner.beforeImportPos != INVALID_POS) {
       // Insert import statement, then new line.
-      textEdit.range = createRange(scanner.beforeImportPos, lineMap);
+      range = createRange(scanner.beforeImportPos, lineMap);
       numNewLineAfter = 1;
     } else if (scanner.afterStaticImportsPos != INVALID_POS) {
       // 1 blank line between static import and the new import, so two new lines.
-      textEdit.range = createRange(scanner.afterStaticImportsPos, lineMap);
+      range = createRange(scanner.afterStaticImportsPos, lineMap);
       numNewLineBefore = 2;
     } else if (scanner.afterPackagePos != INVALID_POS) {
       // 1 blank line between package statement and the new import, so two new lines.
-      textEdit.range = createRange(scanner.afterPackagePos, lineMap);
+      range = createRange(scanner.afterPackagePos, lineMap);
       numNewLineBefore = 2;
     } else {
       // No package or import statements, insert to the first line and add a blank line below.
-      textEdit.range = new Range(new Position(0, 0), new Position(0, 0));
+      range = new Range(new Position(0, 0), new Position(0, 0));
       numNewLineAfter = 2;
     }
 
@@ -80,9 +80,8 @@ public class TextEdits {
     for (int i = 0; i < numNewLineAfter; i++) {
       sb.append('\n');
     }
-    textEdit.newText = sb.toString();
 
-    return Optional.of(textEdit);
+    return Optional.of(new TextEdit(range, sb.toString()));
   }
 
   private static Range createRange(long pos, LineMap lineMap) {

@@ -61,9 +61,7 @@ public final class MessageUtils {
   }
 
   public static TextEdit buildTextEdit(AppliedEdit appliedEdit) {
-    TextEdit ret = new TextEdit();
-    ret.range = Range.createFromTextRange(appliedEdit.getTextRange());
-    ret.newText = appliedEdit.getNewText();
-    return ret;
+    return new TextEdit(
+        Range.createFromTextRange(appliedEdit.getTextRange()), appliedEdit.getNewText());
   }
 }

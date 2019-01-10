@@ -7,9 +7,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.javacomp.completion.CompletionCandidate;
+import org.javacomp.completion.CompletionResult;
 import org.javacomp.project.Project;
 import org.javacomp.protocol.ClientCapabilities;
+import org.javacomp.protocol.Position;
+import org.javacomp.protocol.Range;
 import org.javacomp.protocol.TextDocumentPositionParams;
+import org.javacomp.protocol.TextEdit;
 import org.javacomp.protocol.textdocument.CompletionItem;
 import org.javacomp.protocol.textdocument.CompletionItem.CompletionItemKind;
 import org.javacomp.protocol.textdocument.CompletionItem.InsertTextFormat;
@@ -44,11 +48,12 @@ public class CompletionHandler extends RequestHandler<TextDocumentPositionParams
       throws Exception {
     TextDocumentPositionParams params = request.getParams();
     Project project = server.getProject();
-    List<CompletionCandidate> candidates =
-        project.getCompletionCandidates(
+    CompletionResult result =
+        project.getCompletionResult(
             Paths.get(params.textDocument.uri),
             params.position.getLine(),
             params.position.getCharacter());
+    List<CompletionCandidate> candidates = result.candidates();
 
     CompletionList completionList = new CompletionList();
     completionList.isIncomplete = (candidates.size() > MAX_CANDIDATES);
@@ -69,7 +74,12 @@ public class CompletionHandler extends RequestHandler<TextDocumentPositionParams
       // sort category ordinal.
       item.sortText = String.format("%05d", i);
 
-      fillInsertText(item, candidate);
+      fillText(
+          item,
+          candidate,
+          result.prefixLine(),
+          result.prefixStartColumn(),
+          result.prefixEndColumn());
       fillData(item, candidate);
 
       completionList.items.add(item);
@@ -77,7 +87,12 @@ public class CompletionHandler extends RequestHandler<TextDocumentPositionParams
     return completionList;
   }
 
-  private void fillInsertText(CompletionItem item, CompletionCandidate candidate) {
+  private void fillText(
+      CompletionItem item,
+      CompletionCandidate candidate,
+      int line,
+      int prefixStartColumn,
+      int prefixEndColumn) {
     boolean supportsSnippet = clientSupportsSnippet(server.getClientCapabilities());
     item.insertTextFormat = supportsSnippet ? InsertTextFormat.SNIPPET : InsertTextFormat.PLAINTEXT;
     Optional<String> insertText = Optional.empty();
@@ -85,10 +100,14 @@ public class CompletionHandler extends RequestHandler<TextDocumentPositionParams
       insertText = candidate.getInsertSnippet();
     }
     if (!insertText.isPresent()) {
-      // Either the client doesn't snippet, or the candidate doesn't have a snippet.
+      // Either the client doesn't support snippet, or the candidate doesn't have a snippet.
       insertText = candidate.getInsertPlainText();
     }
     item.insertText = insertText.orElse(null);
+    item.textEdit =
+        new TextEdit(
+            new Range(new Position(line, prefixStartColumn), new Position(line, prefixEndColumn)),
+            insertText.orElse(candidate.getName()));
   }
 
   private void fillData(CompletionItem item, CompletionCandidate candidate) {

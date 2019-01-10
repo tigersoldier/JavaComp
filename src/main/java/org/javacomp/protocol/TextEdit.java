@@ -14,4 +14,9 @@ public class TextEdit {
 
   /** The string to be inserted. For delete operations use an empty string. */
   public String newText;
+
+  public TextEdit(Range range, String newText) {
+    this.range = range;
+    this.newText = newText;
+  }
 }

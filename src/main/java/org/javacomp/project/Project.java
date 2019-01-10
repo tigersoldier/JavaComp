@@ -15,7 +15,7 @@ import java.nio.file.StandardWatchEventKinds;
 import java.nio.file.WatchEvent;
 import java.util.List;
 import java.util.Optional;
-import org.javacomp.completion.CompletionCandidate;
+import org.javacomp.completion.CompletionResult;
 import org.javacomp.completion.Completor;
 import org.javacomp.completion.TextEdits;
 import org.javacomp.file.FileChangeListener;
@@ -110,8 +110,7 @@ public class Project {
    * @param line 0-based line number
    * @param column 0-based character offset of the line
    */
-  public synchronized List<CompletionCandidate> getCompletionCandidates(
-      Path filePath, int line, int column) {
+  public synchronized CompletionResult getCompletionResult(Path filePath, int line, int column) {
     if (!filePath.equals(lastCompletedFile)) {
       lastCompletedFile = filePath;
       addOrUpdateFile(filePath);
