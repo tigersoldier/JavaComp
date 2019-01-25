@@ -27,9 +27,10 @@ public class VariableEntity extends Entity implements EntityScope {
       boolean isStatic,
       TypeReference type,
       EntityScope parentScope,
+      Optional<String> javadoc,
       Range<Integer> variableNameRange,
       Range<Integer> definitionRange) {
-    super(simpleName, kind, qualifiers, isStatic, variableNameRange);
+    super(simpleName, kind, qualifiers, isStatic, javadoc, variableNameRange);
     checkArgument(ALLOWED_KINDS.contains(kind), "Kind %s is not allowed for variables.", kind);
     this.type = type;
     this.parentScope = parentScope;

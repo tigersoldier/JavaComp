@@ -31,6 +31,7 @@ public class MethodEntity extends Entity implements EntityScope {
       List<VariableEntity> parameters,
       List<TypeParameter> typeParameters,
       ClassEntity classEntity,
+      Optional<String> javadoc,
       Range<Integer> methodNamelRange,
       Range<Integer> definitionRange) {
     super(
@@ -38,6 +39,7 @@ public class MethodEntity extends Entity implements EntityScope {
         Entity.Kind.METHOD,
         qualifiers,
         isStatic,
+        javadoc,
         methodNamelRange);
     this.returnType = returnType;
     this.parameters = ImmutableList.copyOf(parameters);
@@ -112,6 +114,7 @@ public class MethodEntity extends Entity implements EntityScope {
     this.parameters = ImmutableList.copyOf(parameters);
   }
 
+  /** gets paramters */
   public ImmutableList<VariableEntity> getParameters() {
     return parameters;
   }

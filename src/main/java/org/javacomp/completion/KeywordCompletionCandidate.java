@@ -71,6 +71,11 @@ enum KeywordCompletionCandidate implements CompletionCandidate {
   }
 
   @Override
+  public Optional<String> getJavadoc() {
+    return Optional.empty();
+  }
+
+  @Override
   public Optional<String> getDetail() {
     return Optional.ofNullable(null);
   }

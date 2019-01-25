@@ -92,6 +92,7 @@ public class EntityShadowingListBuilder<E> {
           delegate.getKind(),
           delegate.getQualifiers(),
           delegate.isStatic(),
+          delegate.getJavadoc(),
           delegate.getSymbolRange());
       this.delegate = delegate;
     }

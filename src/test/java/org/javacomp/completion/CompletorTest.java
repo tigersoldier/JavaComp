@@ -116,6 +116,21 @@ public class CompletorTest {
   }
 
   @Test
+  public void javadocsFromCandidates() throws Exception {
+    String toComplete = "/** @complete */";
+    List<CompletionCandidate> candidates = completeWithContent("CompleteInMethod.java", toComplete);
+    ImmutableList<String> javadocs =
+        candidates
+            .stream()
+            .filter(candidate -> candidate.getJavadoc().isPresent())
+            .map(candidate -> candidate.getJavadoc().get())
+            .collect(ImmutableList.toImmutableList());
+    assertThat(javadocs)
+        .named("javadocs")
+        .containsExactly("The class above. ", "The class below. ");
+  }
+
+  @Test
   public void completeNewStatement() throws Exception {
     List<String> keywords =
         Arrays.stream(KeywordCompletionCandidate.values())

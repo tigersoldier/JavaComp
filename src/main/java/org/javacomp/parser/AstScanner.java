@@ -24,6 +24,7 @@ import com.sun.source.tree.VariableTree;
 import com.sun.source.tree.WhileLoopTree;
 import com.sun.source.util.TreePathScanner;
 import com.sun.source.util.TreeScanner;
+import com.sun.tools.javac.tree.DocCommentTable;
 import com.sun.tools.javac.tree.EndPosTable;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JCClassDecl;
@@ -63,6 +64,7 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
   private FileScope fileScope = null;
   private List<String> currentQualifiers = new ArrayList<>();
   private EndPosTable endPosTable = null;
+  private DocCommentTable docComments = null;
   private NestedRangeMapBuilder<EntityScope> scopeRangeBuilder = null;
   private String filename = null;
   private String content = null;
@@ -97,6 +99,7 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
             filename, this.currentQualifiers, compilationUnit, content.length());
     this.scopeRangeBuilder = new NestedRangeMapBuilder<>();
     this.endPosTable = compilationUnit.endPositions;
+    this.docComments = compilationUnit.docComments;
     addScopeRange(compilationUnit, this.fileScope);
 
     // Handle imports
@@ -166,7 +169,8 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
     for (Tree implementClause : node.getImplementsClause()) {
       interfaceBuilder.add(typeReferenceScanner.getTypeReference(implementClause));
     }
-    Range<Integer> classNameRange = getClassNameRange((JCClassDecl) node);
+    JCClassDecl classNode = (JCClassDecl) node;
+    Range<Integer> classNameRange = getClassNameRange(classNode);
     boolean isStatic =
         (currentScope instanceof FileScope) // Top-level class is considered static.
             || isStatic(node.getModifiers());
@@ -180,6 +184,7 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
             superClass,
             interfaceBuilder.build(),
             convertTypeParameters(node.getTypeParameters()),
+            getJavadoc(classNode),
             classNameRange,
             getNodeRange(node));
     currentScope.addEntity(classEntity);
@@ -216,6 +221,7 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
 
   @Override
   public Void visitMethod(MethodTree node, EntityScope currentScope) {
+    JCMethodDecl methodNode = (JCMethodDecl) node;
     if (!shouldScanWithModifiers(currentScope, node.getModifiers().getFlags())) {
       return null;
     }
@@ -231,7 +237,7 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
     }
     ImmutableList<TypeParameter> typeParameters = convertTypeParameters(node.getTypeParameters());
     ClassEntity classEntity = (ClassEntity) currentScope;
-    Range<Integer> range = getMethodNameRange((JCMethodDecl) node, classEntity.getSimpleName());
+    Range<Integer> range = getMethodNameRange(methodNode, classEntity.getSimpleName());
     MethodEntity methodEntity =
         new MethodEntity(
             node.getName().toString(),
@@ -241,6 +247,7 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
             ImmutableList.of() /* parameters */,
             typeParameters,
             classEntity,
+            getJavadoc(methodNode),
             range,
             getNodeRange(node));
     ImmutableList.Builder<VariableEntity> parameterListBuilder = new ImmutableList.Builder<>();
@@ -256,7 +263,7 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
     this.currentQualifiers = UNAVAILABLE_QUALIFIERS;
     if (node.getBody() != null && indexOptions.shouldIndexMethodContent()) {
       scan(node.getBody(), methodEntity);
-      addScopeRange((JCTree) node, methodEntity);
+      addScopeRange(methodNode, methodEntity);
     }
     this.currentQualifiers = previousQualifiers;
     return null;
@@ -264,13 +271,14 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
 
   @Override
   public Void visitVariable(VariableTree node, EntityScope currentScope) {
+    JCVariableDecl variableNode = (JCVariableDecl) node;
     if (!shouldScanWithModifiers(currentScope, node.getModifiers().getFlags())) {
       return null;
     }
 
     Entity.Kind variableKind =
         (currentScope instanceof ClassEntity) ? Entity.Kind.FIELD : Entity.Kind.VARIABLE;
-    Range<Integer> range = getVariableNameRange((JCVariableDecl) node);
+    Range<Integer> range = getVariableNameRange(variableNode);
 
     TypeReference variableType;
     if (node.getType() == null) {
@@ -288,10 +296,11 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
             isStatic(node.getModifiers()),
             variableType,
             currentScope,
+            getJavadoc(variableNode),
             range,
             getNodeRange(node));
     currentScope.addEntity(variableEntity);
-    addScopeRange((JCTree) node, variableEntity);
+    addScopeRange(variableNode, variableEntity);
     // TODO: add entity to module if it's a non-private static entity.
     return null;
   }
@@ -474,6 +483,10 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
     return modifierTree.getFlags().contains(Modifier.STATIC);
   }
 
+  private Optional<String> getJavadoc(JCTree node) {
+    return Optional.ofNullable(docComments.getCommentText(node));
+  }
+
   private class ParameterScanner extends TreeScanner<Void, Void> {
     private final TypeReferenceScanner typeReferenceScanner;
     private String name = "";
@@ -497,6 +510,7 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
               false /* isStatic */,
               type,
               currentScope,
+              Optional.empty() /* javadoc */,
               range,
               getNodeRange(node));
       addScopeRange((JCTree) node, variableEntity);

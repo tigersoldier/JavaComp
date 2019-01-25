@@ -45,9 +45,10 @@ public class ClassEntity extends Entity implements EntityScope {
       Optional<TypeReference> superClass,
       List<TypeReference> interfaces,
       List<TypeParameter> typeParameters,
+      Optional<String> javadoc,
       Range<Integer> classNameRage,
       Range<Integer> definitionRange) {
-    super(simpleName, kind, qualifiers, isStatic, classNameRage);
+    super(simpleName, kind, qualifiers, isStatic, javadoc, classNameRage);
     checkArgument(
         ALLOWED_KINDS.contains(kind),
         "Invalid entity kind %s, allowed kinds are %s",

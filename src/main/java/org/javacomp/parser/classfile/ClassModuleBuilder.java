@@ -93,6 +93,7 @@ public class ClassModuleBuilder {
             Optional.of(signature.getSuperClass()),
             signature.getInterfaces(),
             signature.getTypeParameters(),
+            Optional.empty() /* javadoc */,
             EMPTY_RANGE,
             EMPTY_RANGE);
 
@@ -127,6 +128,7 @@ public class ClassModuleBuilder {
               false /* isStatic */,
               parameterType,
               parentClass,
+              Optional.empty() /* javadoc */,
               EMPTY_RANGE,
               EMPTY_RANGE));
     }
@@ -140,6 +142,7 @@ public class ClassModuleBuilder {
             parameters,
             signature.getTypeParameters(),
             parentClass,
+            Optional.empty() /* javadoc */,
             EMPTY_RANGE,
             EMPTY_RANGE);
     return method;
@@ -155,6 +158,7 @@ public class ClassModuleBuilder {
             parsedField.isStatic(),
             parsedField.getFieldType(),
             parentClass,
+            Optional.empty() /* javadoc */,
             EMPTY_RANGE,
             EMPTY_RANGE);
     return field;

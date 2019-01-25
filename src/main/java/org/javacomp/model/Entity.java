@@ -39,17 +39,20 @@ public abstract class Entity {
   private final Kind kind;
   private final boolean isStatic;
   private final Range<Integer> symbolRange;
+  private final Optional<String> javadoc;
 
   protected Entity(
       String simpleName,
       Kind kind,
       List<String> qualifiers,
       boolean isStatic,
+      Optional<String> javadoc,
       Range<Integer> symbolRange) {
     this.simpleName = simpleName;
     this.kind = kind;
     this.qualifiers = ImmutableList.copyOf(qualifiers);
     this.isStatic = isStatic;
+    this.javadoc = javadoc;
     this.symbolRange = symbolRange;
   }
 
@@ -73,6 +76,10 @@ public abstract class Entity {
 
   public Kind getKind() {
     return kind;
+  }
+
+  public Optional<String> getJavadoc() {
+    return javadoc;
   }
 
   public Range<Integer> getSymbolRange() {

@@ -14,6 +14,7 @@ public class NullEntity extends Entity {
         Entity.Kind.NULL,
         ImmutableList.<String>of() /* qualifiers */,
         true /* isStatic */,
+        Optional.empty() /* javadoc */,
         Range.closedOpen(0, 0));
   }
 

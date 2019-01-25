@@ -24,6 +24,11 @@ public abstract class SimpleCompletionCandidate implements CompletionCandidate {
     return Optional.empty();
   }
 
+  @Override
+  public Optional<String> getJavadoc() {
+    return Optional.empty();
+  }
+
   @AutoValue.Builder
   public abstract static class Builder {
     public abstract Builder setName(String name);

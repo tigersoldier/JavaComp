@@ -1,5 +1,6 @@
 package org.javacomp.completion;
 
+import java.util.Optional;
 import org.javacomp.model.Entity;
 
 /** A completion candidate backed by a {@link Entity}. */
@@ -12,5 +13,10 @@ abstract class EntityBasedCompletionCandidate implements CompletionCandidate {
 
   Entity getEntity() {
     return entity;
+  }
+
+  @Override
+  public Optional<String> getJavadoc() {
+    return getEntity().getJavadoc();
   }
 }

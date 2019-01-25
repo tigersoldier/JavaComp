@@ -11,7 +11,12 @@ public class PackageEntity extends Entity {
 
   public PackageEntity(String simpleName, List<String> qualifiers, PackageScope packageScope) {
     super(
-        simpleName, Entity.Kind.QUALIFIER, qualifiers, true /* isStatic */, Range.closedOpen(0, 0));
+        simpleName,
+        Entity.Kind.QUALIFIER,
+        qualifiers,
+        true /* isStatic */,
+        Optional.empty() /* javadoc */,
+        Range.closedOpen(0, 0));
     this.packageScope = packageScope;
   }
 

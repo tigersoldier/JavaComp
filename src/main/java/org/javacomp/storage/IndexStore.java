@@ -275,6 +275,7 @@ public class IndexStore {
             superClass,
             interfaces,
             typeParameters,
+            Optional.ofNullable(serializedEntity.javadoc),
             EMPTY_RANGE,
             EMPTY_RANGE);
     if (serializedEntity.members != null) {
@@ -323,6 +324,7 @@ public class IndexStore {
         parameters,
         typeParameters,
         classEntity,
+        Optional.ofNullable(serializedEntity.javadoc),
         EMPTY_RANGE,
         EMPTY_RANGE);
   }
@@ -343,6 +345,7 @@ public class IndexStore {
         serializedEntity.isStatic,
         type,
         parentScope,
+        Optional.ofNullable(serializedEntity.javadoc),
         EMPTY_RANGE,
         EMPTY_RANGE);
   }
@@ -591,6 +594,7 @@ public class IndexStore {
     private SerializedType superClass;
     private List<SerializedType> interfaces;
     private List<SerializedTypeParameter> typeParameters;
+    private String javadoc;
 
     @Override
     public int compareTo(SerializedEntity other) {
@@ -618,6 +622,11 @@ public class IndexStore {
       }
 
       ret = Objects.compare(this.type, other.type, Comparator.naturalOrder());
+      if (ret != 0) {
+        return ret;
+      }
+
+      ret = Objects.compare(this.javadoc, other.javadoc, Comparator.naturalOrder());
       if (ret != 0) {
         return ret;
       }

@@ -7,6 +7,7 @@ public class CompleteInMethod {
 
   public static void staticMethod();
 
+  /** The class above. */
   public class AboveClass {
     public static final int STATIC_ABOVE_FIELD;
     public final int aboveField;
@@ -21,6 +22,7 @@ public class CompleteInMethod {
     /** @insert */
   }
 
+  /** The class below. */
   public class BelowClass {
     public static final int STATIC_BELOW_FIELD;
     public final int belowField;
