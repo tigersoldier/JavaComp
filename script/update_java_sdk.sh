@@ -13,7 +13,7 @@ function index {
     echo Indexing $JDK_CLASSES_DIR
     bazel run src/main/java/org/javacomp/tool:Indexer -- \
           $JDK_CLASSES_DIR \
-          $ROOT_DIR/resources/jdk/index.json \
+          -o $ROOT_DIR/resources/jdk/index.json \
           --no-jdk
 }
 

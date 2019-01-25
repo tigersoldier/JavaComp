@@ -145,6 +145,7 @@ public class IndexStore {
     ret.kind = entity.getKind().name();
     ret.simpleName = entity.getSimpleName();
     ret.isStatic = entity.isStatic();
+    ret.javadoc = entity.getJavadoc().orElse(null);
     return ret;
   }
 
