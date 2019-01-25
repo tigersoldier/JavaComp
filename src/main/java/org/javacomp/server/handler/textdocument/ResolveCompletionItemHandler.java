@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import org.javacomp.protocol.textdocument.CompletionItem;
 import org.javacomp.protocol.textdocument.CompletionItem.ResolveAddImportTextEditsParams;
 import org.javacomp.protocol.textdocument.CompletionItem.ResolveData;
+import org.javacomp.protocol.textdocument.CompletionItem.ResolveFormatJavadocParams;
 import org.javacomp.server.Request;
 import org.javacomp.server.Server;
 import org.javacomp.server.handler.RequestHandler;
@@ -40,6 +41,9 @@ public class ResolveCompletionItemHandler extends RequestHandler<CompletionItem>
         case ADD_IMPORT_TEXT_EDIT:
           resolveImportClass(completionItem, data.params);
           break;
+        case FORMAT_JAVADOC:
+          populateDocumentation(completionItem, data.params);
+          break;
         default:
           throw new UnsupportedOperationException("Unsupported resolve action: " + data.action);
       }
@@ -57,5 +61,11 @@ public class ResolveCompletionItemHandler extends RequestHandler<CompletionItem>
         gson.fromJson(jsonParams, ResolveAddImportTextEditsParams.class);
     completionItem.additionalTextEdits.add(
         server.getProject().textEditForImport(Paths.get(params.uri), params.classFullName));
+  }
+
+  private void populateDocumentation(CompletionItem completionItem, JsonElement jsonParams) {
+    ResolveFormatJavadocParams params = gson.fromJson(jsonParams, ResolveFormatJavadocParams.class);
+    // TODO: Convert JavaDoc to markdown format.
+    completionItem.documentation = params.javadoc;
   }
 }

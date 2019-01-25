@@ -42,9 +42,12 @@ class ClassForImportCandidate extends EntityBasedCompletionCandidate {
 
   @Override
   public Map<ResolveAction, ResolveActionParams> getResolveActions() {
+    ImmutableMap.Builder<ResolveAction, ResolveActionParams> builder = new ImmutableMap.Builder<>();
     ResolveAddImportTextEditsParams params = new ResolveAddImportTextEditsParams();
     params.uri = filePath.toUri();
     params.classFullName = getEntity().getQualifiedName();
-    return ImmutableMap.of(ResolveAction.ADD_IMPORT_TEXT_EDIT, params);
+    builder.put(ResolveAction.ADD_IMPORT_TEXT_EDIT, params);
+    builder.putAll(super.getResolveActions());
+    return builder.build();
   }
 }

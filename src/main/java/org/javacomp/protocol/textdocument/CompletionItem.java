@@ -136,6 +136,13 @@ public class CompletionItem implements RequestParams {
   public enum ResolveAction {
     /** Fill additionalTextEdits with adding import statements. */
     ADD_IMPORT_TEXT_EDIT,
+    /**
+     * Convert the documentation from JavaDoc format to Markdown format.
+     *
+     * <p>We defer the conversion from completion time to resolve time to reduce unnecessary cost
+     * and latency.
+     */
+    FORMAT_JAVADOC,
   }
 
   /** Marker interface for the actual type of {@link ResolveData#data}. */
@@ -147,5 +154,15 @@ public class CompletionItem implements RequestParams {
     public URI uri;
     /** The full name of the class to be imported. */
     public String classFullName;
+  }
+
+  /** Resolve data for FORMAT_JAVADOC action. */
+  public static class ResolveFormatJavadocParams implements ResolveActionParams {
+    /** The javadoc to be converted. */
+    public String javadoc;
+
+    public ResolveFormatJavadocParams(String javadoc) {
+      this.javadoc = javadoc;
+    }
   }
 }

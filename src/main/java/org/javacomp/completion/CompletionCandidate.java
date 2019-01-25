@@ -47,8 +47,6 @@ public interface CompletionCandidate {
 
   Optional<String> getDetail();
 
-  Optional<String> getJavadoc();
-
   default Optional<String> getInsertPlainText() {
     return Optional.empty();
   }
