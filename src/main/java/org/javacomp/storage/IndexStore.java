@@ -627,7 +627,9 @@ public class IndexStore {
         return ret;
       }
 
-      ret = Objects.compare(this.javadoc, other.javadoc, Comparator.naturalOrder());
+      ret =
+          Objects.compare(
+              this.javadoc, other.javadoc, Comparator.nullsLast(Comparator.naturalOrder()));
       if (ret != 0) {
         return ret;
       }
