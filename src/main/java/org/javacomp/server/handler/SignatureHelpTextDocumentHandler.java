@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 import org.javacomp.model.MethodEntity;
 import org.javacomp.model.VariableEntity;
 import org.javacomp.project.Project;
+import org.javacomp.protocol.MarkupContent;
 import org.javacomp.protocol.SignatureHelp;
 import org.javacomp.protocol.TextDocumentPositionParams;
 import org.javacomp.reference.MethodSignatures;
@@ -81,6 +82,9 @@ public class SignatureHelpTextDocumentHandler extends RequestHandler<TextDocumen
     }
     sb.append(")");
     signature.label = sb.toString();
+    if (method.getJavadoc().isPresent()) {
+      signature.documentation = MarkupContent.markdown(method.getJavadoc().get());
+    }
 
     return signature;
   }

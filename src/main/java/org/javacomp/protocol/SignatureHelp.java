@@ -46,7 +46,7 @@ public class SignatureHelp {
     /**
      * The human-readable doc-comment of this signature. Will be shown in the UI but can be omitted.
      */
-    @Nullable public String documentation;
+    @Nullable public MarkupContent documentation;
 
     /** The parameters of this signature. */
     @Nullable public List<ParameterInformation> parameters;
@@ -62,6 +62,6 @@ public class SignatureHelp {
     /**
      * The human-readable doc-comment of this parameter. Will be shown in the UI but can be omitted.
      */
-    @Nullable public String documentation;
+    @Nullable public MarkupContent documentation;
   }
 }
