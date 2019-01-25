@@ -1,9 +1,9 @@
 package org.javacomp.server.handler.textdocument;
 
-import com.google.common.collect.ImmutableList;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
+import java.util.StringJoiner;
 import java.util.stream.Collectors;
 import org.javacomp.logging.JLogger;
 import org.javacomp.model.ClassEntity;
@@ -12,6 +12,7 @@ import org.javacomp.model.MethodEntity;
 import org.javacomp.model.TypeReference;
 import org.javacomp.model.VariableEntity;
 import org.javacomp.project.Project;
+import org.javacomp.protocol.MarkupContent;
 import org.javacomp.protocol.TextDocumentPositionParams;
 import org.javacomp.protocol.textdocument.Hover;
 import org.javacomp.server.Request;
@@ -44,30 +45,29 @@ public class HoverHandler extends RequestHandler<TextDocumentPositionParams> {
             params.position.getLine(),
             params.position.getCharacter());
 
-    Hover hover = new Hover();
-
     if (definitions.isEmpty()) {
-      hover.contents = ImmutableList.of();
-      return hover;
+      return null;
     }
+
+    Hover hover = new Hover();
+    StringJoiner contentBlocks = new StringJoiner("\n\n");
 
     Entity entity = definitions.get(0);
+    if (entity.getJavadoc().isPresent()) {
+      contentBlocks.add(entity.getJavadoc().get());
+    }
     Optional<String> languageValue = formatEntity(entity);
-    if (!languageValue.isPresent()) {
-      hover.contents = ImmutableList.of();
-      return hover;
+    if (languageValue.isPresent()) {
+      contentBlocks.add((createLanguageString(languageValue.get())));
     }
 
-    hover.contents = ImmutableList.of(createLanguageString(languageValue.get()));
+    hover.contents = MarkupContent.markdown(contentBlocks.toString());
 
     return hover;
   }
 
-  private Hover.LanguageString createLanguageString(String value) {
-    Hover.LanguageString languageString = new Hover.LanguageString();
-    languageString.value = value;
-    languageString.language = "java";
-    return languageString;
+  private String createLanguageString(String value) {
+    return String.format("```java\n%s\n```", value);
   }
 
   private Optional<String> formatEntity(Entity entity) {
