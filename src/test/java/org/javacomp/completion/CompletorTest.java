@@ -21,6 +21,8 @@ import org.javacomp.parser.AstScanner;
 import org.javacomp.parser.ParserContext;
 import org.javacomp.project.PositionContext;
 import org.javacomp.project.SimpleModuleManager;
+import org.javacomp.protocol.textdocument.CompletionItem.ResolveAction;
+import org.javacomp.protocol.textdocument.CompletionItem.ResolveFormatJavadocParams;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -122,8 +124,16 @@ public class CompletorTest {
     ImmutableList<String> javadocs =
         candidates
             .stream()
-            .filter(candidate -> candidate.getJavadoc().isPresent())
-            .map(candidate -> candidate.getJavadoc().get())
+            .filter(
+                candidate ->
+                    candidate.getResolveActions().containsKey(ResolveAction.FORMAT_JAVADOC))
+            .map(
+                candidate -> {
+                  ResolveFormatJavadocParams params =
+                      (ResolveFormatJavadocParams)
+                          candidate.getResolveActions().get(ResolveAction.FORMAT_JAVADOC);
+                  return params.javadoc;
+                })
             .collect(ImmutableList.toImmutableList());
     assertThat(javadocs)
         .named("javadocs")

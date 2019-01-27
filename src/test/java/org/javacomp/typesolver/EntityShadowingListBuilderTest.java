@@ -43,6 +43,7 @@ public class EntityShadowingListBuilderTest {
             Optional.empty() /* superClass */,
             ImmutableList.of() /* interfaces */,
             ImmutableList.of() /* typeParameters */,
+            Optional.empty() /* javadoc */,
             Range.all() /* classNameRange */,
             Range.all() /* definitionRange */);
     classEntity2 =
@@ -55,6 +56,7 @@ public class EntityShadowingListBuilderTest {
             Optional.empty() /* superClass */,
             ImmutableList.of() /* interfaces */,
             ImmutableList.of() /* typeParameters */,
+            Optional.empty() /* javadoc */,
             Range.all() /* classNameRange */,
             Range.all() /* definitionRange */);
     variableEntity =
@@ -65,6 +67,7 @@ public class EntityShadowingListBuilderTest {
             false /* isStatic */,
             TypeReference.JAVA_LANG_OBJECT,
             classEntity,
+            Optional.empty() /* javadoc */,
             Range.all(), /* variableNameRange */
             Range.all() /* definitionRange */);
     variableEntity2 =
@@ -75,6 +78,7 @@ public class EntityShadowingListBuilderTest {
             false /* isStatic */,
             TypeReference.JAVA_LANG_OBJECT,
             classEntity,
+            Optional.empty() /* javadoc */,
             Range.all(), /* variableNameRange */
             Range.all() /* definitionRange */);
     methodEntity =
@@ -86,6 +90,7 @@ public class EntityShadowingListBuilderTest {
             ImmutableList.of() /* parameters */,
             ImmutableList.of() /* typeParameters */,
             classEntity,
+            Optional.empty() /* javadoc */,
             Range.all(), /* methodNameRange */
             Range.all() /* definitionRange */);
   }
