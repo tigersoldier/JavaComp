@@ -3,12 +3,14 @@ package org.javacomp.typesolver;
 import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.truth.Truth8;
 import com.sun.source.tree.ExpressionTree;
 import java.nio.file.Paths;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import org.javacomp.model.ClassEntity;
 import org.javacomp.model.Entity;
 import org.javacomp.model.EntityScope;
@@ -312,17 +314,19 @@ public class ExpressionSolverTest {
 
   @Test
   public void solveNewClassConstructorDefinition() {
-    MethodEntity emptyConstructor = (MethodEntity) solveDefinition("new InnerA()", methodScope);
+    MethodEntity emptyConstructor =
+        (MethodEntity) solveDefinition("new InnerA()", methodScope, Entity.Kind.METHOD);
     assertThat(emptyConstructor.isConstructor()).named("is constructor").isTrue();
     assertThat(emptyConstructor.getParameters()).named("constructor parameter").isEmpty();
-    MethodEntity intConstructor = (MethodEntity) solveDefinition("new InnerA(42)", methodScope);
+    MethodEntity intConstructor =
+        (MethodEntity) solveDefinition("new InnerA(42)", methodScope, Entity.Kind.METHOD);
     assertThat(intConstructor.isConstructor()).named("is constructor").isTrue();
     assertThat(intConstructor.getParameters()).named("constructor parameter").hasSize(1);
   }
 
   @Test
   public void solveMethodWithLambdaAsParameter() {
-    assertThat(solveDefinition("lambdaCall((arg) -> {return;})", methodScope))
+    assertThat(solveDefinition("lambdaCall((arg) -> {return;})", methodScope, Entity.Kind.METHOD))
         .isSameAs(lambdaCallMethod);
   }
 
@@ -330,7 +334,8 @@ public class ExpressionSolverTest {
   public void solveTypeCast() {
     assertThat(solveExpression("(InnerC) baseInnerB", topLevelClass).getEntity())
         .isSameAs(innerCClass);
-    assertThat(solveDefinition("((InnerC) baseInnerB).innerCField", topLevelClass))
+    assertThat(
+            solveDefinition("((InnerC) baseInnerB).innerCField", topLevelClass, Entity.Kind.FIELD))
         .isSameAs(TestUtil.lookupEntity(TOP_LEVEL_CLASS_FULL_NAME + ".InnerC.innerCField", module));
     assertThat(solveExpression("(byte) 1", topLevelClass).getEntity())
         .isSameAs(PrimitiveEntity.BYTE);
@@ -338,7 +343,7 @@ public class ExpressionSolverTest {
 
   @Test
   public void solveJavaLangClass() {
-    assertThat(solveDefinition("String", methodScope)).isSameAs(fakeStringClass);
+    assertThat(solveDefinition("String", methodScope, Entity.Kind.CLASS)).isSameAs(fakeStringClass);
   }
 
   @Test
@@ -394,11 +399,16 @@ public class ExpressionSolverTest {
         .isSameAs(onDemandClass);
   }
 
-  private Entity solveDefinition(String expression, EntityScope baseScope) {
+  private Entity solveDefinition(
+      String expression, EntityScope baseScope, Entity.Kind... allowedKinds) {
+    Set<Entity.Kind> allowedKindSet =
+        allowedKinds.length == 0
+            ? EnumSet.allOf(Entity.Kind.class)
+            : ImmutableSet.copyOf(allowedKinds);
     ExpressionTree expressionTree = TestUtil.parseExpression(expression);
     List<EntityWithContext> solvedExpression =
         expressionSolver.solveDefinitions(
-            expressionTree, module, baseScope, -1 /* position */, EnumSet.allOf(Entity.Kind.class));
+            expressionTree, module, baseScope, -1 /* position */, allowedKindSet);
     assertThat(solvedExpression).named(expression).isNotEmpty();
     return solvedExpression.get(0).getEntity();
   }

@@ -12,7 +12,6 @@ import org.javacomp.model.EntityWithContext;
 import org.javacomp.model.MethodEntity;
 import org.javacomp.model.Module;
 import org.javacomp.model.PrimitiveEntity;
-import org.javacomp.model.SolvedType;
 import org.javacomp.model.TypeArgument;
 import org.javacomp.model.VariableEntity;
 
@@ -80,24 +79,15 @@ public class MemberSolver {
     return typeSolver.findEntityMember(identifier, baseEntity, module, allowedKinds);
   }
 
-  /**
-   * @return a list of {@link MethodEntity} instances. The best match is the first element if not
-   *     empty.
-   */
+  /** @return a list of {@link MethodEntity} instances. */
   public List<EntityWithContext> findMethodMembers(
-      String identifier,
-      List<Optional<SolvedType>> arguments,
-      EntityWithContext baseEntity,
-      Module module) {
+      String identifier, EntityWithContext baseEntity, Module module) {
     // Methods must be defined in classes.
     if (!(baseEntity.getEntity() instanceof ClassEntity)) {
       logger.warning(new Throwable(), "Cannot find method of non-class entities %s", baseEntity);
       return ImmutableList.of();
     }
 
-    List<EntityWithContext> methodEntities =
-        typeSolver.findClassMethods(identifier, baseEntity, module);
-
-    return overloadSolver.prioritizeMatchedMethod(methodEntities, arguments, module);
+    return typeSolver.findClassMethods(identifier, baseEntity, module);
   }
 }
