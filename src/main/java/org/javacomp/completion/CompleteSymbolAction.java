@@ -3,6 +3,8 @@ package org.javacomp.completion;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Multimap;
+import com.google.common.collect.Sets;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -31,6 +33,13 @@ class CompleteSymbolAction implements CompletionAction {
           .addAll(VariableEntity.ALLOWED_KINDS)
           .add(Entity.Kind.METHOD)
           .build();
+  private static final ClassMemberCompletor.Options CLASS_SCOPE_COMPLETE_OPTIONS =
+      ClassMemberCompletor.Options.builder()
+      .allowedKinds(Sets.immutableEnumSet(EnumSet.allOf(Entity.Kind.class)))
+      // TODO: In static scope only static members are accessible.
+      .addBothInstanceAndStaticMembers(true)
+      .includeAllMethodOverloads(true)
+      .build();
 
   private final TypeSolver typeSolver;
   private final ClassMemberCompletor classMemberCompletor;
@@ -55,7 +64,7 @@ class CompleteSymbolAction implements CompletionAction {
                 EntityWithContext.ofEntity((ClassEntity) currentScope),
                 positionContext.getModule(),
                 completionPrefix,
-                true /* addBothInstanceAndStaticMembers */));
+                CLASS_SCOPE_COMPLETE_OPTIONS));
       } else if (currentScope instanceof FileScope) {
         FileScope fileScope = (FileScope) currentScope;
         builder.addEntities(

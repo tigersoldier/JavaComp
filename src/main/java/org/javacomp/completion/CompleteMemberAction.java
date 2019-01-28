@@ -1,12 +1,10 @@
 package org.javacomp.completion;
 
-import static com.google.common.base.Preconditions.checkArgument;
-
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Sets;
 import com.sun.source.tree.ExpressionTree;
-import com.sun.source.tree.MemberSelectTree;
-import com.sun.source.util.TreePath;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.Optional;
 import org.javacomp.logging.JLogger;
 import org.javacomp.model.ClassEntity;
@@ -19,61 +17,86 @@ import org.javacomp.typesolver.TypeSolver;
 /** An action to get completion candidates for member selection. */
 class CompleteMemberAction implements CompletionAction {
   private static final JLogger logger = JLogger.createForEnclosingClass();
-  private final ExpressionTree memberExpression;
+
+  private static final ClassMemberCompletor.Options MEMBER_SELECT_OPTIONS =
+      ClassMemberCompletor.Options.builder()
+          .allowedKinds(Sets.immutableEnumSet(EnumSet.allOf(Entity.Kind.class)))
+          .addBothInstanceAndStaticMembers(false)
+          .includeAllMethodOverloads(true)
+          .build();
+  private static final ClassMemberCompletor.Options METHOD_REFERENCE_OPTIONS =
+      ClassMemberCompletor.Options.builder()
+          .allowedKinds(Sets.immutableEnumSet(Entity.Kind.METHOD))
+          .addBothInstanceAndStaticMembers(false)
+          .includeAllMethodOverloads(false)
+          .build();
+  private final ExpressionTree parentExpression;
   private final TypeSolver typeSolver;
   private final ExpressionSolver expressionSolver;
+  private final ClassMemberCompletor.Options options;
 
-  CompleteMemberAction(
-      TreePath treePath, TypeSolver typeSolver, ExpressionSolver expressionSolver) {
-    checkArgument(
-        treePath.getLeaf() instanceof MemberSelectTree,
-        "Expecting MemberSelectTree, but got %s",
-        treePath.getLeaf().getClass().getSimpleName());
-
-    this.memberExpression = ((MemberSelectTree) treePath.getLeaf()).getExpression();
+  private CompleteMemberAction(
+      ExpressionTree parentExpression,
+      TypeSolver typeSolver,
+      ExpressionSolver expressionSolver,
+      ClassMemberCompletor.Options options) {
+    this.parentExpression = parentExpression;
     this.typeSolver = typeSolver;
     this.expressionSolver = expressionSolver;
+    this.options = options;
+  }
+
+  static CompleteMemberAction forMemberSelect(
+      ExpressionTree parentExpression, TypeSolver typeSolver, ExpressionSolver expressionSolver) {
+    return new CompleteMemberAction(
+        parentExpression, typeSolver, expressionSolver, MEMBER_SELECT_OPTIONS);
+  }
+
+  static CompleteMemberAction forMethodReference(
+      ExpressionTree parentExpression, TypeSolver typeSolver, ExpressionSolver expressionSolver) {
+    return new CompleteMemberAction(
+        parentExpression, typeSolver, expressionSolver, METHOD_REFERENCE_OPTIONS);
   }
 
   @Override
   public ImmutableList<CompletionCandidate> getCompletionCandidates(
       PositionContext positionContext, String completionPrefix) {
-    Optional<EntityWithContext> solvedEntityWithContext =
+    Optional<EntityWithContext> solvedParent =
         expressionSolver.solve(
-            memberExpression,
+            parentExpression,
             positionContext.getModule(),
             positionContext.getScopeAtPosition(),
             positionContext.getPosition());
-    logger.fine("Solved member expression: %s", solvedEntityWithContext);
-    if (!solvedEntityWithContext.isPresent()) {
+    logger.fine("Solved parent expression: %s", solvedParent);
+    if (!solvedParent.isPresent()) {
       return ImmutableList.of();
     }
 
     // TODO: handle array type
-    if (solvedEntityWithContext.get().getArrayLevel() > 0) {
+    if (solvedParent.get().getArrayLevel() > 0) {
       return ImmutableList.of();
     }
 
-    if (solvedEntityWithContext.get().getEntity() instanceof ClassEntity) {
+    if (solvedParent.get().getEntity() instanceof ClassEntity) {
       return new ClassMemberCompletor(typeSolver, expressionSolver)
           .getClassMembers(
-              solvedEntityWithContext.get(),
-              positionContext.getModule(),
-              completionPrefix,
-              false /* addBothInstanceAndContextMembers */);
+              solvedParent.get(), positionContext.getModule(), completionPrefix, options);
     }
 
-    return createCompletionCandidates(
-        solvedEntityWithContext.get().getEntity().getScope().getMemberEntities().values(),
-        completionPrefix);
+    // Parent is a package.
+    return completePackageMembers(
+        solvedParent.get().getEntity().getScope().getMemberEntities().values(), completionPrefix);
   }
 
-  private static ImmutableList<CompletionCandidate> createCompletionCandidates(
+  private ImmutableList<CompletionCandidate> completePackageMembers(
       Collection<Entity> entities, String completionPrefix) {
     return entities
         .stream()
         .filter(
-            (entity -> CompletionPrefixMatcher.matches(entity.getSimpleName(), completionPrefix)))
+            (entity) -> {
+              return options.allowedKinds().contains(entity.getKind())
+                  && CompletionPrefixMatcher.matches(entity.getSimpleName(), completionPrefix);
+            })
         .map(
             (entity) ->
                 new EntityCompletionCandidate(

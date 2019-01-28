@@ -38,7 +38,7 @@ public class FileContentFixer {
       Token token = scanner.token();
       if (token.kind == TokenKind.EOF) {
         break;
-      } else if (token.kind == TokenKind.DOT) {
+      } else if (token.kind == TokenKind.DOT || token.kind == TokenKind.COLCOL) {
         fixMemberSelection(scanner, insertions);
       } else if (token.kind == TokenKind.ERROR) {
         int errPos = scanner.errPos();

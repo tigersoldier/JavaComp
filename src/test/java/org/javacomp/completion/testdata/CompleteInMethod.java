@@ -5,8 +5,6 @@ public class CompleteInMethod {
   public CompleteInMethod self = new CompleteInMethod();
   public FakeString fakeString;
 
-  public static void staticMethod();
-
   /** The class above. */
   public class AboveClass {
     public static final int STATIC_ABOVE_FIELD;
@@ -21,6 +19,9 @@ public class CompleteInMethod {
     BelowClass below = new BelowClass();
     /** @insert */
   }
+
+  public static void staticMethod();
+  public static void staticMethod(int value);
 
   /** The class below. */
   public class BelowClass {

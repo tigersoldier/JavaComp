@@ -2,6 +2,7 @@ package org.javacomp.completion;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
@@ -200,7 +201,21 @@ public class CompletorTest {
         "AboveClass",
         "BelowClass",
         "STATIC_FIELD",
+        "staticMethod",
+        "staticMethod" /* overload of staticMethod */);
+  }
+
+  @Test
+  public void completeMethodReference() throws Exception {
+    assertCompletion(
+        "CompleteInMethod.java",
+        ImmutableList.of("CompleteInMethod::/** @complete */"),
         "staticMethod");
+    assertCompletion(
+        "CompleteInMethod.java",
+        ImmutableList.of("this::/** @complete */"),
+        "completeMethod",
+        "toString");
   }
 
   @Test
@@ -318,7 +333,7 @@ public class CompletorTest {
           .containsExactly((Object[]) expectedCandidates);
     }
 
-    Multimap<Character, String> candidatePrefixMap = HashMultimap.create();
+    Multimap<Character, String> candidatePrefixMap = ArrayListMultimap.create();
     for (String candidate : expectedCandidates) {
       char prefix = candidate.charAt(0);
       char lowerPrefix = Character.toLowerCase(prefix);

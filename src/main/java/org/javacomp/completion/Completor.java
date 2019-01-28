@@ -2,15 +2,20 @@ package org.javacomp.completion;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Sets;
+import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.LineMap;
 import com.sun.source.tree.LiteralTree;
+import com.sun.source.tree.MemberReferenceTree;
 import com.sun.source.tree.MemberSelectTree;
 import com.sun.source.util.TreePath;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import java.nio.file.Path;
+import java.util.EnumSet;
 import java.util.Optional;
 import org.javacomp.file.FileManager;
 import org.javacomp.logging.JLogger;
+import org.javacomp.model.Entity;
 import org.javacomp.model.FileScope;
 import org.javacomp.parser.LineMapUtil;
 import org.javacomp.project.ModuleManager;
@@ -95,7 +100,16 @@ public class Completor {
     TreePath treePath = positionContext.getTreePath();
     CompletionAction action;
     if (treePath.getLeaf() instanceof MemberSelectTree) {
-      action = new CompleteMemberAction(treePath, typeSolver, expressionSolver);
+      ExpressionTree parentExpression = ((MemberSelectTree) treePath.getLeaf()).getExpression();
+      action =
+          CompleteMemberAction.forMemberSelect(
+              parentExpression, typeSolver, expressionSolver);
+    } else if (treePath.getLeaf() instanceof MemberReferenceTree) {
+      ExpressionTree parentExpression =
+          ((MemberReferenceTree) treePath.getLeaf()).getQualifierExpression();
+      action =
+          CompleteMemberAction.forMethodReference(
+              parentExpression, typeSolver, expressionSolver);
     } else if (treePath.getLeaf() instanceof LiteralTree) {
       // Do not complete on any literals, especially strings.
       action = NoCandidateAction.INSTANCE;
