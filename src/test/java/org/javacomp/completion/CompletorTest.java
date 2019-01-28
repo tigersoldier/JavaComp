@@ -4,7 +4,6 @@ import static com.google.common.truth.Truth.assertThat;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.FluentIterable;
-import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Multimap;
@@ -248,6 +247,33 @@ public class CompletorTest {
             baseImportCompletion + "\nimport java.util.List;",
             "import java.util.List;\n" + baseImportCompletion);
     assertCompletion("CompleteOutOfClass.java", cases, "completion");
+  }
+
+  @Test
+  public void completeImportPackage() throws Exception {
+    List<String> cases =
+        ImmutableList.of(
+            "import org.javacomp.completion./** @complete */;",
+            "import static org.javacomp.completion./** @complete */;");
+    assertCompletion("CompleteOutOfClass.java", cases, "testdata");
+  }
+
+  @Test
+  public void completeImportInnerClass() throws Exception {
+    String toComplete = "import org.javacomp.completion.testdata.OtherClass./** @complete */";
+    List<CompletionCandidate> candidates =
+        completeWithContent("CompleteOutOfClass.java", toComplete, "OtherClass.java");
+    assertThat(getCandidateNames(candidates)).containsExactly("InnerClass");
+  }
+
+  @Test
+  public void completeImportStaticClass() throws Exception {
+    String toComplete =
+        "import static org.javacomp.completion.testdata.OtherClass./** @complete */";
+    List<CompletionCandidate> candidates =
+        completeWithContent("CompleteOutOfClass.java", toComplete, "OtherClass.java");
+    assertThat(getCandidateNames(candidates))
+        .containsExactly("InnerClass", "staticMethod", "STATIC_FIELD");
   }
 
   @Test

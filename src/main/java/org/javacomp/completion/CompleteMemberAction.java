@@ -1,6 +1,7 @@
 package org.javacomp.completion;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.sun.source.tree.ExpressionTree;
 import java.util.Collection;
@@ -30,6 +31,22 @@ class CompleteMemberAction implements CompletionAction {
           .addBothInstanceAndStaticMembers(false)
           .includeAllMethodOverloads(false)
           .build();
+  private static final ClassMemberCompletor.Options IMPORT_OPTIONS =
+      ClassMemberCompletor.Options.builder()
+          .allowedKinds(
+              new ImmutableSet.Builder<Entity.Kind>()
+                  .addAll(ClassEntity.ALLOWED_KINDS)
+                  .add(Entity.Kind.QUALIFIER)
+                  .build())
+          .addBothInstanceAndStaticMembers(false)
+          .includeAllMethodOverloads(false)
+          .build();
+  private static final ClassMemberCompletor.Options IMPORT_STATIC_OPTIONS =
+      ClassMemberCompletor.Options.builder()
+          .allowedKinds(Sets.immutableEnumSet(EnumSet.allOf(Entity.Kind.class)))
+          .addBothInstanceAndStaticMembers(false)
+          .includeAllMethodOverloads(false)
+          .build();
   private final ExpressionTree parentExpression;
   private final TypeSolver typeSolver;
   private final ExpressionSolver expressionSolver;
@@ -56,6 +73,17 @@ class CompleteMemberAction implements CompletionAction {
       ExpressionTree parentExpression, TypeSolver typeSolver, ExpressionSolver expressionSolver) {
     return new CompleteMemberAction(
         parentExpression, typeSolver, expressionSolver, METHOD_REFERENCE_OPTIONS);
+  }
+
+  static CompleteMemberAction forImport(
+      ExpressionTree parentExpression, TypeSolver typeSolver, ExpressionSolver expressionSolver) {
+    return new CompleteMemberAction(parentExpression, typeSolver, expressionSolver, IMPORT_OPTIONS);
+  }
+
+  static CompleteMemberAction forImportStatic(
+      ExpressionTree parentExpression, TypeSolver typeSolver, ExpressionSolver expressionSolver) {
+    return new CompleteMemberAction(
+        parentExpression, typeSolver, expressionSolver, IMPORT_STATIC_OPTIONS);
   }
 
   @Override

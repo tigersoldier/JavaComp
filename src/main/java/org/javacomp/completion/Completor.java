@@ -2,20 +2,19 @@ package org.javacomp.completion;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Sets;
 import com.sun.source.tree.ExpressionTree;
+import com.sun.source.tree.ImportTree;
 import com.sun.source.tree.LineMap;
 import com.sun.source.tree.LiteralTree;
 import com.sun.source.tree.MemberReferenceTree;
 import com.sun.source.tree.MemberSelectTree;
+import com.sun.source.tree.Tree;
 import com.sun.source.util.TreePath;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import java.nio.file.Path;
-import java.util.EnumSet;
 import java.util.Optional;
 import org.javacomp.file.FileManager;
 import org.javacomp.logging.JLogger;
-import org.javacomp.model.Entity;
 import org.javacomp.model.FileScope;
 import org.javacomp.parser.LineMapUtil;
 import org.javacomp.project.ModuleManager;
@@ -101,15 +100,23 @@ public class Completor {
     CompletionAction action;
     if (treePath.getLeaf() instanceof MemberSelectTree) {
       ExpressionTree parentExpression = ((MemberSelectTree) treePath.getLeaf()).getExpression();
-      action =
-          CompleteMemberAction.forMemberSelect(
-              parentExpression, typeSolver, expressionSolver);
+      Optional<ImportTree> importNode = findNodeOfType(treePath, ImportTree.class);
+      if (importNode.isPresent()) {
+        if (importNode.get().isStatic()) {
+          action =
+              CompleteMemberAction.forImportStatic(parentExpression, typeSolver, expressionSolver);
+        } else {
+          action = CompleteMemberAction.forImport(parentExpression, typeSolver, expressionSolver);
+        }
+      } else {
+        action =
+            CompleteMemberAction.forMemberSelect(parentExpression, typeSolver, expressionSolver);
+      }
     } else if (treePath.getLeaf() instanceof MemberReferenceTree) {
       ExpressionTree parentExpression =
           ((MemberReferenceTree) treePath.getLeaf()).getQualifierExpression();
       action =
-          CompleteMemberAction.forMethodReference(
-              parentExpression, typeSolver, expressionSolver);
+          CompleteMemberAction.forMethodReference(parentExpression, typeSolver, expressionSolver);
     } else if (treePath.getLeaf() instanceof LiteralTree) {
       // Do not complete on any literals, especially strings.
       action = NoCandidateAction.INSTANCE;
@@ -155,6 +162,19 @@ public class Completor {
       start--;
     }
     return fileContent.subSequence(start + 1, position).toString();
+  }
+
+  private static <T extends Tree> Optional<T> findNodeOfType(TreePath treePath, Class<T> type) {
+    while (treePath != null) {
+      Tree leaf = treePath.getLeaf();
+      if (type.isAssignableFrom(leaf.getClass())) {
+        @SuppressWarnings("unchecked")
+        T casted = (T) leaf;
+        return Optional.of(casted);
+      }
+      treePath = treePath.getParentPath();
+    }
+    return Optional.empty();
   }
 
   /** A {@link CompletionAction} that always returns an empty list of candidates. */

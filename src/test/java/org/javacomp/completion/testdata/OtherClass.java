@@ -16,4 +16,9 @@ public class OtherClass {
   public InnerClass getInnerClass() {
     return null;
   }
+
+  public static void staticMethod() {}
+  public static void staticMethod(int value) {}
+
+  public static final String STATIC_FIELD = "foo";
 }
