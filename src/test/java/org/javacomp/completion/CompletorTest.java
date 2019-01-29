@@ -404,9 +404,9 @@ public class CompletorTest {
     PositionContext positionContext =
         PositionContext.createForPosition(moduleManager, filePath, params.line, params.column)
             .get();
-    return new Completor(moduleManager.getFileManager())
-        .extractCompletionPrefix(
-            positionContext.getFileScope(), filePath, params.line, params.column);
+    return ContentWithLineMap.create(
+            positionContext.getFileScope(), moduleManager.getFileManager(), filePath)
+        .extractCompletionPrefix(params.line, params.column);
   }
 
   private static class CompletionParams {

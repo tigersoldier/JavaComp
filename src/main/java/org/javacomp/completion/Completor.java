@@ -1,23 +1,18 @@
 package org.javacomp.completion;
 
-import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.ImportTree;
-import com.sun.source.tree.LineMap;
 import com.sun.source.tree.LiteralTree;
 import com.sun.source.tree.MemberReferenceTree;
 import com.sun.source.tree.MemberSelectTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.util.TreePath;
-import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
 import org.javacomp.file.FileManager;
 import org.javacomp.logging.JLogger;
-import org.javacomp.model.FileScope;
-import org.javacomp.parser.LineMapUtil;
 import org.javacomp.project.ModuleManager;
 import org.javacomp.project.PositionContext;
 import org.javacomp.typesolver.ExpressionSolver;
@@ -81,20 +76,25 @@ public class Completor {
           .build();
     }
 
-    String prefix =
-        extractCompletionPrefix(positionContext.get().getFileScope(), filePath, line, column);
+    ContentWithLineMap contentWithLineMap =
+        ContentWithLineMap.create(positionContext.get().getFileScope(), fileManager, filePath);
+    String prefix = contentWithLineMap.extractCompletionPrefix(line, column);
     // TODO: limit the number of the candidates.
     if (cachedCompletion.isIncrementalCompletion(filePath, line, column, prefix)) {
       return getCompletionCandidatesFromCache(line, column, prefix);
     } else {
       cachedCompletion =
-          computeCompletionResult(positionContext.get(), filePath, line, column, prefix);
+          computeCompletionResult(positionContext.get(), contentWithLineMap, line, column, prefix);
       return cachedCompletion;
     }
   }
 
   private CompletionResult computeCompletionResult(
-      PositionContext positionContext, Path filePath, int line, int column, String prefix) {
+      PositionContext positionContext,
+      ContentWithLineMap contentWithLineMap,
+      int line,
+      int column,
+      String prefix) {
     TreePath treePath = positionContext.getTreePath();
     CompletionAction action;
     TextEditOptions.Builder textEditOptions =
@@ -126,10 +126,19 @@ public class Completor {
       action = new CompleteSymbolAction(typeSolver, expressionSolver);
       textEditOptions.setAppendMethodArgumentSnippets(true);
     }
+
+    // When the cursor is before an opening parenthesis, it's likely the user is
+    // trying to change the name of a method invocation. In this case the
+    // arguments are already there and we should not append method argument
+    // snippet upon completion.
+    if ("(".equals(contentWithLineMap.substring(line, column, 1))) {
+      textEditOptions.setAppendMethodArgumentSnippets(false);
+    }
+
     ImmutableList<CompletionCandidate> candidates =
         action.getCompletionCandidates(positionContext, prefix);
     return CompletionResult.builder()
-        .setFilePath(filePath)
+        .setFilePath(contentWithLineMap.getFilePath())
         .setLine(line)
         .setColumn(column)
         .setPrefix(prefix)
@@ -150,38 +159,6 @@ public class Completor {
         .setColumn(column)
         .setPrefix(prefix)
         .build();
-  }
-
-  @VisibleForTesting
-  String extractCompletionPrefix(FileScope fileScope, Path filePath, int line, int column) {
-    CharSequence fileContent = fileManager.getFileContent(filePath).orElse(null);
-    if (fileContent == null) {
-      logger.warning("Cannot get file content of %s for completion prefix", filePath);
-      return "";
-    }
-    // Get position of line, column. Note that we cannot use the position from
-    // PositionContext because it's the position of the possibly modified
-    // content, not the original content.
-    JCCompilationUnit compilationUnit = fileScope.getCompilationUnit().get();
-    LineMap lineMap = compilationUnit.getLineMap();
-    int position = LineMapUtil.getPositionFromZeroBasedLineAndColumn(lineMap, line, column);
-    if (position < 0) {
-      logger.warning(
-          "Position of (%s, %s): %s is negative when getting completion prefix for file %s",
-          line, column, position, filePath);
-    }
-    if (position >= fileContent.length()) {
-      logger.warning(
-          "Position of (%s, %s): %s is greater than the length of the content %s when "
-              + "getting completion prefix for file %s",
-          line, column, position, fileContent.length(), filePath);
-    }
-
-    int start = position - 1;
-    while (start >= 0 && Character.isJavaIdentifierPart(fileContent.charAt(start))) {
-      start--;
-    }
-    return fileContent.subSequence(start + 1, position).toString();
   }
 
   private static <T extends Tree> Optional<T> findNodeOfType(TreePath treePath, Class<T> type) {
