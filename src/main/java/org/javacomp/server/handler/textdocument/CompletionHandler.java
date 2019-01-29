@@ -74,12 +74,7 @@ public class CompletionHandler extends RequestHandler<TextDocumentPositionParams
       // sort category ordinal.
       item.sortText = String.format("%05d", i);
 
-      fillText(
-          item,
-          candidate,
-          result.getLine(),
-          result.getColumn() - result.getPrefix().length(),
-          result.getColumn());
+      fillText(item, candidate, result);
       fillData(item, candidate);
 
       completionList.items.add(item);
@@ -88,25 +83,25 @@ public class CompletionHandler extends RequestHandler<TextDocumentPositionParams
   }
 
   private void fillText(
-      CompletionItem item,
-      CompletionCandidate candidate,
-      int line,
-      int prefixStartColumn,
-      int prefixEndColumn) {
+      CompletionItem item, CompletionCandidate candidate, CompletionResult result) {
     boolean supportsSnippet = clientSupportsSnippet(server.getClientCapabilities());
+    int textEditStartColumn = result.getColumn() - result.getPrefix().length();
+    int textEditEndColumn = result.getColumn();
     item.insertTextFormat = supportsSnippet ? InsertTextFormat.SNIPPET : InsertTextFormat.PLAINTEXT;
     Optional<String> insertText = Optional.empty();
     if (supportsSnippet) {
-      insertText = candidate.getInsertSnippet();
+      insertText = candidate.getInsertSnippet(result.getTextEditOptions());
     }
     if (!insertText.isPresent()) {
       // Either the client doesn't support snippet, or the candidate doesn't have a snippet.
-      insertText = candidate.getInsertPlainText();
+      insertText = candidate.getInsertPlainText(result.getTextEditOptions());
     }
     item.insertText = insertText.orElse(null);
     item.textEdit =
         new TextEdit(
-            new Range(new Position(line, prefixStartColumn), new Position(line, prefixEndColumn)),
+            new Range(
+                new Position(result.getLine(), textEditStartColumn),
+                new Position(result.getLine(), textEditEndColumn)),
             insertText.orElse(candidate.getName()));
   }
 

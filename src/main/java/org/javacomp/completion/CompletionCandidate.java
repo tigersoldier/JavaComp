@@ -47,11 +47,11 @@ public interface CompletionCandidate {
 
   Optional<String> getDetail();
 
-  default Optional<String> getInsertPlainText() {
+  default Optional<String> getInsertPlainText(TextEditOptions textEditOptions) {
     return Optional.empty();
   }
 
-  default Optional<String> getInsertSnippet() {
+  default Optional<String> getInsertSnippet(TextEditOptions textEditOptions) {
     return Optional.empty();
   }
 

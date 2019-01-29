@@ -36,6 +36,7 @@ public class Completor {
           .setColumn(-1)
           .setPrefix("")
           .setCompletionCandidates(ImmutableList.of())
+          .setTextEditOptions(TextEditOptions.DEFAULT)
           .build();
 
   private final FileManager fileManager;
@@ -96,6 +97,8 @@ public class Completor {
       PositionContext positionContext, Path filePath, int line, int column, String prefix) {
     TreePath treePath = positionContext.getTreePath();
     CompletionAction action;
+    TextEditOptions.Builder textEditOptions =
+        TextEditOptions.builder().setAppendMethodArgumentSnippets(false);
     if (treePath.getLeaf() instanceof MemberSelectTree) {
       ExpressionTree parentExpression = ((MemberSelectTree) treePath.getLeaf()).getExpression();
       Optional<ImportTree> importNode = findNodeOfType(treePath, ImportTree.class);
@@ -109,6 +112,7 @@ public class Completor {
       } else {
         action =
             CompleteMemberAction.forMemberSelect(parentExpression, typeSolver, expressionSolver);
+        textEditOptions.setAppendMethodArgumentSnippets(true);
       }
     } else if (treePath.getLeaf() instanceof MemberReferenceTree) {
       ExpressionTree parentExpression =
@@ -120,6 +124,7 @@ public class Completor {
       action = NoCandidateAction.INSTANCE;
     } else {
       action = new CompleteSymbolAction(typeSolver, expressionSolver);
+      textEditOptions.setAppendMethodArgumentSnippets(true);
     }
     ImmutableList<CompletionCandidate> candidates =
         action.getCompletionCandidates(positionContext, prefix);
@@ -129,6 +134,7 @@ public class Completor {
         .setColumn(column)
         .setPrefix(prefix)
         .setCompletionCandidates(candidates)
+        .setTextEditOptions(textEditOptions.build())
         .build();
   }
 

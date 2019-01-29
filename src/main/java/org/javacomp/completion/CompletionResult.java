@@ -18,6 +18,8 @@ public abstract class CompletionResult {
 
   public abstract ImmutableList<CompletionCandidate> getCompletionCandidates();
 
+  public abstract TextEditOptions getTextEditOptions();
+
   public abstract Builder toBuilder();
 
   public static Builder builder() {
@@ -60,6 +62,8 @@ public abstract class CompletionResult {
 
     public abstract Builder setCompletionCandidates(
         ImmutableList<CompletionCandidate> completionCandidates);
+
+    public abstract Builder setTextEditOptions(TextEditOptions textEditOptions);
 
     public abstract CompletionResult build();
   }

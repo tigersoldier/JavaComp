@@ -29,26 +29,30 @@ class EntityCompletionCandidate extends EntityBasedCompletionCandidate {
   }
 
   @Override
-  public Optional<String> getInsertSnippet() {
+  public Optional<String> getInsertSnippet(TextEditOptions textEditOptions) {
     switch (getEntity().getKind()) {
       case METHOD:
         {
-          MethodEntity method = (MethodEntity) getEntity();
-          StringBuilder sb = new StringBuilder(getName());
-          sb.append("(");
-          boolean firstParam = true;
-          int nParam = 0;
-          for (VariableEntity param : method.getParameters()) {
-            if (!firstParam) {
-              sb.append(", ");
-            } else {
-              firstParam = false;
+          if (textEditOptions.getAppendMethodArgumentSnippets()) {
+            MethodEntity method = (MethodEntity) getEntity();
+            StringBuilder sb = new StringBuilder(getName());
+            sb.append("(");
+            boolean firstParam = true;
+            int nParam = 0;
+            for (VariableEntity param : method.getParameters()) {
+              if (!firstParam) {
+                sb.append(", ");
+              } else {
+                firstParam = false;
+              }
+              nParam++;
+              sb.append(String.format("${%d:%s}", nParam, param.getSimpleName()));
             }
-            nParam++;
-            sb.append(String.format("${%d:%s}", nParam, param.getSimpleName()));
+            sb.append(")");
+            return Optional.of(sb.toString());
+          } else {
+            return Optional.empty();
           }
-          sb.append(")");
-          return Optional.of(sb.toString());
         }
       default:
         return Optional.empty();
