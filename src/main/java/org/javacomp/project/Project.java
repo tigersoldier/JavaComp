@@ -115,7 +115,7 @@ public class Project {
       lastCompletedFile = filePath;
       addOrUpdateFile(filePath);
     }
-    return completor.getCompletionCandidates(moduleManager, filePath, line, column);
+    return completor.getCompletionResult(moduleManager, filePath, line, column);
   }
 
   /**

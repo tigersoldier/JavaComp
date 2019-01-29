@@ -12,6 +12,7 @@ import com.sun.source.tree.Tree;
 import com.sun.source.util.TreePath;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Optional;
 import org.javacomp.file.FileManager;
 import org.javacomp.logging.JLogger;
@@ -28,11 +29,20 @@ import org.javacomp.typesolver.TypeSolver;
 public class Completor {
   private static final JLogger logger = JLogger.createForEnclosingClass();
 
+  private static final CompletionResult NO_CACHE =
+      CompletionResult.builder()
+          .setFilePath(Paths.get(""))
+          .setLine(-1)
+          .setColumn(-1)
+          .setPrefix("")
+          .setCompletionCandidates(ImmutableList.of())
+          .build();
+
   private final FileManager fileManager;
   private final TypeSolver typeSolver;
   private final ExpressionSolver expressionSolver;
 
-  private CachedCompletion cachedCompletion = CachedCompletion.NONE;
+  private CompletionResult cachedCompletion = NO_CACHE;
 
   public Completor(FileManager fileManager) {
     this.fileManager = fileManager;
@@ -49,7 +59,7 @@ public class Completor {
    * @param line 0-based line number of the completion point
    * @param column 0-based character offset from the beginning of the line to the completion point
    */
-  public CompletionResult getCompletionCandidates(
+  public CompletionResult getCompletionResult(
       ModuleManager moduleManager, Path filePath, int line, int column) {
     // PositionContext gets the tree path whose leaf node includes the position
     // (position < node's endPosition). However, for completions, we want the leaf node either
@@ -62,40 +72,28 @@ public class Completor {
 
     if (!positionContext.isPresent()) {
       return CompletionResult.builder()
-          .candidates(ImmutableList.of())
-          .prefixLine(line)
-          .prefixStartColumn(column)
-          .prefixEndColumn(column)
+          .setCompletionCandidates(ImmutableList.of())
+          .setLine(line)
+          .setColumn(column)
+          .setPrefix("")
+          .setFilePath(filePath)
           .build();
     }
 
     String prefix =
         extractCompletionPrefix(positionContext.get().getFileScope(), filePath, line, column);
-    ImmutableList<CompletionCandidate> candidates;
-    if (cachedCompletion.isIncrementalCompletion(filePath, line, column, prefix)) {
-      candidates = getCompletionCandidatesFromCache(prefix);
-    } else {
-      candidates = computeCompletionCandidates(positionContext.get(), prefix);
-      cachedCompletion =
-          CachedCompletion.builder()
-              .setFilePath(filePath)
-              .setLine(line)
-              .setColumn(column)
-              .setPrefix(prefix)
-              .setCompletionCandidates(candidates)
-              .build();
-    }
     // TODO: limit the number of the candidates.
-    return CompletionResult.builder()
-        .candidates(candidates)
-        .prefixLine(line)
-        .prefixStartColumn(column - prefix.length())
-        .prefixEndColumn(column)
-        .build();
+    if (cachedCompletion.isIncrementalCompletion(filePath, line, column, prefix)) {
+      return getCompletionCandidatesFromCache(line, column, prefix);
+    } else {
+      cachedCompletion =
+          computeCompletionResult(positionContext.get(), filePath, line, column, prefix);
+      return cachedCompletion;
+    }
   }
 
-  private ImmutableList<CompletionCandidate> computeCompletionCandidates(
-      PositionContext positionContext, String prefix) {
+  private CompletionResult computeCompletionResult(
+      PositionContext positionContext, Path filePath, int line, int column, String prefix) {
     TreePath treePath = positionContext.getTreePath();
     CompletionAction action;
     if (treePath.getLeaf() instanceof MemberSelectTree) {
@@ -123,12 +121,28 @@ public class Completor {
     } else {
       action = new CompleteSymbolAction(typeSolver, expressionSolver);
     }
-    return action.getCompletionCandidates(positionContext, prefix);
+    ImmutableList<CompletionCandidate> candidates =
+        action.getCompletionCandidates(positionContext, prefix);
+    return CompletionResult.builder()
+        .setFilePath(filePath)
+        .setLine(line)
+        .setColumn(column)
+        .setPrefix(prefix)
+        .setCompletionCandidates(candidates)
+        .build();
   }
 
-  private ImmutableList<CompletionCandidate> getCompletionCandidatesFromCache(String prefix) {
-    return new CompletionCandidateListBuilder(prefix)
-        .addCandidates(cachedCompletion.getCompletionCandidates())
+  private CompletionResult getCompletionCandidatesFromCache(int line, int column, String prefix) {
+    ImmutableList<CompletionCandidate> narrowedCandidates =
+        new CompletionCandidateListBuilder(prefix)
+            .addCandidates(cachedCompletion.getCompletionCandidates())
+            .build();
+    return cachedCompletion
+        .toBuilder()
+        .setCompletionCandidates(narrowedCandidates)
+        .setLine(line)
+        .setColumn(column)
+        .setPrefix(prefix)
         .build();
   }
 

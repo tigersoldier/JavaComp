@@ -35,11 +35,11 @@ class CompleteSymbolAction implements CompletionAction {
           .build();
   private static final ClassMemberCompletor.Options CLASS_SCOPE_COMPLETE_OPTIONS =
       ClassMemberCompletor.Options.builder()
-      .allowedKinds(Sets.immutableEnumSet(EnumSet.allOf(Entity.Kind.class)))
-      // TODO: In static scope only static members are accessible.
-      .addBothInstanceAndStaticMembers(true)
-      .includeAllMethodOverloads(true)
-      .build();
+          .allowedKinds(Sets.immutableEnumSet(EnumSet.allOf(Entity.Kind.class)))
+          // TODO: In static scope only static members are accessible.
+          .addBothInstanceAndStaticMembers(true)
+          .includeAllMethodOverloads(true)
+          .build();
 
   private final TypeSolver typeSolver;
   private final ClassMemberCompletor classMemberCompletor;

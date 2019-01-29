@@ -92,9 +92,9 @@ public class CompletorTest {
       String inputFilename, String testDataContent, String... otherFiles) {
     CompletionParams params = createCompletionParams(inputFilename, testDataContent, otherFiles);
     return new Completor(moduleManager.getFileManager())
-        .getCompletionCandidates(
+        .getCompletionResult(
             moduleManager, getInputFilePath(inputFilename), params.line, params.column)
-        .candidates();
+        .getCompletionCandidates();
   }
 
   private static List<String> getCandidateNames(List<CompletionCandidate> candidates) {

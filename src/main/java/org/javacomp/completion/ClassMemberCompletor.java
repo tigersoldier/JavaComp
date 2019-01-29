@@ -25,10 +25,7 @@ class ClassMemberCompletor {
   }
 
   ImmutableList<CompletionCandidate> getClassMembers(
-      EntityWithContext actualClass,
-      Module module,
-      String prefix,
-      Options options) {
+      EntityWithContext actualClass, Module module, String prefix, Options options) {
     CompletionCandidateListBuilder builder = new CompletionCandidateListBuilder(prefix);
     boolean directMembers = true;
     Set<String> addedMethodNames = options.includeAllMethodOverloads() ? null : new HashSet<>();
@@ -70,9 +67,8 @@ class ClassMemberCompletor {
     abstract boolean includeAllMethodOverloads();
 
     /**
-     * If false, instance members are returned only if the parent is an
-     * instance, and static members are returned only if the parent is a class
-     * itself.
+     * If false, instance members are returned only if the parent is an instance, and static members
+     * are returned only if the parent is a class itself.
      */
     abstract boolean addBothInstanceAndStaticMembers();
 

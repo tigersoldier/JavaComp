@@ -53,7 +53,7 @@ public class CompletionHandler extends RequestHandler<TextDocumentPositionParams
             Paths.get(params.textDocument.uri),
             params.position.getLine(),
             params.position.getCharacter());
-    List<CompletionCandidate> candidates = result.candidates();
+    List<CompletionCandidate> candidates = result.getCompletionCandidates();
 
     CompletionList completionList = new CompletionList();
     completionList.isIncomplete = (candidates.size() > MAX_CANDIDATES);
@@ -77,9 +77,9 @@ public class CompletionHandler extends RequestHandler<TextDocumentPositionParams
       fillText(
           item,
           candidate,
-          result.prefixLine(),
-          result.prefixStartColumn(),
-          result.prefixEndColumn());
+          result.getLine(),
+          result.getColumn() - result.getPrefix().length(),
+          result.getColumn());
       fillData(item, candidate);
 
       completionList.items.add(item);
