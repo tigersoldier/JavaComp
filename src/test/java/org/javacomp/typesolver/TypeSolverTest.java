@@ -1,6 +1,7 @@
 package org.javacomp.typesolver;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth8.assertThat;
 
 import com.google.common.base.Joiner;
 import com.google.common.truth.Truth8;
@@ -9,6 +10,7 @@ import org.javacomp.model.ClassEntity;
 import org.javacomp.model.EntityScope;
 import org.javacomp.model.MethodEntity;
 import org.javacomp.model.Module;
+import org.javacomp.model.SolvedArrayType;
 import org.javacomp.model.SolvedEntityType;
 import org.javacomp.model.SolvedReferenceType;
 import org.javacomp.model.SolvedType;
@@ -229,6 +231,27 @@ public class TypeSolverTest {
     assertThat(((SolvedEntityType) typeParameterB.get()).getEntity())
         .named("Type parameter B of getParameterizedType()")
         .isSameAs(TestUtil.lookupEntity(TEST_CLASS_FACTORY_FULL_NAME, testModule));
+  }
+
+  @Test
+  public void solveKnownTypeParametersWithArray() {
+    ClassEntity testClassEntity =
+        (ClassEntity) TestUtil.lookupEntity(TEST_CLASS_FULL_NAME, testModule);
+    SolvedReferenceType solvedTestClass =
+        SolvedReferenceType.create(testClassEntity, SolvedTypeParameters.EMPTY);
+    SolvedTypeParameters solvedTypeParameters =
+        SolvedTypeParameters.builder().putTypeParameter("T", solvedTestClass).build();
+    TypeReference typeReference =
+        TypeReference.builder()
+            .setPrimitive(false)
+            .setFullName("T")
+            .setTypeArguments()
+            .setArray(true)
+            .build();
+    assertThat(
+            typeSolver.solve(
+                typeReference, solvedTypeParameters, testClassEntity.getScope(), testModule))
+        .hasValue(SolvedArrayType.create(solvedTestClass));
   }
 
   private Optional<SolvedEntityType> solveEntityType(

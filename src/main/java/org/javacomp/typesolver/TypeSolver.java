@@ -101,7 +101,7 @@ public class TypeSolver {
       Optional<SolvedType> typeInTypeParameters =
           contextTypeParameters.getTypeParameter(typeReference.getSimpleName());
       if (typeInTypeParameters.isPresent()) {
-        return typeInTypeParameters;
+        return Optional.of(createSolvedType(typeInTypeParameters.get(), typeReference));
       }
     }
 
@@ -266,8 +266,7 @@ public class TypeSolver {
         fileScope = (FileScope) currentScope.get();
         List<Entity> foundEntities = findEntitiesInFile(name, fileScope, module, allowedKinds);
         if (!foundEntities.isEmpty()) {
-          return foundEntities
-              .stream()
+          return foundEntities.stream()
               .map(entity -> EntityWithContext.ofStaticEntity(entity))
               .collect(ImmutableList.toImmutableList());
         }
@@ -332,30 +331,31 @@ public class TypeSolver {
           classWithContext);
       builder.addAll(
           ((ClassEntity) classInHierarchy.getEntity())
-              .getMemberEntities()
-              .get(name)
-              .stream()
-              .filter(
-                  entity -> {
-                    if (!allowedKinds.contains(entity.getKind())) {
-                      return false;
-                    }
-                    if (classWithContext.isInstanceContext()) {
-                      // Both static and non-static memebers can be accessed in an instance context.
-                      return true;
-                    } else {
-                      // Instance members are not allowed to be accessed in a non-instance context.
-                      return !entity.isInstanceMember();
-                    }
-                  })
-              .map(
-                  entity ->
-                      EntityWithContext.simpleBuilder()
-                          .setEntity(entity)
-                          .setInstanceContext(!(entity instanceof ClassEntity) && entity.isStatic())
-                          .setSolvedTypeParameters(classInHierarchy.getSolvedTypeParameters())
-                          .build())
-              .collect(ImmutableList.<EntityWithContext>toImmutableList()));
+              .getMemberEntities().get(name).stream()
+                  .filter(
+                      entity -> {
+                        if (!allowedKinds.contains(entity.getKind())) {
+                          return false;
+                        }
+                        if (classWithContext.isInstanceContext()) {
+                          // Both static and non-static memebers can be accessed in an instance
+                          // context.
+                          return true;
+                        } else {
+                          // Instance members are not allowed to be accessed in a non-instance
+                          // context.
+                          return !entity.isInstanceMember();
+                        }
+                      })
+                  .map(
+                      entity ->
+                          EntityWithContext.simpleBuilder()
+                              .setEntity(entity)
+                              .setInstanceContext(
+                                  !(entity instanceof ClassEntity) && entity.isStatic())
+                              .setSolvedTypeParameters(classInHierarchy.getSolvedTypeParameters())
+                              .build())
+                  .collect(ImmutableList.<EntityWithContext>toImmutableList()));
     }
 
     return builder.build();
@@ -515,10 +515,7 @@ public class TypeSolver {
     if (allowedKinds.contains(Entity.Kind.VARIABLE)) {
       allowedKinds = Sets.difference(allowedKinds, EnumSet.of(Entity.Kind.VARIABLE));
 
-      baseScope
-          .getMemberEntities()
-          .get(name)
-          .stream()
+      baseScope.getMemberEntities().get(name).stream()
           .filter(
               entity -> {
                 if (position >= 0
@@ -590,10 +587,7 @@ public class TypeSolver {
       String name, FileScope fileScope, Module module) {
     Optional<ClassEntity> classOfStaticMember = solveClassOfStaticImport(name, fileScope, module);
     if (classOfStaticMember.isPresent()) {
-      return classOfStaticMember
-          .get()
-          .getMethodsWithName(name)
-          .stream()
+      return classOfStaticMember.get().getMethodsWithName(name).stream()
           .filter(methodEntity -> methodEntity.isStatic())
           .collect(ImmutableList.toImmutableList());
     }
@@ -815,17 +809,21 @@ public class TypeSolver {
       SolvedTypeParameters contextTypeParameters,
       EntityScope baseScope,
       Module module) {
+    return createSolvedType(
+        createSolvedEntityType(
+            solvedEntity,
+            typeReference.getTypeArguments(),
+            contextTypeParameters,
+            baseScope,
+            module),
+        typeReference);
+  }
+
+  private SolvedType createSolvedType(SolvedType solvedBaseType, TypeReference typeReference) {
     if (typeReference.isArray()) {
-      return SolvedArrayType.create(
-          createSolvedEntityType(
-              solvedEntity,
-              typeReference.getTypeArguments(),
-              contextTypeParameters,
-              baseScope,
-              module));
+      return SolvedArrayType.create(solvedBaseType);
     }
-    return createSolvedEntityType(
-        solvedEntity, typeReference.getTypeArguments(), contextTypeParameters, baseScope, module);
+    return solvedBaseType;
   }
 
   private EntityWithContext solveClassWithContext(ClassEntity classEntity, Module module) {
