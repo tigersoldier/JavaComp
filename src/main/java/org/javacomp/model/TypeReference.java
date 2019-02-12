@@ -3,7 +3,9 @@ package org.javacomp.model;
 import com.google.auto.value.AutoValue;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 /** A reference to a type for lazy resolution. */
@@ -98,6 +100,31 @@ public abstract class TypeReference implements TypeArgument {
 
   public ImmutableList<TypeArgument> getTypeArguments() {
     return getSimpleType().getTypeArguments();
+  }
+
+  @Override
+  public Optional<TypeArgument> applyTypeParameters(SolvedTypeParameters solvedTypeParameters) {
+    if (getFullName().size() == 1 && getTypeArguments().isEmpty()) {
+      // Only simple name, can be replaced with type parameters.
+      Optional<SolvedType> solved = solvedTypeParameters.getTypeParameter(getSimpleName());
+      if (solved.isPresent()) {
+        return Optional.of(solved.get().toTypeReference());
+      }
+    }
+    boolean hasChange = false;
+    List<TypeArgument> newTypeArguments = new ArrayList<>();
+    for (TypeArgument typeArgument : getTypeArguments()) {
+      Optional<TypeArgument> applied = typeArgument.applyTypeParameters(solvedTypeParameters);
+      if (applied.isPresent()) {
+        hasChange = true;
+      }
+      newTypeArguments.add(applied.orElse(typeArgument));
+    }
+    if (!hasChange) {
+      return Optional.empty();
+    }
+    // TODO: apply to type parameters of the enclosing classes.
+    return Optional.of(toBuilder().setTypeArguments(newTypeArguments).build());
   }
 
   public static Builder builder() {
@@ -196,6 +223,10 @@ public abstract class TypeReference implements TypeArgument {
       return this.setPackageName(ImmutableList.copyOf(packageNames));
     }
 
+    public Builder setPackageName(Collection<String> packageNames) {
+      return this.setPackageName(ImmutableList.copyOf(packageNames));
+    }
+
     public abstract Builder setEnclosingClasses(ImmutableList<SimpleType> enclosingClassName);
 
     public abstract Builder setEnclosingClasses(
@@ -211,7 +242,7 @@ public abstract class TypeReference implements TypeArgument {
 
     protected abstract Builder setUnformalizedFullName(ImmutableList<String> fullName);
 
-    protected abstract Builder setSimpleType(SimpleType simpleType);
+    public abstract Builder setSimpleType(SimpleType simpleType);
 
     public Builder setPrimitive(boolean isPrimitive) {
       simpleTypeBuilder.setPrimitive(isPrimitive);

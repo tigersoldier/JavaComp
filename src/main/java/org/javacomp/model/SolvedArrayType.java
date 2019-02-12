@@ -10,4 +10,9 @@ public abstract class SolvedArrayType implements SolvedType {
   public static SolvedArrayType create(SolvedType baseType) {
     return new AutoValue_SolvedArrayType(baseType);
   }
+
+  @Override
+  public TypeReference toTypeReference() {
+    return getBaseType().toTypeReference().toBuilder().setArray(true).build();
+  }
 }

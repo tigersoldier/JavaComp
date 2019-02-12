@@ -1,5 +1,7 @@
 package org.javacomp.model;
 
+import java.util.Optional;
+
 /**
  * Type variable applying to generic type references.
  *
@@ -10,5 +12,9 @@ package org.javacomp.model;
  * }</pre>
  */
 public interface TypeArgument {
+
+  /** Replaces the simple type names with the type found in {@code solvedTypeParameters}. */
+  Optional<TypeArgument> applyTypeParameters(SolvedTypeParameters solvedTypeParameters);
+
   String toDisplayString();
 }

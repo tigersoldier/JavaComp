@@ -33,6 +33,13 @@ public abstract class SimpleType {
       return setTypeArguments(ImmutableList.copyOf(typeArguments));
     }
 
+    protected abstract ImmutableList.Builder<TypeArgument> typeArgumentsBuilder();
+
+    public Builder addTypeArgument(TypeArgument typeArgument) {
+      typeArgumentsBuilder().add(typeArgument);
+      return this;
+    }
+
     public abstract SimpleType build();
   }
 }

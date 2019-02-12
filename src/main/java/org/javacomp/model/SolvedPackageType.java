@@ -11,4 +11,11 @@ public abstract class SolvedPackageType extends SolvedEntityType {
   public static SolvedPackageType create(PackageEntity packageEntity) {
     return new AutoValue_SolvedPackageType(packageEntity);
   }
+
+  @Override
+  public TypeReference toTypeReference() {
+    throw new RuntimeException(
+        String.format(
+            "Cannot convert package type %s to type reference.", getEntity().getQualifiedName()));
+  }
 }
