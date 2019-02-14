@@ -58,9 +58,7 @@ public class ClassFileParserTest {
   @Test
   public void fieldNames() throws Exception {
     List<String> fieldNames =
-        testClass
-            .getFields()
-            .stream()
+        testClass.getFields().stream()
             .map((field) -> testClassTester.getUtf8(field.getNameIndex()))
             .collect(Collectors.toList());
     assertThat(fieldNames)
@@ -96,9 +94,7 @@ public class ClassFileParserTest {
   @Test
   public void methodNames() throws Exception {
     List<String> methodNames =
-        testClass
-            .getMethods()
-            .stream()
+        testClass.getMethods().stream()
             .map((method) -> testClassTester.getUtf8(method.getNameIndex()))
             .collect(Collectors.toList());
     assertThat(methodNames)
@@ -247,9 +243,7 @@ public class ClassFileParserTest {
     private List<InnerClassName> getInnerClassNames() {
       AttributeInfo.InnerClass innerClassAttribute =
           getFirstAttribute(AttributeInfo.InnerClass.class);
-      return innerClassAttribute
-          .getClasses()
-          .stream()
+      return innerClassAttribute.getClasses().stream()
           .map(
               classInfo -> {
                 String outerClassName = getClassName(classInfo.getOuterClassInfoIndex());

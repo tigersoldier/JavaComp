@@ -288,9 +288,7 @@ public class FileScope implements EntityScope {
 
   @Override
   public List<EntityScope> getChildScopes() {
-    return entities
-        .values()
-        .stream()
+    return entities.values().stream()
         .map(entity -> entity.getScope())
         .collect(ImmutableList.toImmutableList());
   }

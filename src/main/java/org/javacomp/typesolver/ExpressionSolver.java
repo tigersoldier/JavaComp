@@ -115,8 +115,7 @@ public class ExpressionSolver {
     }
 
     logger.fine("Found definitions for %s: %s", expression, entities);
-    return entities
-        .stream()
+    return entities.stream()
         .filter(entityWithContext -> allowedKinds.contains(entityWithContext.getEntity().getKind()))
         .collect(ImmutableList.toImmutableList());
   }
@@ -233,22 +232,19 @@ public class ExpressionSolver {
 
       List<EntityWithContext> constructors =
           ((ClassEntity) entityWithContext.getEntity())
-              .getConstructors()
-              .stream()
-              .map(methodEntity -> EntityWithContext.ofEntity(methodEntity))
-              .collect(Collectors.toList());
+              .getConstructors().stream()
+                  .map(methodEntity -> EntityWithContext.ofEntity(methodEntity))
+                  .collect(Collectors.toList());
       if (constructors.isEmpty()) {
         // No constructors defined. Fallback to the class.
         return applyTypeArguments(
-            baseClassEntities
-                .stream()
+            baseClassEntities.stream()
                 .map(baseClass -> baseClass.toBuilder().setInstanceContext(true).build())
                 .collect(Collectors.toList()),
             node.getTypeArguments());
       }
       List<Optional<SolvedType>> arguments =
-          node.getArguments()
-              .stream()
+          node.getArguments().stream()
               .map(
                   arg ->
                       solve(

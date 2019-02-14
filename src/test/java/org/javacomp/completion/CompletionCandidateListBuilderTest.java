@@ -37,9 +37,7 @@ public class CompletionCandidateListBuilderTest {
   }
 
   private List<String> buildCandidateNameList(CompletionCandidateListBuilder builder) {
-    return builder
-        .build()
-        .stream()
+    return builder.build().stream()
         .map(candidate -> candidate.getName())
         .collect(ImmutableList.toImmutableList());
   }

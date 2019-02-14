@@ -44,10 +44,7 @@ public class DocumentContentHandler extends RequestHandler<DocumentContentParams
       ret.editHistory = new DocumentContent.EditHistory();
       ret.editHistory.orignalContent = editHistory.get().getOriginalContent();
       ret.editHistory.textEdits =
-          editHistory
-              .get()
-              .getAppliedEdits()
-              .stream()
+          editHistory.get().getAppliedEdits().stream()
               .map(MessageUtils::buildTextEdit)
               .collect(ImmutableList.toImmutableList());
     }

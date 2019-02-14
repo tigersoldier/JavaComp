@@ -96,8 +96,7 @@ public class SignatureSolverTest extends BaseTest {
       otherMethods.remove(0);
 
       assertThat(
-              otherMethods
-                  .stream()
+              otherMethods.stream()
                   .map(m -> formatMethod(m))
                   .collect(ImmutableList.toImmutableList()))
           .named(debugString)
@@ -153,9 +152,7 @@ public class SignatureSolverTest extends BaseTest {
       sb.append("(");
       sb.append(
           PARAMETER_JOINER.join(
-              method
-                  .getParameters()
-                  .stream()
+              method.getParameters().stream()
                   .map(v -> v.getSimpleName())
                   .collect(ImmutableList.toImmutableList())));
       sb.append(")");

@@ -40,8 +40,7 @@ public class DefinitionHandler extends RequestHandler<TextDocumentPositionParams
             params.position.getLine(),
             params.position.getCharacter());
 
-    return definitions
-        .stream()
+    return definitions.stream()
         .map(
             entity -> {
               com.google.common.collect.Range<Integer> range = entity.getSymbolRange();

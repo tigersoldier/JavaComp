@@ -80,9 +80,7 @@ public class IndexStore {
     this.module = module;
     SerializedModule ret = new SerializedModule();
     ret.files =
-        module
-            .getAllFiles()
-            .stream()
+        module.getAllFiles().stream()
             .collect(
                 Collectors.groupingBy(
                     fileScope -> QUALIFIER_JOINER.join(fileScope.getPackageQualifiers())))
@@ -109,8 +107,7 @@ public class IndexStore {
     SerializedFileScope ret = new SerializedFileScope();
     ret.packageName = packageName;
     ret.entities =
-        fileScopes
-            .stream()
+        fileScopes.stream()
             .flatMap(fileScope -> fileScope.getMemberEntities().values().stream())
             .map(entity -> serializeEntity(entity))
             .sorted()
@@ -152,16 +149,11 @@ public class IndexStore {
   private SerializedEntity serializeClassEntity(ClassEntity entity) {
     SerializedEntity ret = new SerializedEntity();
     ret.members =
-        entity
-            .getConstructors()
-            .stream()
+        entity.getConstructors().stream()
             .map(constructor -> serializeEntity(constructor))
             .collect(Collectors.toList());
     ret.members.addAll(
-        entity
-            .getMemberEntities()
-            .values()
-            .stream()
+        entity.getMemberEntities().values().stream()
             .map(
                 childEntity -> {
                   if (visitedEntities.containsKey(childEntity)) {
@@ -184,17 +176,13 @@ public class IndexStore {
           serializeTypeReference(entity.getSuperClass().get(), entity.getParentScope().get());
     }
     ret.interfaces =
-        entity
-            .getInterfaces()
-            .stream()
+        entity.getInterfaces().stream()
             .map(t -> serializeTypeReference(t, entity.getParentScope().get()))
             .sorted()
             .collect(Collectors.toList());
     if (!entity.getTypeParameters().isEmpty()) {
       ret.typeParameters =
-          entity
-              .getTypeParameters()
-              .stream()
+          entity.getTypeParameters().stream()
               .map(t -> serializeTypeParameter(t, entity))
               .collect(Collectors.toList());
     }
@@ -204,9 +192,7 @@ public class IndexStore {
   private SerializedEntity serializeMethodEntity(MethodEntity entity) {
     SerializedEntity ret = new SerializedEntity();
     ret.parameters =
-        entity
-            .getParameters()
-            .stream()
+        entity.getParameters().stream()
             .map(param -> serializeEntity(param))
             .collect(Collectors.toList());
     if (!entity.getSimpleName().equals("<init>")) {
@@ -214,9 +200,7 @@ public class IndexStore {
     }
     if (!entity.getTypeParameters().isEmpty()) {
       ret.typeParameters =
-          entity
-              .getTypeParameters()
-              .stream()
+          entity.getTypeParameters().stream()
               .map(t -> serializeTypeParameter(t, entity))
               .collect(Collectors.toList());
     }
@@ -306,9 +290,7 @@ public class IndexStore {
       parameters = ImmutableList.of();
     } else {
       parameters =
-          serializedEntity
-              .parameters
-              .stream()
+          serializedEntity.parameters.stream()
               .map(
                   p ->
                       deserializeVariableEntity(
@@ -392,8 +374,7 @@ public class IndexStore {
 
     if (!type.getTypeArguments().isEmpty()) {
       ret.typeArguments =
-          type.getTypeArguments()
-              .stream()
+          type.getTypeArguments().stream()
               .map(typeArgument -> serializeTypeArgument(typeArgument, baseScope))
               .collect(Collectors.toList());
     }
@@ -405,8 +386,7 @@ public class IndexStore {
     if (types == null) {
       return ImmutableList.of();
     }
-    return types
-        .stream()
+    return types.stream()
         .map(t -> deserializeTypeReference(t))
         .collect(ImmutableList.toImmutableList());
   }
@@ -418,8 +398,7 @@ public class IndexStore {
     if (type.typeArguments != null && !type.typeArguments.isEmpty()) {
       try {
         typeArguments =
-            type.typeArguments
-                .stream()
+            type.typeArguments.stream()
                 .map(
                     typeArgument -> {
                       return deserializeTypeArgument(typeArgument);
@@ -509,9 +488,7 @@ public class IndexStore {
     ret.name = typeParameter.getName();
     if (!typeParameter.getExtendBounds().isEmpty()) {
       ret.bounds =
-          typeParameter
-              .getExtendBounds()
-              .stream()
+          typeParameter.getExtendBounds().stream()
               .map(bound -> serializeTypeReference(bound, entityScope))
               .collect(Collectors.toList());
     }
@@ -523,8 +500,7 @@ public class IndexStore {
     if (typeParameters == null) {
       return ImmutableList.of();
     }
-    return typeParameters
-        .stream()
+    return typeParameters.stream()
         .map(tp -> deserializeTypeParameter(tp))
         .collect(ImmutableList.toImmutableList());
   }

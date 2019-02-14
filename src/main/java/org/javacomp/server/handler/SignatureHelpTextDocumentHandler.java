@@ -41,9 +41,7 @@ public class SignatureHelpTextDocumentHandler extends RequestHandler<TextDocumen
     ret.activeSignature = 0;
     ret.activeParameter = methodSignatures.getActiveParameter();
     ret.signatures =
-        methodSignatures
-            .getMethods()
-            .stream()
+        methodSignatures.getMethods().stream()
             .map((method) -> convertMethod(method, methodSignatures.getActiveParameter()))
             .collect(ImmutableList.toImmutableList());
     return ret;
@@ -53,9 +51,7 @@ public class SignatureHelpTextDocumentHandler extends RequestHandler<TextDocumen
       MethodEntity method, int activeParameter) {
     SignatureHelp.SignatureInformation signature = new SignatureHelp.SignatureInformation();
     signature.parameters =
-        method
-            .getParameters()
-            .stream()
+        method.getParameters().stream()
             .map((param) -> convertParameter(param))
             .collect(ImmutableList.toImmutableList());
 
@@ -63,9 +59,7 @@ public class SignatureHelpTextDocumentHandler extends RequestHandler<TextDocumen
     if (!method.getTypeParameters().isEmpty()) {
       sb.append("<");
       sb.append(
-          method
-              .getTypeParameters()
-              .stream()
+          method.getTypeParameters().stream()
               .map(t -> t.toDisplayString())
               .collect(Collectors.joining(", ")));
     }

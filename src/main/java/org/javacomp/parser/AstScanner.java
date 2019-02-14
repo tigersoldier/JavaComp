@@ -205,13 +205,11 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
 
   private ImmutableList<TypeParameter> convertTypeParameters(
       List<? extends TypeParameterTree> typeParameterTrees) {
-    return typeParameterTrees
-        .stream()
+    return typeParameterTrees.stream()
         .map(
             node -> {
               ImmutableList<TypeReference> extendBounds =
-                  node.getBounds()
-                      .stream()
+                  node.getBounds().stream()
                       .map(bound -> typeReferenceScanner.getTypeReference(bound))
                       .collect(ImmutableList.toImmutableList());
               return TypeParameter.create(node.getName().toString(), extendBounds);

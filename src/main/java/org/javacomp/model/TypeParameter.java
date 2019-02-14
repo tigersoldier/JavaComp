@@ -23,8 +23,7 @@ public abstract class TypeParameter {
 
     return getName()
         + " extends "
-        + getExtendBounds()
-            .stream()
+        + getExtendBounds().stream()
             .map(b -> b.toDisplayString())
             .collect(Collectors.joining(", "));
   }

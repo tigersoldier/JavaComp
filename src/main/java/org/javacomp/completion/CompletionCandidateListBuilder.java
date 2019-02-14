@@ -67,9 +67,7 @@ public class CompletionCandidateListBuilder {
   }
 
   public ImmutableList<CompletionCandidate> build() {
-    return candidateMap
-        .values()
-        .stream()
+    return candidateMap.values().stream()
         .flatMap(entityShadowingListBuilder -> entityShadowingListBuilder.stream())
         .sorted()
         .map(candidateWithLevel -> candidateWithLevel.getCompletionCandidate())

@@ -92,9 +92,7 @@ public class HoverHandler extends RequestHandler<TextDocumentPositionParams> {
     if (!method.getTypeParameters().isEmpty()) {
       sb.append("<");
       sb.append(
-          method
-              .getTypeParameters()
-              .stream()
+          method.getTypeParameters().stream()
               .map(t -> t.toDisplayString())
               .collect(Collectors.joining(", ")));
       sb.append("> ");
@@ -200,9 +198,7 @@ public class HoverHandler extends RequestHandler<TextDocumentPositionParams> {
     if (!classEntity.getTypeParameters().isEmpty()) {
       sb.append("<");
       sb.append(
-          classEntity
-              .getTypeParameters()
-              .stream()
+          classEntity.getTypeParameters().stream()
               .map(t -> t.toDisplayString())
               .collect(Collectors.joining(", ")));
       sb.append(">");

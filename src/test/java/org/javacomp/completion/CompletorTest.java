@@ -122,8 +122,7 @@ public class CompletorTest {
     String toComplete = "/** @complete */";
     List<CompletionCandidate> candidates = completeWithContent("CompleteInMethod.java", toComplete);
     ImmutableList<String> javadocs =
-        candidates
-            .stream()
+        candidates.stream()
             .filter(
                 candidate ->
                     candidate.getResolveActions().containsKey(ResolveAction.FORMAT_JAVADOC))

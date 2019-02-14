@@ -38,9 +38,7 @@ public class ReferencesHandler extends RequestHandler<ReferenceParams> {
                 Paths.get(request.getParams().textDocument.uri),
                 request.getParams().position.getLine(),
                 request.getParams().position.getCharacter());
-    return symbols
-        .entries()
-        .stream()
+    return symbols.entries().stream()
         .map(
             entry -> {
               FileScope fileScope = entry.getKey();

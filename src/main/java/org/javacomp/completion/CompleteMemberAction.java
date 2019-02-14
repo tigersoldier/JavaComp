@@ -118,8 +118,7 @@ class CompleteMemberAction implements CompletionAction {
 
   private ImmutableList<CompletionCandidate> completePackageMembers(
       Collection<Entity> entities, String completionPrefix) {
-    return entities
-        .stream()
+    return entities.stream()
         .filter(
             (entity) -> {
               return options.allowedKinds().contains(entity.getKind())

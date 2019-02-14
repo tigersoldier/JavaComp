@@ -127,8 +127,7 @@ public class OverloadSolver {
   public MethodEntity solve(
       List<EntityWithContext> entities, List<Optional<SolvedType>> argumentTypes, Module module) {
     List<MethodEntity> methods =
-        entities
-            .stream()
+        entities.stream()
             .map(entityWithContext -> entityWithContext.getEntity())
             .filter(entity -> entity instanceof MethodEntity)
             .map(entity -> (MethodEntity) entity)
@@ -169,9 +168,7 @@ public class OverloadSolver {
   private SignatureMatchLevel matchMethodSignature(
       MethodEntity method, List<Optional<SolvedType>> argumentTypes, Module module) {
     List<TypeReference> parameterTypes =
-        method
-            .getParameters()
-            .stream()
+        method.getParameters().stream()
             .map(p -> p.getType())
             .collect(ImmutableList.toImmutableList());
 
@@ -497,13 +494,11 @@ public class OverloadSolver {
       SignatureMatchLevel signatureMatchLevel,
       Module module) {
     List<Optional<SolvedType>> lhsParameterTypes =
-        lhs.getParameters()
-            .stream()
+        lhs.getParameters().stream()
             .map(p -> typeSolver.solve(p.getType(), lhs.getScope().getParentScope().get(), module))
             .collect(Collectors.toList());
     List<Optional<SolvedType>> rhsParameterTypes =
-        rhs.getParameters()
-            .stream()
+        rhs.getParameters().stream()
             .map(p -> typeSolver.solve(p.getType(), rhs.getScope().getParentScope().get(), module))
             .collect(Collectors.toList());
     if (methodMoreSpecific(

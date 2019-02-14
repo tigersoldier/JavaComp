@@ -34,8 +34,7 @@ public class SimpleFileManager implements FileManager {
     this.rootPath = rootPath;
     FileSystem fs = FileSystems.getDefault();
     this.ignorePathMatchers =
-        ignorePaths
-            .stream()
+        ignorePaths.stream()
             .map(p -> fs.getPathMatcher(p))
             .collect(ImmutableList.toImmutableList());
     this.snapshots = new HashMap<>();
