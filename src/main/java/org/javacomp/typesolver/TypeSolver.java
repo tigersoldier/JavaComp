@@ -883,6 +883,57 @@ public class TypeSolver {
     };
   }
 
+  public Entity applyTypeParameters(Entity entity, SolvedTypeParameters solvedTypeParameters) {
+    if (entity instanceof MethodEntity) {
+      return applyTypeParameters((MethodEntity) entity, solvedTypeParameters);
+    } else if (entity instanceof VariableEntity) {
+      return applyTypeParameters((VariableEntity) entity, solvedTypeParameters);
+    } else {
+      return entity;
+    }
+  }
+
+  public MethodEntity applyTypeParameters(
+      MethodEntity method, SolvedTypeParameters solvedTypeParameters) {
+    TypeReference returnType = method.getReturnType();
+    returnType =
+        (TypeReference) returnType.applyTypeParameters(solvedTypeParameters).orElse(returnType);
+    ImmutableList.Builder<VariableEntity> parameters = new ImmutableList.Builder<>();
+    for (VariableEntity parameter : method.getParameters()) {
+      parameters.add(applyTypeParameters(parameter, solvedTypeParameters));
+    }
+    return new MethodEntity(
+        method.getSimpleName(),
+        method.getQualifiers(),
+        method.isStatic(),
+        returnType,
+        parameters.build(),
+        method.getTypeParameters(),
+        method.getParentClass(),
+        method.getJavadoc(),
+        method.getSymbolRange(),
+        method.getDefinitionRange());
+  }
+
+  public VariableEntity applyTypeParameters(
+      VariableEntity variable, SolvedTypeParameters solvedTypeParameters) {
+    Optional<TypeReference> type = variable.getType().applyTypeParameters(solvedTypeParameters);
+    if (type.isPresent()) {
+      return new VariableEntity(
+          variable.getSimpleName(),
+          variable.getKind(),
+          variable.getQualifiers(),
+          variable.isStatic(),
+          type.get(),
+          variable.getParentScope().get(),
+          variable.getJavadoc(),
+          variable.getSymbolRange(),
+          variable.getDefinitionRange());
+    } else {
+      return variable;
+    }
+  }
+
   /** An iterator walking through a class and all its ancestor classes and interfaces */
   public class ClassHierarchyIterator extends AbstractIterator<EntityWithContext> {
     private class ClassReference {

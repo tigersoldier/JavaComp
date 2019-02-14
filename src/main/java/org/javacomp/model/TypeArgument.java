@@ -14,7 +14,7 @@ import java.util.Optional;
 public interface TypeArgument {
 
   /** Replaces the simple type names with the type found in {@code solvedTypeParameters}. */
-  Optional<TypeArgument> applyTypeParameters(SolvedTypeParameters solvedTypeParameters);
+  Optional<? extends TypeArgument> applyTypeParameters(SolvedTypeParameters solvedTypeParameters);
 
   String toDisplayString();
 }

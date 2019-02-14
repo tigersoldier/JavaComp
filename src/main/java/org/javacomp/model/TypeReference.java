@@ -103,7 +103,7 @@ public abstract class TypeReference implements TypeArgument {
   }
 
   @Override
-  public Optional<TypeArgument> applyTypeParameters(SolvedTypeParameters solvedTypeParameters) {
+  public Optional<TypeReference> applyTypeParameters(SolvedTypeParameters solvedTypeParameters) {
     if (getFullName().size() == 1 && getTypeArguments().isEmpty()) {
       // Only simple name, can be replaced with type parameters.
       Optional<SolvedType> solved = solvedTypeParameters.getTypeParameter(getSimpleName());
@@ -114,11 +114,16 @@ public abstract class TypeReference implements TypeArgument {
     boolean hasChange = false;
     List<TypeArgument> newTypeArguments = new ArrayList<>();
     for (TypeArgument typeArgument : getTypeArguments()) {
-      Optional<TypeArgument> applied = typeArgument.applyTypeParameters(solvedTypeParameters);
+      Optional<? extends TypeArgument> applied =
+          typeArgument.applyTypeParameters(solvedTypeParameters);
+      TypeArgument newTypeArgument;
       if (applied.isPresent()) {
         hasChange = true;
+        newTypeArgument = applied.get();
+      } else {
+        newTypeArgument = typeArgument;
       }
-      newTypeArguments.add(applied.orElse(typeArgument));
+      newTypeArguments.add(newTypeArgument);
     }
     if (!hasChange) {
       return Optional.empty();

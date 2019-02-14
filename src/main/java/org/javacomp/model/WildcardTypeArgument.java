@@ -18,19 +18,19 @@ public abstract class WildcardTypeArgument implements TypeArgument {
   public abstract Optional<Bound> getBound();
 
   @Override
-  public Optional<TypeArgument> applyTypeParameters(SolvedTypeParameters solvedTypeParameters) {
+  public Optional<WildcardTypeArgument> applyTypeParameters(
+      SolvedTypeParameters solvedTypeParameters) {
     Optional<Bound> bound = getBound();
     if (!bound.isPresent()) {
       return Optional.empty();
     }
-    Optional<TypeArgument> typeReference =
+    Optional<TypeReference> typeReference =
         bound.get().getTypeReference().applyTypeParameters(solvedTypeParameters);
     if (!typeReference.isPresent()) {
       return Optional.empty();
     }
     return Optional.of(
-        WildcardTypeArgument.create(
-            Bound.create(bound.get().getKind(), (TypeReference) typeReference.get())));
+        WildcardTypeArgument.create(Bound.create(bound.get().getKind(), typeReference.get())));
   }
 
   @Override

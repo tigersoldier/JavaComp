@@ -37,6 +37,7 @@ class ClassMemberCompletor {
           actualClass);
       for (Entity member :
           ((ClassEntity) classInHierachy.getEntity()).getMemberEntities().values()) {
+        member = typeSolver.applyTypeParameters(member, classInHierachy.getSolvedTypeParameters());
         if (!options.allowedKinds().contains(member.getKind())) {
           continue;
         }
