@@ -745,7 +745,21 @@ public class TypeSolver {
     } else {
       // TODO: support multiple bounds.
       TypeReference bound = bounds.get(0);
-      return solve(bound, contextTypeParameters, baseScope, module);
+
+      // HACK: mark type parameter name as solved before solving its bounds.
+      // This prevents infinite loops for solving recursive type references in the form of
+      //   class Foo<T extends Foo>
+      // Such form causes infinite loop of
+      //   solve bounds: T extends Foo
+      //   -> solve type: Foo (no type arguments)
+      //   -> solve type parameters: type parameters=T extends Foo, type arguments=(Empty)
+      //   -> (loop) solve bounds: T extends Foo
+      MutableSolvedTypeParameters mutableContextTypeParameters =
+          MutableSolvedTypeParameters.copyOf(contextTypeParameters);
+      mutableContextTypeParameters.putTypeParameter(
+          typeParameter.getName(),
+          solveJavaLangObject(module).orElse(SolvedPrimitiveType.create(PrimitiveEntity.VOID)));
+      return solve(bound, mutableContextTypeParameters, baseScope, module);
     }
   }
 

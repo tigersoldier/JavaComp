@@ -254,6 +254,43 @@ public class TypeSolverTest {
         .hasValue(SolvedArrayType.create(solvedTestClass));
   }
 
+  /** Test for infinite loop caused by solving {@code class Foo<T extends Foo>}. */
+  @Test
+  public void solveRecursiveParameterizedType() {
+    ClassEntity nestedParameterizedClassEntity =
+        (ClassEntity)
+            TestUtil.lookupEntity(TEST_CLASS_FULL_NAME + ".RecursiveParameterizedType", testModule);
+    ClassEntity javaObjectClassEntity =
+        (ClassEntity) TestUtil.lookupEntity("java.lang.Object", fakeJdkModule);
+    SolvedReferenceType solvedJavaObject =
+        SolvedReferenceType.create(
+            javaObjectClassEntity, /* typeParameters= */ SolvedTypeParameters.EMPTY);
+    assertThat(
+            typeSolver.solve(
+                TypeReference.builder()
+                    .setFullName("RecursiveParameterizedType")
+                    .setArray(false)
+                    .setPrimitive(false)
+                    .build(),
+                nestedParameterizedClassEntity.getScope(),
+                testModule))
+        .hasValue(
+            SolvedReferenceType.create(
+                nestedParameterizedClassEntity,
+                SolvedTypeParameters.builder()
+                    // First recursion. Bound type is solved.
+                    .putTypeParameter(
+                        "N",
+                        SolvedReferenceType.create(
+                            nestedParameterizedClassEntity,
+                            SolvedTypeParameters.builder()
+                                // Securion recusion. Bound type is not solved so that infinite loop
+                                // is broken.
+                                .putTypeParameter("N", solvedJavaObject)
+                                .build()))
+                    .build()));
+  }
+
   private Optional<SolvedEntityType> solveEntityType(
       TypeReference typeReference, Module module, EntityScope parentScope) {
     return typeSolver

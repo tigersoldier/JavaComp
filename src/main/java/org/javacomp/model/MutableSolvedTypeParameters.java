@@ -2,6 +2,7 @@ package org.javacomp.model;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 /** A mutable {@link SolvedTypeParameters}. */
@@ -32,6 +33,12 @@ public class MutableSolvedTypeParameters extends SolvedTypeParameters {
     return this;
   }
 
+  public MutableSolvedTypeParameters putAllTypeParameters(
+      Map<String, SolvedType> allTypeParameters) {
+    typeVariableMap.putAll(allTypeParameters);
+    return this;
+  }
+
   public MutableSolvedTypeParameters removeTypeParameter(String name) {
     typeVariableMap.remove(name);
     return this;
@@ -39,5 +46,11 @@ public class MutableSolvedTypeParameters extends SolvedTypeParameters {
 
   public SolvedTypeParameters toImmutable() {
     return SolvedTypeParameters.builder().putTypeParameters(typeVariableMap).build();
+  }
+
+  public static MutableSolvedTypeParameters copyOf(SolvedTypeParameters solvedTypeParameters) {
+    MutableSolvedTypeParameters ret = new MutableSolvedTypeParameters();
+    ret.putAllTypeParameters(solvedTypeParameters.getTypeVariableMap());
+    return ret;
   }
 }

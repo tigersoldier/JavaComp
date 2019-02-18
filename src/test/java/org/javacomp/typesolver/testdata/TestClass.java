@@ -62,4 +62,6 @@ public class TestClass extends BaseClass implements BaseInterface {
     public class InnerClass<E> {}
     public static class StaticInnerClass<F> {}
   }
+
+  public static class RecursiveParameterizedType<N extends RecursiveParameterizedType> {}
 }
