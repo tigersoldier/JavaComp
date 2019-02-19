@@ -399,6 +399,36 @@ public class ExpressionSolverTest {
         .isSameAs(onDemandClass);
   }
 
+  @Test
+  public void solveNewClassWithTypeArguments() {
+    // Simple new class with type arguments
+    assertThat(
+            solveExpression(
+                    "new ParameterizedType<String, TestClassFactory>().getA()", testClassClass)
+                .getEntity())
+        .isSameAs(fakeStringClass);
+    // New non-static inner class with type arguments
+    assertThat(
+            solveExpression(
+                    "new TestClass().new ParameterizedTypeNoConstructor<TestClassFactory>().get()",
+                    testClassClass)
+                .getEntity())
+        .isSameAs(testClassFactoryClass);
+    // New anonymouse class with type arguments after new instead of before (
+    assertThat(
+            solveExpression(
+                    "new <String, TestClassFactory>ParameterizedType() {}.getA()", testClassClass)
+                .getEntity())
+        .isSameAs(fakeStringClass);
+  }
+
+  @Test
+  public void solveMethodInvocationWithTypeArguments() {
+    assertThat(
+            solveExpression("ParameterizedType.<String>staticMethod()", testClassClass).getEntity())
+        .isSameAs(fakeStringClass);
+  }
+
   private Entity solveDefinition(
       String expression, EntityScope baseScope, Entity.Kind... allowedKinds) {
     Set<Entity.Kind> allowedKindSet =

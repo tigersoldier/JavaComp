@@ -39,8 +39,10 @@ import org.javacomp.model.SolvedReferenceType;
 import org.javacomp.model.SolvedType;
 import org.javacomp.model.SolvedTypeParameters;
 import org.javacomp.model.TypeArgument;
+import org.javacomp.model.TypeParameter;
 import org.javacomp.model.TypeReference;
 import org.javacomp.model.VariableEntity;
+import org.javacomp.parser.TypeArgumentScanner;
 import org.javacomp.parser.TypeReferenceScanner;
 
 /** Logic for solving the result type of an expression. */
@@ -62,6 +64,7 @@ public class ExpressionSolver {
   private final OverloadSolver overloadSolver;
   private final MemberSolver memberSolver;
   private final ExpressionDefinitionScanner expressionDefinitionScanner;
+  private final TypeArgumentScanner typeArgumentScanner;
 
   public ExpressionSolver(
       TypeSolver typeSolver, OverloadSolver overloadSolver, MemberSolver memberSolver) {
@@ -69,6 +72,7 @@ public class ExpressionSolver {
     this.overloadSolver = overloadSolver;
     this.memberSolver = memberSolver;
     this.expressionDefinitionScanner = new ExpressionDefinitionScanner();
+    this.typeArgumentScanner = new TypeArgumentScanner();
   }
 
   /**
@@ -179,7 +183,7 @@ public class ExpressionSolver {
       List<EntityWithContext> methods = scan(node.getMethodSelect(), methodOnlyParams);
 
       methods = overloadSolver.prioritizeMatchedMethod(methods, methodArgs, params.module());
-      return applyTypeArguments(methods, node.getTypeArguments());
+      return applyTypeArguments(methods, node.getTypeArguments(), params);
     }
 
     @Override
@@ -233,7 +237,12 @@ public class ExpressionSolver {
       List<EntityWithContext> constructors =
           ((ClassEntity) entityWithContext.getEntity())
               .getConstructors().stream()
-                  .map(methodEntity -> EntityWithContext.ofEntity(methodEntity))
+                  .map(
+                      methodEntity ->
+                          EntityWithContext.simpleBuilder()
+                              .setEntity(methodEntity)
+                              .setSolvedTypeParameters(entityWithContext.getSolvedTypeParameters())
+                              .build())
                   .collect(Collectors.toList());
       if (constructors.isEmpty()) {
         // No constructors defined. Fallback to the class.
@@ -241,7 +250,8 @@ public class ExpressionSolver {
             baseClassEntities.stream()
                 .map(baseClass -> baseClass.toBuilder().setInstanceContext(true).build())
                 .collect(Collectors.toList()),
-            node.getTypeArguments());
+            node.getTypeArguments(),
+            params);
       }
       List<Optional<SolvedType>> arguments =
           node.getArguments().stream()
@@ -257,14 +267,15 @@ public class ExpressionSolver {
 
       constructors =
           overloadSolver.prioritizeMatchedMethod(constructors, arguments, params.module());
-      return applyTypeArguments(constructors, node.getTypeArguments());
+      return applyTypeArguments(constructors, node.getTypeArguments(), params);
     }
 
     @Override
     public List<EntityWithContext> visitParameterizedType(
         ParameterizedTypeTree node, ExpressionDefinitionScannerParams params) {
-      // TODO: solve type parameters, handle diamond operator.
-      return scan(node.getType(), params);
+      // TODO: handle diamond operator.
+      List<EntityWithContext> entities = scan(node.getType(), params);
+      return applyTypeArguments(entities, node.getTypeArguments(), params);
     }
 
     @Override
@@ -431,9 +442,52 @@ public class ExpressionSolver {
     }
 
     private List<EntityWithContext> applyTypeArguments(
-        List<EntityWithContext> entities, List<? extends Tree> typeArguments) {
-      // TODO: implement this;
-      return entities;
+        List<EntityWithContext> entities,
+        List<? extends Tree> typeArguments,
+        ExpressionDefinitionScannerParams params) {
+      if (typeArguments.isEmpty()) {
+        return entities;
+      }
+      ImmutableList<TypeArgument> parsedTypeArguments =
+          typeArguments.stream()
+              .map(node -> typeArgumentScanner.getTypeArgument(node))
+              .collect(ImmutableList.toImmutableList());
+      ImmutableList.Builder<EntityWithContext> builder = new ImmutableList.Builder<>();
+      for (EntityWithContext entityWithContext : entities) {
+        ImmutableList<TypeParameter> typeParameters =
+            getTypeParameters(entityWithContext.getEntity());
+        if (typeParameters.isEmpty()) {
+          builder.add(entityWithContext);
+          continue;
+        }
+
+        SolvedTypeParameters newSolvedTypeParameters =
+            typeSolver.solveTypeParameters(
+                typeParameters,
+                parsedTypeArguments,
+                entityWithContext.getSolvedTypeParameters(),
+                params.baseScope(),
+                params.module());
+        builder.add(
+            entityWithContext.toBuilder().setSolvedTypeParameters(newSolvedTypeParameters).build());
+      }
+      return builder.build();
+    }
+
+    private ImmutableList<TypeParameter> getTypeParameters(Entity entity) {
+      if (entity instanceof ClassEntity) {
+        return ((ClassEntity) entity).getTypeParameters();
+      }
+      if (entity instanceof MethodEntity) {
+        MethodEntity method = (MethodEntity) entity;
+        if (method.isConstructor()) {
+          // Constructor inherits type parameters from the class.
+          return method.getParentClass().getTypeParameters();
+        } else {
+          return method.getTypeParameters();
+        }
+      }
+      return ImmutableList.of();
     }
 
     @Nullable

@@ -53,6 +53,7 @@ public class TestClass extends BaseClass implements BaseInterface {
   public final ParameterizedType<String, ? extends TestClassFactory> getParameterizedType();
 
   public static class ParameterizedType<A, B extends BaseInnerClass> {
+    public ParameterizedType() {}
     public A getA();
     public B getB();
     public <C extends B & A> C getC() {}
@@ -61,6 +62,10 @@ public class TestClass extends BaseClass implements BaseInterface {
 
     public class InnerClass<E> {}
     public static class StaticInnerClass<F> {}
+  }
+
+  public class ParameterizedTypeNoConstructor<T> {
+    public T get();
   }
 
   public static class RecursiveParameterizedType<N extends RecursiveParameterizedType> {}
