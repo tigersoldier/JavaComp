@@ -18,6 +18,7 @@ java_library(
         "//src/main/java/org/javacomp/server",
         "//src/main/java/org/javacomp/server:request",
         "//src/main/java/org/javacomp/server:requestexception",
+        "//third_party:google_java_format",
         "//third_party:gson",
         "//third_party:guava",
         "//third_party:javac",

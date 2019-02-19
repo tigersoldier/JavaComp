@@ -43,6 +43,16 @@ java_plugin(
 )
 
 java_library(
+    name = "google_java_format",
+    exports = [
+        "@com_google_googlejavaformat//jar",
+    ],
+    runtime_deps = [
+        ":javac-shaded",
+    ],
+)
+
+java_library(
     name = "gson",
     exports = [
         "@com_google_code_gson_gson//jar",
@@ -60,6 +70,13 @@ java_library(
     name = "javac",
     exports = [
         "@com_google_errorprone_javac//jar",
+    ],
+)
+
+java_library(
+    name = "javac-shaded",
+    exports = [
+        "@com_google_errorprone_javac_shaded//jar",
     ],
 )
 

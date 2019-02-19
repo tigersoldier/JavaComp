@@ -10,6 +10,12 @@ maven_jar(
 )
 
 maven_jar(
+    name = "com_google_errorprone_javac_shaded",
+    artifact = "com.google.errorprone:javac-shaded:9+181-r4173-1",
+    sha1 = "a399ee380b6d6b6ea53af1cfbcb086b108d1efb7",
+)
+
+maven_jar(
     name = "com_google_code_gson_gson",
     artifact = "com.google.code.gson:gson:2.8.2",
     sha1 = "3edcfe49d2c6053a70a2a47e4e1c2f94998a49cf",
@@ -19,6 +25,22 @@ maven_jar(
     name = "com_google_code_findbugs_jsr305",
     artifact = "com.google.code.findbugs:jsr305:3.0.2",
     sha1 = "25ea2e8b0c338a877313bd4672d3fe056ea78f0d",
+)
+
+maven_jar(
+    name = "com_google_auto_value_auto_value",
+    artifact = "com.google.auto.value:auto-value:1.6.2",
+)
+
+maven_jar(
+    name = "com_google_auto_value_auto_value_annotations",
+    artifact = "com.google.auto.value:auto-value-annotations:1.6.2",
+)
+
+maven_jar(
+    name = "com_google_googlejavaformat",
+    artifact = "com.google.googlejavaformat:google-java-format:1.7",
+    sha1 = "97cb6afc835d65682edc248e19170a8e4ecfe4c4",
 )
 
 ####################
@@ -55,16 +77,6 @@ maven_jar(
 maven_jar(
     name = "org_objenesis_objenesis",
     artifact = "org.objenesis:objenesis:2.4",
-)
-
-maven_jar(
-    name = "com_google_auto_value_auto_value",
-    artifact = "com.google.auto.value:auto-value:1.6.2",
-)
-
-maven_jar(
-    name = "com_google_auto_value_auto_value_annotations",
-    artifact = "com.google.auto.value:auto-value-annotations:1.6.2",
 )
 
 maven_jar(

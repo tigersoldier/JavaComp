@@ -39,6 +39,7 @@ public class InitializeHandler extends RequestHandler<InitializeParams> {
     result.capabilities.hoverProvider = true;
     result.capabilities.documentSymbolProvider = true;
     result.capabilities.referencesProvider = true;
+    result.capabilities.documentFormattingProvider = true;
     return result;
   }
 }
