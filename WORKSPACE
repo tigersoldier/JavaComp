@@ -5,8 +5,8 @@ maven_jar(
 
 maven_jar(
     name = "com_google_errorprone_javac",
-    artifact = "com.google.errorprone:javac:1.8.0-u20",
-    sha1 = "b23b2b0e3f79e3f737496a9eca5bab65cdca791d",
+    artifact = "com.google.errorprone:javac:9+181-r4173-1",
+    sha1 = "bdf4c0aa7d540ee1f7bf14d47447aea4bbf450c5",
 )
 
 maven_jar(

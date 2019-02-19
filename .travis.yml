@@ -1,6 +1,7 @@
 # Forked from https://github.com/pubref/rules_protobuf
 dist: trusty
 language: java
+jdk: openjdk9
 
 os: linux
 
@@ -10,7 +11,7 @@ cache:
     - $HOME/bazel/outbase
 
 before_install:
-  - BAZEL_VERSION=0.10.0
+  - BAZEL_VERSION=0.22.0
   - OS=linux
   - ARCH=x86_64
   - GH_BASE="https://github.com/bazelbuild/bazel/releases/download/$BAZEL_VERSION"
@@ -28,7 +29,6 @@ script:
   - |
     bazel \
       --output_base=$HOME/bazel/outbase \
-      --batch \
       --host_jvm_args=-Xmx500m \
       --host_jvm_args=-Xms500m \
       test \
@@ -43,6 +43,7 @@ script:
       --strategy=Closure=worker \
       //src/test/... \
       $FLAGS
+  - bazel shutdown
 
 notifications:
   email: false
