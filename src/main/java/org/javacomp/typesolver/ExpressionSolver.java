@@ -4,6 +4,7 @@ import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
+import com.google.common.flogger.FluentLogger;
 import com.sun.source.tree.ArrayAccessTree;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.IdentifierTree;
@@ -26,7 +27,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
-import org.javacomp.logging.JLogger;
 import org.javacomp.model.ClassEntity;
 import org.javacomp.model.Entity;
 import org.javacomp.model.EntityScope;
@@ -47,7 +47,7 @@ import org.javacomp.parser.TypeReferenceScanner;
 
 /** Logic for solving the result type of an expression. */
 public class ExpressionSolver {
-  private static final JLogger logger = JLogger.createForEnclosingClass();
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   private static final Set<Entity.Kind> ALL_ENTITY_KINDS = EnumSet.allOf(Entity.Kind.class);
   private static final Set<Entity.Kind> ALLOWED_KINDS_METHOD = ImmutableSet.of(Entity.Kind.METHOD);
@@ -110,15 +110,12 @@ public class ExpressionSolver {
             .build();
     List<EntityWithContext> entities = expressionDefinitionScanner.scan(expression, params);
     if (entities == null) {
-      logger.warning(
-          new Throwable(),
-          "Unsupported expression: (%s) %s",
-          expression.getClass().getSimpleName(),
-          expression);
+      logger.atWarning().log(
+          "Unsupported expression: (%s) %s", expression.getClass().getSimpleName(), expression);
       return ImmutableList.of();
     }
 
-    logger.fine("Found definitions for %s: %s", expression, entities);
+    logger.atFine().log("Found definitions for %s: %s", expression, entities);
     return entities.stream()
         .filter(entityWithContext -> allowedKinds.contains(entityWithContext.getEntity().getKind()))
         .collect(ImmutableList.toImmutableList());
@@ -226,7 +223,7 @@ public class ExpressionSolver {
       }
       EntityWithContext entityWithContext = baseClassEntities.get(0);
       if (!(entityWithContext.getEntity() instanceof ClassEntity)) {
-        logger.warning(
+        logger.atWarning().log(
             "Resolved entity for new class %s is not an entity: %s.",
             node, entityWithContext.getEntity());
         return ImmutableList.of();
@@ -283,7 +280,7 @@ public class ExpressionSolver {
         MemberSelectTree node, ExpressionDefinitionScannerParams params) {
       List<EntityWithContext> expressionEntities =
           scan(node.getExpression(), params.copyWithAllEntityKindsAllowed());
-      logger.severe(
+      logger.atSevere().log(
           "[DEBUG] expression for %s with allowed %s are %s",
           node, params.allowedEntityKinds(), expressionEntities);
       EntityWithContext expressionType = solveEntityType(expressionEntities, params.module());
@@ -415,7 +412,7 @@ public class ExpressionSolver {
         return ImmutableList.of(builder.setEntity(primitiveEntity.get()).build());
       }
 
-      logger.warning("Unknown literal type: %s", value);
+      logger.atWarning().log("Unknown literal type: %s", value);
       return ImmutableList.of();
     }
 

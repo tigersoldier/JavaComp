@@ -16,8 +16,8 @@ java_library(
     name = "file",
     srcs = PUBLIC_INTERFACES,
     deps = [
-        "//src/main/java/org/javacomp/logging",
         "//third_party:auto_value",
+        "//third_party:flogger",
         "//third_party:guava",
     ],
 )
@@ -30,8 +30,8 @@ java_library(
     ),
     deps = [
         ":file",
-        "//src/main/java/org/javacomp/logging",
         "//third_party:auto_value",
+        "//third_party:flogger",
         "//third_party:guava",
     ],
 )

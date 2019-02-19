@@ -2,6 +2,7 @@ package org.javacomp.reference;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.flogger.FluentLogger;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.IdentifierTree;
 import com.sun.source.tree.LiteralTree;
@@ -17,7 +18,6 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import org.javacomp.logging.JLogger;
 import org.javacomp.model.ClassEntity;
 import org.javacomp.model.Entity;
 import org.javacomp.model.EntityScope;
@@ -34,7 +34,7 @@ import org.javacomp.typesolver.TypeSolver;
 
 /** Finds the definition of a symbol at a given position */
 public class DefinitionSolver {
-  private static final JLogger logger = JLogger.createForEnclosingClass();
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
   private static final Set<Entity.Kind> ALLOWED_ENTITY_KINDS =
       new ImmutableSet.Builder<Entity.Kind>()
           .addAll(VariableEntity.ALLOWED_KINDS)

@@ -1,6 +1,7 @@
 package org.javacomp.project;
 
 import com.google.auto.value.AutoValue;
+import com.google.common.flogger.FluentLogger;
 import com.sun.source.tree.ErroneousTree;
 import com.sun.source.tree.LineMap;
 import com.sun.source.tree.Tree;
@@ -11,7 +12,6 @@ import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import java.nio.file.Path;
 import java.util.Optional;
-import org.javacomp.logging.JLogger;
 import org.javacomp.model.EntityScope;
 import org.javacomp.model.FileScope;
 import org.javacomp.model.Module;
@@ -21,7 +21,7 @@ import org.javacomp.parser.TreePathFormatter;
 /** All information inferred from a given cursor position of a file. */
 @AutoValue
 public abstract class PositionContext {
-  private static final JLogger logger = JLogger.createForEnclosingClass();
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   public abstract EntityScope getScopeAtPosition();
 
@@ -88,9 +88,9 @@ public abstract class PositionContext {
     JCCompilationUnit compilationUnit = inputFileScope.getCompilationUnit().get();
     EntityScope scopeAtPosition = inputFileScope.getEntityScopeAt(position - 1);
     PositionAstScanner scanner = new PositionAstScanner(compilationUnit.endPositions, position);
-    logger.fine("Starting PositionAstScanner, position: %s", position);
+    logger.atFine().log("Starting PositionAstScanner, position: %s", position);
     TreePath treePath = scanner.scan(compilationUnit, null);
-    logger.fine("TreePath for position: %s", TreePathFormatter.formatTreePath(treePath));
+    logger.atFine().log("TreePath for position: %s", TreePathFormatter.formatTreePath(treePath));
 
     return new AutoValue_PositionContext(
         scopeAtPosition, module, inputFileScope, treePath, position, compilationUnit.endPositions);
@@ -118,7 +118,7 @@ public abstract class PositionContext {
       boolean positionInNodeRange =
           (startPosition < 0 || startPosition <= position)
               && (position < endPosition || endPosition < 0);
-      logger.fine(
+      logger.atFine().log(
           "PositionAstScanner: visiting node: %s, start: %s, end: %s.%s",
           tree.accept(new TreePathFormatter.TreeFormattingVisitor(), null),
           jcTree.getStartPosition(),

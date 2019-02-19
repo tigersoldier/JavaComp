@@ -43,6 +43,18 @@ maven_jar(
     sha1 = "97cb6afc835d65682edc248e19170a8e4ecfe4c4",
 )
 
+maven_jar(
+    name = "com_google_flogger",
+    artifact = "com.google.flogger:flogger:0.3.1",
+    sha1 = "585030fe1ec709760cbef997a459729fb965df0e",
+)
+
+maven_jar(
+    name = "com_google_flogger_system_backend",
+    artifact = "com.google.flogger:flogger-system-backend:0.3.1",
+    sha1 = "287b569d76abcd82f9de87fe41829fbc7ebd8ac9",
+)
+
 ####################
 # For tests
 

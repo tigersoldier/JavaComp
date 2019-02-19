@@ -1,5 +1,7 @@
 package org.javacomp.parser;
 
+import com.google.common.flogger.FluentLogger;
+import com.google.common.flogger.StackSize;
 import com.sun.source.tree.ArrayTypeTree;
 import com.sun.source.tree.IdentifierTree;
 import com.sun.source.tree.MemberSelectTree;
@@ -11,12 +13,11 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
-import org.javacomp.logging.JLogger;
 import org.javacomp.model.TypeArgument;
 import org.javacomp.model.TypeReference;
 
 public class TypeReferenceScanner extends TreeScanner<Void, Void> {
-  private static final JLogger logger = JLogger.createForEnclosingClass();
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   private final Deque<String> names;
   private final List<TypeArgument> typeArguments;
@@ -44,7 +45,7 @@ public class TypeReferenceScanner extends TreeScanner<Void, Void> {
     scan(node, null);
     if (names.isEmpty()) {
       // Malformed input, no type can be referenced
-      logger.warning(new Throwable(), "Empty type name with %s", node);
+      logger.atWarning().withStackTrace(StackSize.LARGE).log("Empty type name with %s", node);
       return TypeReference.EMPTY_TYPE;
     }
     return TypeReference.builder()

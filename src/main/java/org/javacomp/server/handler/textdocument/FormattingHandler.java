@@ -2,11 +2,11 @@ package org.javacomp.server.handler.textdocument;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
+import com.google.common.flogger.FluentLogger;
 import com.google.googlejavaformat.java.Formatter;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
-import org.javacomp.logging.JLogger;
 import org.javacomp.protocol.Position;
 import org.javacomp.protocol.Range;
 import org.javacomp.protocol.TextEdit;
@@ -21,7 +21,7 @@ import org.javacomp.server.handler.RequestHandler;
  * <p>See https://microsoft.github.io/language-server-protocol/specification#textDocument_formatting
  */
 public class FormattingHandler extends RequestHandler<DocumentFormattingParams> {
-  private static final JLogger logger = JLogger.createForEnclosingClass();
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   private static final Splitter LINE_SPLITTER = Splitter.on('\n');
 
@@ -38,7 +38,8 @@ public class FormattingHandler extends RequestHandler<DocumentFormattingParams> 
     Optional<CharSequence> content =
         server.getFileManager().getFileContent(Paths.get(request.getParams().textDocument.uri));
     if (!content.isPresent()) {
-      logger.warning("Cannot find file content for %s", request.getParams().textDocument.uri);
+      logger.atWarning().log(
+          "Cannot find file content for %s", request.getParams().textDocument.uri);
       return ImmutableList.of();
     }
     if (content.get().length() == 0) {

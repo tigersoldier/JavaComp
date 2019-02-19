@@ -8,7 +8,6 @@ java_library(
     deps = [
         "//src/main/java/org/javacomp/completion",
         "//src/main/java/org/javacomp/file",
-        "//src/main/java/org/javacomp/logging",
         "//src/main/java/org/javacomp/model",
         "//src/main/java/org/javacomp/parser",
         "//src/main/java/org/javacomp/project",
@@ -18,6 +17,7 @@ java_library(
         "//src/main/java/org/javacomp/server",
         "//src/main/java/org/javacomp/server:request",
         "//src/main/java/org/javacomp/server:requestexception",
+        "//third_party:flogger",
         "//third_party:google_java_format",
         "//third_party:gson",
         "//third_party:guava",

@@ -4,6 +4,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.flogger.FluentLogger;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonPrimitive;
@@ -12,7 +13,6 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import javax.annotation.Nullable;
-import org.javacomp.logging.JLogger;
 import org.javacomp.protocol.NullParams;
 import org.javacomp.protocol.RequestParams;
 import org.javacomp.server.handler.RequestHandler;
@@ -24,7 +24,7 @@ import org.javacomp.server.io.StreamClosedException;
  * name.
  */
 public class RequestDispatcher {
-  private static final JLogger logger = JLogger.createForEnclosingClass();
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   private static final int MAX_REQUESTS_IN_QUEUE = 50;
 
@@ -54,17 +54,19 @@ public class RequestDispatcher {
    */
   public boolean dispatchRequest() {
     if (dispatchFuture.isCancelled() || dispatchFuture.isDone()) {
-      logger.severe("The dispatch thread exits. Stop parsing and dispatching new requests.");
+      logger.atSevere().log(
+          "The dispatch thread exits. Stop parsing and dispatching new requests.");
     }
 
     RawRequest rawRequest;
     try {
       rawRequest = requestParser.parse();
     } catch (RequestException e) {
-      logger.severe(e, "Malformed request received and unable to recover. Shutting down.");
+      logger.atSevere().withCause(e).log(
+          "Malformed request received and unable to recover. Shutting down.");
       return false;
     } catch (StreamClosedException e) {
-      logger.severe(e, "Input stream closed, shutting down server.");
+      logger.atSevere().withCause(e).log("Input stream closed, shutting down server.");
       return false;
     }
 
@@ -74,7 +76,7 @@ public class RequestDispatcher {
         continue;
       }
 
-      logger.warning(
+      logger.atWarning().log(
           "Request queue is full. Dropping early request (%s) %s",
           firstInQueue.getContent().getId(), firstInQueue.getContent().getMethod());
       return true;
@@ -115,17 +117,17 @@ public class RequestDispatcher {
             if (requestIdElem.isJsonPrimitive()) {
               requestId = requestIdElem.getAsJsonPrimitive();
             } else {
-              logger.warning("Invalid type of request ID: %s", requestIdElem);
+              logger.atWarning().log("Invalid type of request ID: %s", requestIdElem);
             }
           }
 
           try {
             result = dispatchRequestInternal(rawRequest, requestId);
           } catch (RequestException e) {
-            logger.severe(e, "Failed to process request.");
+            logger.atSevere().withCause(e).log("Failed to process request.");
             error = new Response.ResponseError(e.getErrorCode(), e.getMessage());
           } catch (Throwable e) {
-            logger.severe(e, "Failed to process request.");
+            logger.atSevere().withCause(e).log("Failed to process request.");
             error = new Response.ResponseError(ErrorCode.INTERNAL_ERROR, e.getMessage());
           }
 
@@ -135,7 +137,7 @@ public class RequestDispatcher {
             continue;
           }
           if (!requestId.isNumber() && !requestId.isString()) {
-            logger.warning("Invalid type of request ID: %s", requestId);
+            logger.atWarning().log("Invalid type of request ID: %s", requestId);
             continue;
           }
 
@@ -148,11 +150,11 @@ public class RequestDispatcher {
           try {
             responseWriter.writeResponse(response);
           } catch (Throwable e) {
-            logger.severe(e, "Failed to write response, shutting down server.");
+            logger.atSevere().withCause(e).log("Failed to write response, shutting down server.");
             return;
           }
         } catch (InterruptedException e) {
-          logger.info("Request dispatching thread is interrupted, shutting down.");
+          logger.atInfo().log("Request dispatching thread is interrupted, shutting down.");
           return;
         }
       }
@@ -180,7 +182,7 @@ public class RequestDispatcher {
       RequestHandler handler = handlerRegistry.get(requestContent.getMethod());
 
       Request typedRequest = convertRawToRequest(rawRequest, requestId, handler);
-      logger.info("Handling request %s", requestContent.getMethod());
+      logger.atInfo().log("Handling request %s", requestContent.getMethod());
       @SuppressWarnings("unchecked")
       Object result = handler.handleRequest(typedRequest);
       return result;

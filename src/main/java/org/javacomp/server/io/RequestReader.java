@@ -3,10 +3,10 @@ package org.javacomp.server.io;
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
+import com.google.common.flogger.FluentLogger;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
-import org.javacomp.logging.JLogger;
 
 /**
  * A reader wrapping around {@link InputStream} providing useful methods for parsing requests.
@@ -17,7 +17,7 @@ import org.javacomp.logging.JLogger;
  * <p>The reader is backed by a ring buffer.
  */
 public class RequestReader implements Closeable {
-  private static final JLogger logger = JLogger.createForEnclosingClass();
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   private final InputStream inputStream;
 
@@ -141,7 +141,7 @@ public class RequestReader implements Closeable {
    *     and no more data will be available
    */
   boolean fillBuffer() throws IOException {
-    logger.fine("fillBuffer: readOffset: %d, writeOffset: %d", readOffset, writeOffset);
+    logger.atFine().log("fillBuffer: readOffset: %d, writeOffset: %d", readOffset, writeOffset);
     int remainCapacity = getRemainCapacity();
     if (remainCapacity == 0) {
       return false;
@@ -153,7 +153,7 @@ public class RequestReader implements Closeable {
     int numRead = inputStream.read(buffer, writeOffset, numToRead);
     if (numRead > 0) {
       writeOffset = incrementOffset(writeOffset, numRead);
-      logger.fine("fillBuffer: %d bytes read, writeOffset: %d", readOffset, writeOffset);
+      logger.atFine().log("fillBuffer: %d bytes read, writeOffset: %d", readOffset, writeOffset);
       return true;
     }
     return false;

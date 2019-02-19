@@ -43,6 +43,16 @@ java_plugin(
 )
 
 java_library(
+    name = "flogger",
+    exports = [
+        "@com_google_flogger//jar",
+    ],
+    runtime_deps = [
+        "@com_google_flogger_system_backend//jar",
+    ],
+)
+
+java_library(
     name = "google_java_format",
     exports = [
         "@com_google_googlejavaformat//jar",

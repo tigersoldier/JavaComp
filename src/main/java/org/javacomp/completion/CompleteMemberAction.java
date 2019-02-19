@@ -3,11 +3,11 @@ package org.javacomp.completion;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
+import com.google.common.flogger.FluentLogger;
 import com.sun.source.tree.ExpressionTree;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.Optional;
-import org.javacomp.logging.JLogger;
 import org.javacomp.model.ClassEntity;
 import org.javacomp.model.Entity;
 import org.javacomp.model.EntityWithContext;
@@ -17,7 +17,7 @@ import org.javacomp.typesolver.TypeSolver;
 
 /** An action to get completion candidates for member selection. */
 class CompleteMemberAction implements CompletionAction {
-  private static final JLogger logger = JLogger.createForEnclosingClass();
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   private static final ClassMemberCompletor.Options MEMBER_SELECT_OPTIONS =
       ClassMemberCompletor.Options.builder()
@@ -95,7 +95,7 @@ class CompleteMemberAction implements CompletionAction {
             positionContext.getModule(),
             positionContext.getScopeAtPosition(),
             positionContext.getPosition());
-    logger.fine("Solved parent expression: %s", solvedParent);
+    logger.atFine().log("Solved parent expression: %s", solvedParent);
     if (!solvedParent.isPresent()) {
       return ImmutableList.of();
     }

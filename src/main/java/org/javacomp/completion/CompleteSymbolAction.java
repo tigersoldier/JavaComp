@@ -4,12 +4,12 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
+import com.google.common.flogger.FluentLogger;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import org.javacomp.completion.CompletionCandidate.SortCategory;
-import org.javacomp.logging.JLogger;
 import org.javacomp.model.ClassEntity;
 import org.javacomp.model.Entity;
 import org.javacomp.model.EntityScope;
@@ -25,7 +25,7 @@ import org.javacomp.typesolver.TypeSolver;
 
 /** An action that returns any visible entities as completion candidates. */
 class CompleteSymbolAction implements CompletionAction {
-  private static final JLogger logger = JLogger.createForEnclosingClass();
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   private static final List<String> JAVA_LANG_QUALIFIERS = ImmutableList.of("java", "lang");
   private static final Set<Entity.Kind> METHOD_VARIABLE_KINDS =
@@ -57,7 +57,7 @@ class CompleteSymbolAction implements CompletionAction {
     for (EntityScope currentScope = positionContext.getScopeAtPosition();
         currentScope != null;
         currentScope = currentScope.getParentScope().orElse(null)) {
-      logger.fine("Adding member entities in scope: %s", currentScope);
+      logger.atFine().log("Adding member entities in scope: %s", currentScope);
       if (currentScope instanceof ClassEntity) {
         builder.addCandidates(
             classMemberCompletor.getClassMembers(

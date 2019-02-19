@@ -1,6 +1,7 @@
 package org.javacomp.completion;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.flogger.FluentLogger;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.ImportTree;
 import com.sun.source.tree.LiteralTree;
@@ -12,7 +13,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Optional;
 import org.javacomp.file.FileManager;
-import org.javacomp.logging.JLogger;
 import org.javacomp.project.ModuleManager;
 import org.javacomp.project.PositionContext;
 import org.javacomp.typesolver.ExpressionSolver;
@@ -22,7 +22,7 @@ import org.javacomp.typesolver.TypeSolver;
 
 /** Entry point of completion logic. */
 public class Completor {
-  private static final JLogger logger = JLogger.createForEnclosingClass();
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   private static final CompletionResult NO_CACHE =
       CompletionResult.builder()

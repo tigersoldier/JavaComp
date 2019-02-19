@@ -1,11 +1,11 @@
 package org.javacomp.server;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.flogger.FluentLogger;
 import com.google.gson.Gson;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Map;
-import org.javacomp.logging.JLogger;
 import org.javacomp.server.io.RequestReader;
 import org.javacomp.server.io.StreamClosedException;
 
@@ -18,7 +18,7 @@ import org.javacomp.server.io.StreamClosedException;
  * https://github.com/Microsoft/language-server-protocol/blob/master/protocol.md#base-protocol
  */
 public class RequestParser implements Closeable {
-  private static final JLogger logger = JLogger.createForEnclosingClass();
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   /** Normalized Content-Length header name in the request header. */
   public static final String HEADER_CONTENT_LENGTH = "content-length";
@@ -67,7 +67,7 @@ public class RequestParser implements Closeable {
 
       String[] parts = headerLine.split(HEADER_KEY_VALUE_SEPARATOR, 2);
       if (parts.length != 2) {
-        logger.warning("Malformed header %s", headerLine);
+        logger.atWarning().log("Malformed header %s", headerLine);
       } else {
         headerBuilder.put(parts[0].toLowerCase(), parts[1]);
       }
@@ -77,7 +77,7 @@ public class RequestParser implements Closeable {
 
   private int getContentLength(Map<String, String> header) throws RequestException {
     if (!header.containsKey(HEADER_CONTENT_LENGTH)) {
-      logger.warning("Missing Content-Length in header %s. Ignore the content.", header);
+      logger.atWarning().log("Missing Content-Length in header %s. Ignore the content.", header);
       return 0;
     }
 
@@ -85,13 +85,14 @@ public class RequestParser implements Closeable {
     try {
       contentLength = Integer.parseInt(header.get(HEADER_CONTENT_LENGTH));
     } catch (NumberFormatException e) {
-      logger.warning(
+      logger.atWarning().log(
           "Invalid content length: %s. Ignore the content.", header.get(HEADER_CONTENT_LENGTH));
       return 0;
     }
 
     if (contentLength <= 0) {
-      logger.warning("Got non-positive content length: %s. Ignore the content.", contentLength);
+      logger.atWarning().log(
+          "Got non-positive content length: %s. Ignore the content.", contentLength);
       return 0;
     }
 

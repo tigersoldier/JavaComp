@@ -3,9 +3,9 @@ package org.javacomp.server.handler.textdocument;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Range;
+import com.google.common.flogger.FluentLogger;
 import java.nio.file.Paths;
 import java.util.List;
-import org.javacomp.logging.JLogger;
 import org.javacomp.model.FileScope;
 import org.javacomp.protocol.Location;
 import org.javacomp.protocol.ReferenceParams;
@@ -20,7 +20,7 @@ import org.javacomp.server.handler.utils.MessageUtils;
  * <p>See https://microsoft.github.io/language-server-protocol/specification#textDocument_references
  */
 public class ReferencesHandler extends RequestHandler<ReferenceParams> {
-  private static final JLogger logger = JLogger.createForEnclosingClass();
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   private final Server server;
 

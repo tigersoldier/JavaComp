@@ -1,6 +1,7 @@
 package org.javacomp.project;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.flogger.FluentLogger;
 import java.nio.file.Path;
 import java.util.Deque;
 import java.util.HashSet;
@@ -10,7 +11,6 @@ import java.util.Set;
 import java.util.function.Consumer;
 import org.javacomp.file.FileManager;
 import org.javacomp.file.PathUtils;
-import org.javacomp.logging.JLogger;
 import org.javacomp.model.FileScope;
 import org.javacomp.model.Module;
 import org.javacomp.options.IndexOptions;
@@ -18,7 +18,7 @@ import org.javacomp.parser.Parser;
 import org.javacomp.parser.classfile.ClassModuleBuilder;
 
 public class FileSystemModuleManager implements ModuleManager {
-  private static final JLogger logger = JLogger.createForEnclosingClass();
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
   private static final String JAVA_EXTENSION = ".java";
   private static final String JAR_EXTENSION = ".jar";
   private static final String SRCJAR_EXTENSION = ".srcjar";
@@ -83,7 +83,7 @@ public class FileSystemModuleManager implements ModuleManager {
         module.addOrReplaceFileScope(fileScope.get());
       }
     } catch (Throwable e) {
-      logger.warning(e, "Failed to process file %s", path);
+      logger.atWarning().withCause(e).log("Failed to process file %s", path);
     }
   }
 
@@ -111,7 +111,7 @@ public class FileSystemModuleManager implements ModuleManager {
   }
 
   private void addJarModule(Path path) {
-    logger.fine("Adding JAR module for %s", path);
+    logger.atFine().log("Adding JAR module for %s", path);
     try {
       Module jarModule = new Module();
       ClassModuleBuilder classModuleBuilder = new ClassModuleBuilder(jarModule);
@@ -125,13 +125,14 @@ public class FileSystemModuleManager implements ModuleManager {
                 try {
                   classModuleBuilder.processClassFile(filePath);
                 } catch (Throwable t) {
-                  logger.warning(t, "Failed to process .class file: %s", filePath);
+                  logger.atWarning().withCause(t).log(
+                      "Failed to process .class file: %s", filePath);
                 }
               });
       PathUtils.walkDirectory(rootJarPath, handlers, /* ignorePathPredicate= */ filePath -> false);
       projectModule.addDependingModule(jarModule);
     } catch (Throwable t) {
-      logger.warning(t, "Failed to create module for JAR file %s", path);
+      logger.atWarning().withCause(t).log("Failed to create module for JAR file %s", path);
     }
   }
 }

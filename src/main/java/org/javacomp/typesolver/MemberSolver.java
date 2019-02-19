@@ -2,10 +2,11 @@ package org.javacomp.typesolver;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.flogger.FluentLogger;
+import com.google.common.flogger.StackSize;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import org.javacomp.logging.JLogger;
 import org.javacomp.model.ClassEntity;
 import org.javacomp.model.Entity;
 import org.javacomp.model.EntityWithContext;
@@ -17,7 +18,7 @@ import org.javacomp.model.VariableEntity;
 
 /** Logic for finding the entity that defines the member of a class. */
 public class MemberSolver {
-  private static final JLogger logger = JLogger.createForEnclosingClass();
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   private static final String IDENT_THIS = "this";
   private static final String IDENT_LENGTH = "length";
@@ -84,7 +85,8 @@ public class MemberSolver {
       String identifier, EntityWithContext baseEntity, Module module) {
     // Methods must be defined in classes.
     if (!(baseEntity.getEntity() instanceof ClassEntity)) {
-      logger.warning(new Throwable(), "Cannot find method of non-class entities %s", baseEntity);
+      logger.atWarning().withStackTrace(StackSize.LARGE).log(
+          "Cannot find method of non-class entities %s", baseEntity);
       return ImmutableList.of();
     }
 

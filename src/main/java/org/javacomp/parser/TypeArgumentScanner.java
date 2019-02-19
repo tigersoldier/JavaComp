@@ -1,16 +1,16 @@
 package org.javacomp.parser;
 
+import com.google.common.flogger.FluentLogger;
 import com.sun.source.tree.Tree;
 import com.sun.source.tree.WildcardTree;
 import com.sun.source.util.TreeScanner;
 import java.util.Optional;
-import org.javacomp.logging.JLogger;
 import org.javacomp.model.TypeArgument;
 import org.javacomp.model.WildcardTypeArgument;
 
 /** Converts a Java source tree to a {@link TypeArgument}. */
 public class TypeArgumentScanner extends TreeScanner<TypeArgument, Void> {
-  private static final JLogger logger = JLogger.createForEnclosingClass();
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   public TypeArgument getTypeArgument(Tree node) {
     return scan(node, null);
@@ -45,7 +45,7 @@ public class TypeArgumentScanner extends TreeScanner<TypeArgument, Void> {
         bound = Optional.empty();
         break;
       default:
-        logger.warning("Unknown wildcard type varialbe kind: %s", node.getKind());
+        logger.atWarning().log("Unknown wildcard type varialbe kind: %s", node.getKind());
         bound = Optional.empty();
     }
     return WildcardTypeArgument.create(bound);

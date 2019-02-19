@@ -1,11 +1,11 @@
 package org.javacomp.completion;
 
 import com.google.auto.value.AutoValue;
+import com.google.common.flogger.FluentLogger;
 import com.sun.source.tree.LineMap;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import java.nio.file.Path;
 import org.javacomp.file.FileManager;
-import org.javacomp.logging.JLogger;
 import org.javacomp.model.FileScope;
 import org.javacomp.parser.LineMapUtil;
 
@@ -17,7 +17,7 @@ import org.javacomp.parser.LineMapUtil;
  */
 @AutoValue
 abstract class ContentWithLineMap {
-  private static final JLogger logger = JLogger.createForEnclosingClass();
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   abstract CharSequence getContent();
 
@@ -29,12 +29,12 @@ abstract class ContentWithLineMap {
   String extractCompletionPrefix(int line, int column) {
     int position = LineMapUtil.getPositionFromZeroBasedLineAndColumn(getLineMap(), line, column);
     if (position < 0) {
-      logger.warning(
+      logger.atWarning().log(
           "Position of (%s, %s): %s is negative when getting completion prefix for file %s",
           line, column, position, getFilePath());
     }
     if (position >= getContent().length()) {
-      logger.warning(
+      logger.atWarning().log(
           "Position of (%s, %s): %s is greater than the length of the content %s when "
               + "getting completion prefix for file %s",
           line, column, position, getContent().length(), getFilePath());
@@ -50,14 +50,14 @@ abstract class ContentWithLineMap {
   String substring(int line, int column, int length) {
     int position = LineMapUtil.getPositionFromZeroBasedLineAndColumn(getLineMap(), line, column);
     if (position < 0) {
-      logger.warning(
+      logger.atWarning().log(
           "Position of (%s, %s): %s is negative when getting substring for file %s",
           line, column, position, getFilePath());
       return "";
     }
     CharSequence content = getContent();
     if (content.length() < position) {
-      logger.warning(
+      logger.atWarning().log(
           "Position of (%s, %s): %s is greater than the length of the content %s when "
               + "getting substring for file %s",
           line, column, position, content.length(), getFilePath());
@@ -70,7 +70,7 @@ abstract class ContentWithLineMap {
   static ContentWithLineMap create(FileScope fileScope, FileManager fileManager, Path filePath) {
     CharSequence content = fileManager.getFileContent(filePath).orElse(null);
     if (content == null) {
-      logger.warning("Cannot get file content of %s", filePath);
+      logger.atWarning().log("Cannot get file content of %s", filePath);
       content = "";
     }
 

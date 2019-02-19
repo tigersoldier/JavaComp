@@ -3,6 +3,7 @@ package org.javacomp.file;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.flogger.FluentLogger;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.DirectoryStream;
@@ -20,11 +21,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.ExecutorService;
-import org.javacomp.logging.JLogger;
 
 /** Manages all files for the same project. */
 public class FileManagerImpl implements FileManager {
-  private static final JLogger logger = JLogger.createForEnclosingClass();
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   /**
    * A map from normalized file name to snapshotted files.
@@ -53,7 +53,7 @@ public class FileManagerImpl implements FileManager {
           matcher = fs.getPathMatcher("glob:" + pattern);
           ignorePathMatchersBuilder.add(matcher);
         } catch (Throwable t) {
-          logger.warning(t, "Invalid ignore path pattern %s", pattern);
+          logger.atWarning().withCause(t).log("Invalid ignore path pattern %s", pattern);
         }
       }
       ignorePathMatchers = ignorePathMatchersBuilder.build();
@@ -141,7 +141,7 @@ public class FileManagerImpl implements FileManager {
           directories.add(subDir);
         }
       } catch (Throwable e) {
-        logger.warning(e, "Cannot list files in directory %s", directory);
+        logger.atWarning().withCause(e).log("Cannot list files in directory %s", directory);
       }
     }
   }
@@ -162,7 +162,7 @@ public class FileManagerImpl implements FileManager {
     try {
       return Optional.of(new String(Files.readAllBytes(normalizedPath), UTF_8));
     } catch (Exception e) {
-      logger.severe(e, "Failed to read content from file %s", normalizedPath);
+      logger.atSevere().withCause(e).log("Failed to read content from file %s", normalizedPath);
     }
     return Optional.empty();
   }

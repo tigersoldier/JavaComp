@@ -1,17 +1,17 @@
 package org.javacomp.parser;
 
+import com.google.common.flogger.FluentLogger;
 import com.sun.source.tree.LineMap;
 import java.nio.file.Path;
 import java.util.Optional;
 import org.javacomp.file.FileManager;
-import org.javacomp.logging.JLogger;
 import org.javacomp.model.FileScope;
 import org.javacomp.options.IndexOptions;
 import org.javacomp.parser.FileContentFixer.FixedContent;
 
 /** Parser that converts source file to {@link FileScope}. */
 public class Parser {
-  private static final JLogger logger = JLogger.createForEnclosingClass();
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   private final ParserContext parserContext = new ParserContext();
   private final FileContentFixer fileContentFixer = new FileContentFixer(parserContext);
@@ -27,7 +27,7 @@ public class Parser {
     parserContext.setupLoggingSource(path.toString());
     Optional<CharSequence> optionalContent = fileManager.getFileContent(path);
     if (!optionalContent.isPresent()) {
-      logger.info("Didn't parse %s because it's not found.", path);
+      logger.atInfo().log("Didn't parse %s because it's not found.", path);
       return Optional.empty();
     }
     CharSequence content = optionalContent.get();

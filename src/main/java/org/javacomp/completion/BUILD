@@ -7,7 +7,6 @@ java_library(
     srcs = glob(["*.java"]),
     deps = [
         "//src/main/java/org/javacomp/file",
-        "//src/main/java/org/javacomp/logging",
         "//src/main/java/org/javacomp/model",
         "//src/main/java/org/javacomp/parser",
         "//src/main/java/org/javacomp/project:modulemanager",
@@ -15,6 +14,7 @@ java_library(
         "//src/main/java/org/javacomp/protocol",
         "//src/main/java/org/javacomp/typesolver",
         "//third_party:auto_value",
+        "//third_party:flogger",
         "//third_party:guava",
         "//third_party:javac",
         "//third_party:jsr305",

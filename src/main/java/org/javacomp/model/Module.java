@@ -1,6 +1,7 @@
 package org.javacomp.model;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.flogger.FluentLogger;
 import java.nio.file.Path;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -9,7 +10,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import org.javacomp.logging.JLogger;
 
 /**
  * A scope containing a set of classes and the packages defined under the root (unnamed) package.
@@ -17,7 +17,7 @@ import org.javacomp.logging.JLogger;
  * <p>A Module may be created from a set of Java files, index cache files, or JAR archives.
  */
 public class Module {
-  private static final JLogger logger = JLogger.createForEnclosingClass();
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   // Map of filename -> FileScope.
   private final Map<String, FileScope> fileScopeMap;
@@ -31,7 +31,8 @@ public class Module {
   }
 
   public synchronized void addOrReplaceFileScope(FileScope fileScope) {
-    logger.fine("Adding file: %s: %s", fileScope.getFilename(), fileScope.getMemberEntities());
+    logger.atFine().log(
+        "Adding file: %s: %s", fileScope.getFilename(), fileScope.getMemberEntities());
     FileScope existingFileScope = fileScopeMap.get(fileScope.getFilename());
     // Add the new file scope to the package first, so that we don't GC the pacakge if
     // the new file and old file are in the same pacakge and is the only file in the package.

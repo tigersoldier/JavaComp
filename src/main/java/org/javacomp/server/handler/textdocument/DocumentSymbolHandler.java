@@ -2,12 +2,12 @@ package org.javacomp.server.handler.textdocument;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.flogger.FluentLogger;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import javax.annotation.Nullable;
-import org.javacomp.logging.JLogger;
 import org.javacomp.model.ClassEntity;
 import org.javacomp.model.Entity;
 import org.javacomp.model.EntityScope;
@@ -32,7 +32,7 @@ import org.javacomp.server.handler.utils.MessageUtils;
  * https://github.com/Microsoft/language-server-protocol/blob/master/protocol.md#textDocument_hover
  */
 public class DocumentSymbolHandler extends RequestHandler<DocumentSymbolParams> {
-  private static final JLogger logger = JLogger.createForEnclosingClass();
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   private static final ImmutableSet<SymbolKind> DEFAULT_SUPPORTED_SYMBOL_KINDS =
       ImmutableSet.of(
@@ -108,7 +108,7 @@ public class DocumentSymbolHandler extends RequestHandler<DocumentSymbolParams> 
       EntityScope scope,
       FileScope fileScope,
       Set<SymbolKind> supportedSymbolKinds) {
-    logger.fine("Building document symbols for scope %s", scope);
+    logger.atFine().log("Building document symbols for scope %s", scope);
 
     @Nullable DocumentSymbol newSymbol = null;
     ImmutableList.Builder<DocumentSymbol> children = symbols;
@@ -141,7 +141,7 @@ public class DocumentSymbolHandler extends RequestHandler<DocumentSymbolParams> 
       FileScope fileScope,
       Set<SymbolKind> supportedSymbolKinds,
       @Nullable String containerName) {
-    logger.fine("Building symbol informations in scope %s", scope);
+    logger.atFine().log("Building symbol informations in scope %s", scope);
     for (Entity entity : scope.getMemberEntities().values()) {
       SymbolKind symbolKind = getSymbolKind(entity, supportedSymbolKinds);
       if (symbolKind != null) {
@@ -202,9 +202,9 @@ public class DocumentSymbolHandler extends RequestHandler<DocumentSymbolParams> 
         symbolKind = SymbolKind.VARIABLE;
         break;
       default:
-        logger.fine("", entity.getKind());
+        logger.atFine().log("", entity.getKind());
     }
-    logger.fine("Symbol %s for %s", symbolKind, entity);
+    logger.atFine().log("Symbol %s for %s", symbolKind, entity);
     return symbolKind;
   }
 }

@@ -3,6 +3,7 @@ package org.javacomp.file;
 import static com.google.common.base.Preconditions.checkState;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.flogger.FluentLogger;
 import java.io.IOException;
 import java.nio.file.ClosedWatchServiceException;
 import java.nio.file.DirectoryStream;
@@ -22,14 +23,13 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-import org.javacomp.logging.JLogger;
 
 /**
  * A wrapper around {@link WatchService} that supports watching both file system files and
  * snapshotted files.
  */
 class FileWatcher {
-  private static final JLogger logger = JLogger.createForEnclosingClass();
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   private final WatchService watchService;
   private final Map<Path, WatchKey> watchKeyMap;
@@ -70,13 +70,13 @@ class FileWatcher {
   synchronized boolean watchDirectory(Path path) {
 
     if (PathUtils.shouldIgnorePath(path, this.projectRoot, this.ignorePathMatchers)) {
-      logger.info("Ignore watching directory %s", path);
+      logger.atInfo().log("Ignore watching directory %s", path);
       return false;
     }
 
     Path normalizedPath = path.normalize();
     if (watchKeyMap.containsKey(normalizedPath)) {
-      logger.info("Directory %s has already been watched.", path);
+      logger.atInfo().log("Directory %s has already been watched.", path);
       return false;
     }
 
@@ -90,7 +90,7 @@ class FileWatcher {
       watchKeyMap.put(path, watchKey);
       return true;
     } catch (IOException e) {
-      logger.warning(e, "Cannot watch directory %s.", path);
+      logger.atWarning().withCause(e).log("Cannot watch directory %s.", path);
     }
     return false;
   }
@@ -98,7 +98,7 @@ class FileWatcher {
   private synchronized void unwatchDirectory(Path path) {
     Path normalizedPath = path.normalize();
     if (!watchKeyMap.containsKey(normalizedPath)) {
-      logger.info("Directory %s is not being watched.", path);
+      logger.atInfo().log("Directory %s is not being watched.", path);
       return;
     }
 
@@ -141,7 +141,7 @@ class FileWatcher {
     try {
       listener.onFileChange(path, eventKind);
     } catch (Throwable e) {
-      logger.warning(e, "File watch listener throws exception.");
+      logger.atWarning().withCause(e).log("File watch listener throws exception.");
     }
   }
 
@@ -228,7 +228,7 @@ class FileWatcher {
             }
           }
         } catch (Throwable t) {
-          logger.severe(t, "Cannot list files in directory %s", path);
+          logger.atSevere().withCause(t).log("Cannot list files in directory %s", path);
         }
       }
 

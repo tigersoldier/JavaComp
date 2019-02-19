@@ -1,11 +1,11 @@
 package org.javacomp.server.handler.textdocument;
 
+import com.google.common.flogger.FluentLogger;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
 import java.util.StringJoiner;
 import java.util.stream.Collectors;
-import org.javacomp.logging.JLogger;
 import org.javacomp.model.ClassEntity;
 import org.javacomp.model.Entity;
 import org.javacomp.model.MethodEntity;
@@ -26,7 +26,7 @@ import org.javacomp.server.handler.RequestHandler;
  * https://github.com/Microsoft/language-server-protocol/blob/master/protocol.md#textDocument_hover
  */
 public class HoverHandler extends RequestHandler<TextDocumentPositionParams> {
-  private static final JLogger logger = JLogger.createForEnclosingClass();
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   private final Server server;
 
@@ -189,7 +189,7 @@ public class HoverHandler extends RequestHandler<TextDocumentPositionParams> {
         sb.append("enum");
         break;
       default:
-        logger.warning("Unknown entity kind for class: %s", classEntity.getKind());
+        logger.atWarning().log("Unknown entity kind for class: %s", classEntity.getKind());
         sb.append(classEntity.getKind().name().toLowerCase());
         break;
     }

@@ -2,6 +2,7 @@ package org.javacomp.file;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.flogger.FluentLogger;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.FileSystem;
@@ -18,11 +19,10 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
-import org.javacomp.logging.JLogger;
 
 /** Utilities for dealing with paths. */
 public class PathUtils {
-  private static final JLogger logger = JLogger.createForEnclosingClass();
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   public static final ImmutableList<PathMatcher> DEFAULT_IGNORE_MATCHERS;
   private static final Path PSUEDO_ROOT_PATH = Paths.get("/");
@@ -106,7 +106,7 @@ public class PathUtils {
         entryStream.forEach(
             entryPath -> {
               if (ignorePredicate.test(entryPath)) {
-                logger.info("Ignoring path %s", entryPath);
+                logger.atInfo().log("Ignoring path %s", entryPath);
                 return;
               }
               if (Files.isDirectory(entryPath)) {
@@ -131,7 +131,7 @@ public class PathUtils {
   public static Path getRootPathForJarFile(Path jarFilePath) throws IOException {
     // JAR specific URI pattern.
     // See https://docs.oracle.com/javase/8/docs/technotes/guides/io/fsp/zipfilesystemprovider.html
-    logger.fine("Parsing jar file: %s", jarFilePath);
+    logger.atFine().log("Parsing jar file: %s", jarFilePath);
     String jarUri = "jar:file:" + jarFilePath.toAbsolutePath().normalize().toString();
     FileSystem fs = FileSystems.newFileSystem(URI.create(jarUri), ImmutableMap.of() /* env */);
     return fs.getPath("/");

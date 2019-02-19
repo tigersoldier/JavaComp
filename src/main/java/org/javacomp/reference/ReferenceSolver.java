@@ -6,13 +6,13 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Range;
+import com.google.common.flogger.FluentLogger;
 import com.sun.source.tree.LineMap;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
 import org.javacomp.file.FileManager;
-import org.javacomp.logging.JLogger;
 import org.javacomp.model.ClassEntity;
 import org.javacomp.model.Entity;
 import org.javacomp.model.EntityScope;
@@ -25,7 +25,7 @@ import org.javacomp.project.PositionContext;
 
 /** Finds references of a symbol. */
 public class ReferenceSolver {
-  private static final JLogger logger = JLogger.createForEnclosingClass();
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   private static final int MAX_SCOPES_TO_SEARCH = 500;
 
@@ -134,7 +134,7 @@ public class ReferenceSolver {
     String actualFileContent = fileContent.get().toString();
     int start = entityScope.getDefinitionRange().lowerEndpoint();
     int end = entityScope.getDefinitionRange().upperEndpoint();
-    logger.fine(
+    logger.atFine().log(
         "Finding entity %s in scope %s [%s, %s] of file %s",
         entityName, entityScope, start, end, fileScope.getFilename());
     while (start < end) {

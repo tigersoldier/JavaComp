@@ -8,6 +8,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.collect.Multimap;
+import com.google.common.flogger.FluentLogger;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -16,7 +17,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
-import org.javacomp.logging.JLogger;
 import org.javacomp.model.ClassEntity;
 import org.javacomp.model.EntityWithContext;
 import org.javacomp.model.MethodEntity;
@@ -38,7 +38,7 @@ import org.javacomp.model.TypeReference;
 public class OverloadSolver {
   private static final String OBJECT_FULL_NAME = "java.lang.Object";
 
-  private static final JLogger logger = JLogger.createForEnclosingClass();
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   // The type specified by the key can be converted to the types specified by the values without
   // losing information about the overall magnitude.
@@ -402,7 +402,7 @@ public class OverloadSolver {
       }
       return TypeMatchResult.NOT_MATCH;
     }
-    logger.info("Primitive type %s cannot be match to type %s", primitiveEntity, otherType);
+    logger.atInfo().log("Primitive type %s cannot be match to type %s", primitiveEntity, otherType);
     return TypeMatchResult.NOT_MATCH;
   }
 
@@ -477,7 +477,7 @@ public class OverloadSolver {
     }
 
     // Shouldn't reach here.
-    logger.warning("No most specific method picked.");
+    logger.atWarning().log("No most specific method picked.");
     return null;
   }
 

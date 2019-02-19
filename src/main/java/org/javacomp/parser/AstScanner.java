@@ -5,6 +5,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Range;
+import com.google.common.flogger.FluentLogger;
 import com.sun.source.tree.BlockTree;
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.CompilationUnitTree;
@@ -38,7 +39,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import javax.lang.model.element.Modifier;
-import org.javacomp.logging.JLogger;
 import org.javacomp.model.BlockScope;
 import org.javacomp.model.ClassEntity;
 import org.javacomp.model.Entity;
@@ -55,7 +55,7 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
   private static final List<String> UNAVAILABLE_QUALIFIERS = ImmutableList.of();
   private static final String ON_DEMAND_IMPORT_WILDCARD = "*";
 
-  private static final JLogger logger = JLogger.createForEnclosingClass();
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   private final TypeReferenceScanner typeReferenceScanner;
   private final ParameterScanner parameterScanner;
@@ -158,7 +158,7 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
         entityKind = Entity.Kind.ANNOTATION;
         break;
       default:
-        logger.severe("Unknown entity kind for class: %s", node.getKind());
+        logger.atSevere().log("Unknown entity kind for class: %s", node.getKind());
         return null;
     }
     ImmutableList.Builder<TypeReference> interfaceBuilder = new ImmutableList.Builder<>();

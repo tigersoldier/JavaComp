@@ -4,6 +4,8 @@ import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.flogger.FluentLogger;
+import com.google.common.flogger.StackSize;
 import com.google.gson.Gson;
 import java.io.IOException;
 import java.io.InputStream;
@@ -17,10 +19,14 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.FileHandler;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 import javax.annotation.Nullable;
 import org.javacomp.file.FileManager;
 import org.javacomp.file.FileManagerImpl;
-import org.javacomp.logging.JLogger;
 import org.javacomp.options.IndexOptions;
 import org.javacomp.options.JavaCompOptions;
 import org.javacomp.project.Project;
@@ -46,7 +52,7 @@ import org.javacomp.server.io.ResponseWriter;
 
 /** Entry point of the JavaComp server. */
 public class JavaComp implements Server {
-  private static final JLogger logger = JLogger.createForEnclosingClass();
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   private static final int REQUEST_BUFFER_SIZE = 4096;
   private static final int NUM_THREADS = 10;
@@ -125,15 +131,16 @@ public class JavaComp implements Server {
       mergeOptions(options, initializeOptions);
     }
 
-    logger.info("Initializing project: %s", projectRootUri);
-    logger.info(
+    logger.atInfo().log("Initializing project: %s", projectRootUri);
+    logger.atInfo().log(
         "Options:\n  logPath: %s\n  logLevel: %s\n" + "  ignorePaths: %s\n  typeIndexFiles: %s",
         options.logPath, options.logLevel, options.ignorePaths, options.typeIndexFiles);
     if (options.logPath != null) {
-      JLogger.setLogFile(options.logPath);
+      Logger.getLogger("");
+      setLogFile(options.logPath);
     }
     if (options.logLevel != null) {
-      JLogger.setLogLevel(options.getLogLevel());
+      setLogLevel(options.getLogLevel());
     }
     if (options.ignorePaths != null) {
       ignorePaths = options.getIgnorePaths();
@@ -187,7 +194,8 @@ public class JavaComp implements Server {
 
     isRunning.set(false);
     if (initialized) {
-      logger.warning(new Throwable(), "exit() is called without shutting down the server.");
+      logger.atWarning().withStackTrace(StackSize.LARGE).log(
+          "exit() is called without shutting down the server.");
       exitCode = 1;
     }
 
@@ -195,7 +203,7 @@ public class JavaComp implements Server {
     try {
       requestParser.close();
     } catch (Exception e) {
-      logger.warning(e, "Failed to close input stream on exit.");
+      logger.atWarning().withCause(e).log("Failed to close input stream on exit.");
     }
   }
 
@@ -247,5 +255,23 @@ public class JavaComp implements Server {
     }
     int exitCode = new JavaComp(System.in, System.out).run();
     System.exit(exitCode);
+  }
+
+  private static synchronized void setLogFile(String filePath) {
+    Logger rootLogger = Logger.getLogger("");
+    try {
+      FileHandler fileHandler = new FileHandler(filePath);
+      fileHandler.setFormatter(new SimpleFormatter());
+      rootLogger.addHandler(fileHandler);
+    } catch (Exception e) {
+    }
+  }
+
+  private static synchronized void setLogLevel(Level level) {
+    Logger rootLogger = Logger.getLogger("");
+    rootLogger.setLevel(level);
+    for (Handler handler : rootLogger.getHandlers()) {
+      handler.setLevel(level);
+    }
   }
 }

@@ -9,6 +9,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Sets;
+import com.google.common.flogger.FluentLogger;
 import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Deque;
@@ -19,7 +20,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import org.javacomp.logging.JLogger;
 import org.javacomp.model.AggregatePackageScope;
 import org.javacomp.model.ClassEntity;
 import org.javacomp.model.Entity;
@@ -46,7 +46,7 @@ import org.javacomp.model.WildcardTypeArgument;
 
 /** Logic for solvfing the type of a given entity. */
 public class TypeSolver {
-  private static final JLogger logger = JLogger.createForEnclosingClass();
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   private static final Optional<SolvedType> UNSOLVED = Optional.empty();
   private static final Set<Entity.Kind> CLASS_KINDS = ClassEntity.ALLOWED_KINDS;
@@ -725,7 +725,7 @@ public class TypeSolver {
         return solveJavaLangObject(module);
       }
     } else {
-      logger.warning("Unsupported type of type argument: %s", typeArgument);
+      logger.atWarning().log("Unsupported type of type argument: %s", typeArgument);
       return Optional.empty();
     }
   }
@@ -1040,7 +1040,7 @@ public class TypeSolver {
         }
         EntityWithContext entityWithContext = solvedEntity.get();
         if (!(entityWithContext.getEntity() instanceof ClassEntity)) {
-          logger.warning(
+          logger.atWarning().log(
               "%s is not a class entity for super class/interface type %s of class %s",
               entityWithContext.getEntity(),
               classReference.classType,

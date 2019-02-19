@@ -4,6 +4,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Range;
+import com.google.common.flogger.FluentLogger;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.URI;
@@ -20,7 +21,6 @@ import org.javacomp.completion.Completor;
 import org.javacomp.completion.TextEdits;
 import org.javacomp.file.FileChangeListener;
 import org.javacomp.file.FileManager;
-import org.javacomp.logging.JLogger;
 import org.javacomp.model.Entity;
 import org.javacomp.model.FileScope;
 import org.javacomp.model.Module;
@@ -34,7 +34,7 @@ import org.javacomp.storage.IndexStore;
 
 /** Handles all files in a project. */
 public class Project {
-  private static final JLogger logger = JLogger.createForEnclosingClass();
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   private static final String JDK_RESOURCE_PATH = "/resources/jdk/index.json";
   private static final String JAVA_EXTENSION = ".java";
@@ -62,7 +62,7 @@ public class Project {
 
   public synchronized void initialize() {
     if (initialized) {
-      logger.warning("Project has already been initalized.");
+      logger.atWarning().log("Project has already been initalized.");
       return;
     }
     initialized = true;
@@ -72,30 +72,31 @@ public class Project {
   }
 
   public synchronized void loadJdkModule() {
-    logger.info("Loading JDK module");
+    logger.atInfo().log("Loading JDK module");
     try (BufferedReader reader =
         new BufferedReader(
             new InputStreamReader(this.getClass().getResourceAsStream(JDK_RESOURCE_PATH), UTF_8))) {
       moduleManager.addDependingModule(new IndexStore().readModule(reader));
-      logger.info("JDK module loaded");
+      logger.atInfo().log("JDK module loaded");
     } catch (Throwable t) {
-      logger.warning(t, "Unable to load JDK module");
+      logger.atWarning().withCause(t).log("Unable to load JDK module");
     }
   }
 
   public synchronized void loadTypeIndexFile(String typeIndexFile) {
-    logger.info("Loading type index file %s", typeIndexFile);
+    logger.atInfo().log("Loading type index file %s", typeIndexFile);
     IndexStore indexStore = new IndexStore();
     try {
       Module module =
           indexStore.readModuleFromFile(
               fileManager.getProjectRootPath().resolve(Paths.get(typeIndexFile)));
       moduleManager.addDependingModule(module);
-      logger.info("Loaded type index file %s", typeIndexFile);
+      logger.atInfo().log("Loaded type index file %s", typeIndexFile);
     } catch (NoSuchFileException nsfe) {
-      logger.warning("Unable to load type index file %s: file doesn't exist", typeIndexFile);
+      logger.atWarning().log(
+          "Unable to load type index file %s: file doesn't exist", typeIndexFile);
     } catch (Throwable t) {
-      logger.warning(t, "Unable to load type index file %s", typeIndexFile);
+      logger.atWarning().withCause(t).log("Unable to load type index file %s", typeIndexFile);
     }
   }
 
@@ -153,7 +154,7 @@ public class Project {
   private class ProjectFileChangeListener implements FileChangeListener {
     @Override
     public void onFileChange(Path filePath, WatchEvent.Kind<?> changeKind) {
-      logger.fine("onFileChange(%s): %s", changeKind, filePath);
+      logger.atFine().log("onFileChange(%s): %s", changeKind, filePath);
       if (changeKind == StandardWatchEventKinds.ENTRY_CREATE
           || changeKind == StandardWatchEventKinds.ENTRY_MODIFY) {
         if (isJavaFile(filePath)) {

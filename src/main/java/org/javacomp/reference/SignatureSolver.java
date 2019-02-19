@@ -1,6 +1,7 @@
 package org.javacomp.reference;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.flogger.FluentLogger;
 import com.sun.source.tree.ClassTree;
 import com.sun.source.tree.ExpressionTree;
 import com.sun.source.tree.MethodInvocationTree;
@@ -13,7 +14,6 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import org.javacomp.logging.JLogger;
 import org.javacomp.model.Entity;
 import org.javacomp.model.MethodEntity;
 import org.javacomp.project.ModuleManager;
@@ -25,7 +25,7 @@ import org.javacomp.typesolver.TypeSolver;
 
 /** Finds the method signature of a symbol at a given position */
 public class SignatureSolver {
-  private static final JLogger logger = JLogger.createForEnclosingClass();
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   private static final Set<Entity.Kind> METHOD_KIND_SET = EnumSet.of(Entity.Kind.METHOD);
 
@@ -52,7 +52,8 @@ public class SignatureSolver {
     Optional<PositionContext> positionContext =
         PositionContext.createForPosition(moduleManager, filePath, line, column);
 
-    logger.severe("[DEBUG] getMethodSignature: %s %s %s", moduleManager, filePath, positionContext);
+    logger.atSevere().log(
+        "[DEBUG] getMethodSignature: %s %s %s", moduleManager, filePath, positionContext);
     if (!positionContext.isPresent()) {
       return emptySignature();
     }
@@ -88,7 +89,8 @@ public class SignatureSolver {
 
   private MethodSignatures getMethodSignatures(
       PositionContext positionContext, MethodInvocationTree method, Tree childNode) {
-    logger.severe("[DEBUG] getMethodSignature: %s %s %s", positionContext, method, childNode);
+    logger.atSevere().log(
+        "[DEBUG] getMethodSignature: %s %s %s", positionContext, method, childNode);
     List<MethodEntity> methods =
         expressionSolver
             .solveDefinitions(

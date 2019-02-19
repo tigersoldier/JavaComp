@@ -8,6 +8,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Range;
+import com.google.common.flogger.FluentLogger;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import java.io.BufferedWriter;
@@ -25,7 +26,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
-import org.javacomp.logging.JLogger;
 import org.javacomp.model.ClassEntity;
 import org.javacomp.model.Entity;
 import org.javacomp.model.EntityScope;
@@ -44,7 +44,7 @@ import org.javacomp.typesolver.TypeSolver;
 
 /** Storing and loading indexed Java modules from storage. */
 public class IndexStore {
-  private static final JLogger logger = JLogger.createForEnclosingClass();
+  private static final FluentLogger logger = FluentLogger.forEnclosingClass();
 
   private static final String QUALIFIER_SEPARATOR = "\\.";
   private static final Joiner QUALIFIER_JOINER = Joiner.on(".");
@@ -136,7 +136,7 @@ public class IndexStore {
     } else if (entity instanceof VariableEntity) {
       ret = serializeVariableEntity((VariableEntity) entity);
     } else {
-      logger.warning("Unknown Entity: %s", entity);
+      logger.atWarning().log("Unknown Entity: %s", entity);
       ret = new SerializedEntity();
     }
     ret.kind = entity.getKind().name();
@@ -357,7 +357,7 @@ public class IndexStore {
                 .map(solvedType -> EntityWithContext.from(solvedType).build());
       }
     } catch (Throwable t) {
-      logger.warning(t, "Error on solving type %s in %s", type, baseScope);
+      logger.atWarning().withCause(t).log("Error on solving type %s in %s", type, baseScope);
       optionalEntityWithContext = Optional.empty();
     }
     if (optionalEntityWithContext.isPresent()
@@ -405,7 +405,7 @@ public class IndexStore {
                     })
                 .collect(Collectors.toList());
       } catch (Exception e) {
-        logger.severe(
+        logger.atSevere().log(
             "Failed to deserialize type arguments %s for %s",
             Arrays.asList(type.typeArguments), type.fullName);
       }
