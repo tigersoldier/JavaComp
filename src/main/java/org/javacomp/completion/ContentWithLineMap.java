@@ -28,6 +28,7 @@ abstract class ContentWithLineMap {
   /** Gets the content before cursor position (line, column) as prefix for completion. */
   String extractCompletionPrefix(int line, int column) {
     int position = LineMapUtil.getPositionFromZeroBasedLineAndColumn(getLineMap(), line, column);
+    logger.fine("column:%s, position:%s", column, position);
     if (position < 0) {
       logger.warning(
           "Position of (%s, %s): %s is negative when getting completion prefix for file %s",
@@ -44,6 +45,7 @@ abstract class ContentWithLineMap {
     while (start >= 0 && Character.isJavaIdentifierPart(getContent().charAt(start))) {
       start--;
     }
+    logger.fine("start:%s", start);
     return getContent().subSequence(start + 1, position).toString();
   }
 

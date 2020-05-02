@@ -102,6 +102,7 @@ public class Project {
   private synchronized void addOrUpdateFile(Path filePath) {
     // Only fix content for files that are under completion.
     boolean fixContentForParsing = lastCompletedFile != null && lastCompletedFile.equals(filePath);
+    logger.fine("fixContentForParsing:%s", fixContentForParsing);
     moduleManager.addOrUpdateFile(filePath, fixContentForParsing);
   }
 

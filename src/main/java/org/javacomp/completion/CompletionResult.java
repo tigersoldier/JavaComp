@@ -31,6 +31,9 @@ public abstract class CompletionResult {
    * the cached completion.
    */
   boolean isIncrementalCompletion(Path filePath, int line, int column, String prefix) {
+    if(prefix.length()==0){
+      return false;
+    }
     if (!getFilePath().equals(filePath)) {
       return false;
     }

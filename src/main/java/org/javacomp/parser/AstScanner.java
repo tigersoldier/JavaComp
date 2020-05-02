@@ -255,6 +255,7 @@ public class AstScanner extends TreePathScanner<Void, EntityScope> {
     methodEntity.setParameters(parameterListBuilder.build());
 
     // TODO: distinguish between static and non-static methods.
+    logger.fine("fileScope:%s, methodEntity:%s", fileScope, methodEntity);
     currentScope.addEntity(methodEntity);
     List<String> previousQualifiers = this.currentQualifiers;
     // No entity defined inside method scope is qualified.

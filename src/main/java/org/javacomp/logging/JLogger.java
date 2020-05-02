@@ -18,6 +18,14 @@ public class JLogger {
   private static volatile boolean hasFileHandler = false;
   private final Logger javaLogger;
 
+  static {
+    // remove default logging handlers, we only support a FileHandler set through setLogFile
+    Logger rootLogger = Logger.getLogger("");
+    for(Handler handler : rootLogger.getHandlers()) {
+      rootLogger.removeHandler(handler);
+    }
+  }
+
   public static synchronized void setLogFile(String filePath) {
     Logger rootLogger = Logger.getLogger("");
 
@@ -38,9 +46,6 @@ public class JLogger {
   public static synchronized void setLogLevel(Level level) {
     Logger rootLogger = Logger.getLogger("");
     rootLogger.setLevel(level);
-    for (Handler handler : rootLogger.getHandlers()) {
-      handler.setLevel(level);
-    }
   }
 
   private JLogger(String enclosingClassName) {
@@ -50,14 +55,14 @@ public class JLogger {
   /** Creates a {@link JLogger} and sets its tag to the name of the class that calls it. */
   public static JLogger createForEnclosingClass() {
     StackTraceElement[] stackTrace = new Throwable().getStackTrace();
-    // The top of the stack trace is this method. The one belows it is the caller class.
+    // The top of the stack trace is this method. The one below it is the caller class.
     String enclosingClassName = stackTrace[1].getClassName();
     return new JLogger(enclosingClassName);
   }
 
   /** Logs a message at severe level. */
   public void severe(String msg) {
-    log(Level.SEVERE, msg, null /* thrown */);
+    log(Level.SEVERE, msg);
   }
 
   /**
@@ -67,7 +72,7 @@ public class JLogger {
    * @param args arguments to be filled into {@code msgfmt}
    */
   public void severe(String msgfmt, Object... args) {
-    log(Level.SEVERE, String.format(msgfmt, args), null /* thrown */);
+    log(Level.SEVERE, msgfmt, args);
   }
 
   /**
@@ -78,12 +83,12 @@ public class JLogger {
    * @param args arguments to be filled into {@code msgfmt}
    */
   public void severe(Throwable thrown, String msgfmt, Object... args) {
-    log(Level.SEVERE, String.format(msgfmt, args), thrown);
+    log(Level.SEVERE, thrown, msgfmt, args);
   }
 
   /** Logs a message at warning level. */
   public void warning(String msg) {
-    log(Level.WARNING, msg, null /* thrown */);
+    log(Level.WARNING, msg);
   }
 
   /**
@@ -93,7 +98,7 @@ public class JLogger {
    * @param args arguments to be filled into {@code msgfmt}
    */
   public void warning(String msgfmt, Object... args) {
-    log(Level.WARNING, String.format(msgfmt, args), null /* thrown */);
+    log(Level.WARNING, msgfmt, args);
   }
 
   /**
@@ -105,12 +110,12 @@ public class JLogger {
    * @param args arguments to be filled into {@code msgfmt}
    */
   public void warning(Throwable thrown, String msgfmt, Object... args) {
-    log(Level.WARNING, String.format(msgfmt, args), thrown);
+    log(Level.WARNING, thrown, msgfmt, args);
   }
 
   /** Logs a message at info level. */
   public void info(String msg) {
-    log(Level.INFO, msg, null /* thrown */);
+    log(Level.INFO, msg);
   }
 
   /**
@@ -120,12 +125,12 @@ public class JLogger {
    * @param args arguments to be filled into {@code msgfmt}
    */
   public void info(String msgfmt, Object... args) {
-    log(Level.INFO, String.format(msgfmt, args), null /* thrown */);
+    log(Level.INFO, msgfmt, args);
   }
 
   /** Logs a message at fine level. */
   public void fine(String msg) {
-    log(Level.FINE, msg, null /* thrown */);
+    log(Level.FINE, msg);
   }
 
   /**
@@ -135,10 +140,26 @@ public class JLogger {
    * @param args arguments to be filled into {@code msgfmt}
    */
   public void fine(String msgfmt, Object... args) {
-    log(Level.FINE, String.format(msgfmt, args), null /* thrown */);
+    log(Level.FINE, msgfmt, args);
   }
 
-  private void log(Level level, String msg, @Nullable Throwable thrown) {
+  public void log(Level level, String msgFormat, Object... msgArgs) {
+    log(level, null, msgFormat, msgArgs);
+  }
+
+  public void log(Level level, String msg) {
+    log(level, null, msg);
+  }
+
+  public void log(Level level, @Nullable Throwable thrown, String msgFormat, Object... msgArgs) {
+    if(!javaLogger.isLoggable(level))
+      return;
+    log(level, thrown, String.format(msgFormat, msgArgs));
+  }
+
+  public void log(Level level, @Nullable Throwable thrown, String msg) {
+    if(!javaLogger.isLoggable(level))
+      return;
     LogRecord logRecord = new LogRecord(level, msg);
     if (thrown != null) {
       logRecord.setThrown(thrown);

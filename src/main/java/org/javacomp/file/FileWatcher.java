@@ -131,6 +131,7 @@ class FileWatcher {
   }
 
   synchronized void notifyFileChange(Path path, WatchEvent.Kind<?> eventKind) {
+    logger.fine("path: %s", path);
     if (PathUtils.shouldIgnorePath(path, projectRoot, ignorePathMatchers)) {
       return;
     }
@@ -179,15 +180,18 @@ class FileWatcher {
       Path fullPath = dir.resolve(event.context());
 
       if (PathUtils.shouldIgnorePath(fullPath, projectRoot, ignorePathMatchers)) {
+        logger.fine("%s ignored", fullPath);
         return;
       }
 
       if (fileSnapshotPaths.contains(fullPath)) {
+        logger.fine("%s is on fileSnapshotPaths", fullPath);
         // The file is managed by file snapshots. Ignore file system events.
         return;
       }
 
       if (Files.isDirectory(fullPath)) {
+        logger.fine("%s is a directory", fullPath);
         handleDirectoryEvent(fullPath, eventKind);
         return;
       }
@@ -196,6 +200,7 @@ class FileWatcher {
     }
 
     private void handleDirectoryEvent(Path path, WatchEvent.Kind<?> eventKind) {
+      logger.fine("path:%s", path);
       if (eventKind == StandardWatchEventKinds.ENTRY_CREATE) {
         // New directory created, watch it.
         watchNewDirectory(path);

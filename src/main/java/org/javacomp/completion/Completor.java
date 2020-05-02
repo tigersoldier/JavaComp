@@ -66,6 +66,8 @@ public class Completor {
     Optional<PositionContext> positionContext =
         PositionContext.createForPosition(moduleManager, filePath, line, contextColumn);
 
+    logger.fine("filePath: %s, line: %s, contextColumn: %s", filePath, line, contextColumn );
+
     if (!positionContext.isPresent()) {
       return CompletionResult.builder()
           .setCompletionCandidates(ImmutableList.of())
@@ -79,8 +81,10 @@ public class Completor {
     ContentWithLineMap contentWithLineMap =
         ContentWithLineMap.create(positionContext.get().getFileScope(), fileManager, filePath);
     String prefix = contentWithLineMap.extractCompletionPrefix(line, column);
+    logger.fine("prefix:%s", prefix);
     // TODO: limit the number of the candidates.
     if (cachedCompletion.isIncrementalCompletion(filePath, line, column, prefix)) {
+      logger.fine("using cache");
       return getCompletionCandidatesFromCache(line, column, prefix);
     } else {
       cachedCompletion =

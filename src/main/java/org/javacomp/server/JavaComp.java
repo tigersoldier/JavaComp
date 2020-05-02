@@ -122,17 +122,18 @@ public class JavaComp implements Server {
     if (initializeOptions != null) {
       mergeOptions(options, initializeOptions);
     }
-
-    logger.info("Initializing project: %s", projectRootUri);
-    logger.info(
-        "Options:\n  logPath: %s\n  logLevel: %s\n" + "  ignorePaths: %s\n  typeIndexFiles: %s",
-        options.logPath, options.logLevel, options.ignorePaths, options.typeIndexFiles);
+    
     if (options.logPath != null) {
       JLogger.setLogFile(options.logPath);
     }
     if (options.logLevel != null) {
       JLogger.setLogLevel(options.getLogLevel());
     }
+    logger.info("Initializing project: %s", projectRootUri);
+    logger.info(
+        "Options:\n  logPath: %s\n  logLevel: %s\n" + "  ignorePaths: %s\n  typeIndexFiles: %s",
+        options.logPath, options.logLevel, options.ignorePaths, options.typeIndexFiles);
+
     if (options.ignorePaths != null) {
       ignorePaths = options.getIgnorePaths();
     } else {

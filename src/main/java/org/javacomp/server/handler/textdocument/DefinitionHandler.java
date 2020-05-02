@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableList;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Objects;
+import org.javacomp.logging.JLogger;
 import org.javacomp.model.Entity;
 import org.javacomp.model.EntityScope;
 import org.javacomp.model.FileScope;
@@ -22,6 +23,7 @@ import org.javacomp.server.handler.utils.MessageUtils;
  * https://github.com/Microsoft/language-server-protocol/blob/master/protocol.md#textDocument_definition
  */
 public class DefinitionHandler extends RequestHandler<TextDocumentPositionParams> {
+  private static final JLogger logger=JLogger.createForEnclosingClass();
   private final Server server;
 
   public DefinitionHandler(Server server) {
@@ -43,6 +45,7 @@ public class DefinitionHandler extends RequestHandler<TextDocumentPositionParams
     return definitions.stream()
         .map(
             entity -> {
+              logger.fine("getting location for %s", entity);
               com.google.common.collect.Range<Integer> range = entity.getSymbolRange();
               EntityScope scope = entity.getScope();
               while (!(scope instanceof FileScope) && scope.getParentScope().isPresent()) {
@@ -58,6 +61,7 @@ public class DefinitionHandler extends RequestHandler<TextDocumentPositionParams
                 // If the file scope is not created from a source code (e.g. it's created from
                 // a type index JSON file or class file), there is no souce code that defines the
                 // symbol.
+                logger.fine("%s is on a non SOURCE_COCE fileScope");
                 return null;
               }
               if (!fileScope.getLineMap().isPresent()) {

@@ -77,8 +77,10 @@ public class FileSystemModuleManager implements ModuleManager {
   }
 
   private void addOrUpdateFile(Module module, Path path, boolean fixContentForParsing) {
+    logger.fine("path:%s", path);
     try {
       Optional<FileScope> fileScope = parser.parseSourceFile(path, fixContentForParsing);
+      logger.fine("fileScope:%s", fileScope);
       if (fileScope.isPresent()) {
         module.addOrReplaceFileScope(fileScope.get());
       }

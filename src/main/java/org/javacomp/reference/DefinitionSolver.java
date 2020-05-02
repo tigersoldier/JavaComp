@@ -71,6 +71,7 @@ public class DefinitionSolver {
         PositionContext.createForPosition(moduleManager, filePath, line, column);
 
     if (!positionContext.isPresent()) {
+      logger.fine("positionContext not present");
       return ImmutableList.of();
     }
 
@@ -86,8 +87,10 @@ public class DefinitionSolver {
     if (leafTree instanceof LiteralTree) {
       // LiteralTree is also an ExpressionTree. We don't want to show type definitions for literal
       // constants.
+      logger.fine("leafTree is a LiteralTree");
       return ImmutableList.of();
     } else if (leafTree instanceof ExpressionTree) {
+      logger.fine("leafTree is a ExpressionTree");
       Set<Entity.Kind> allowedKinds = ALLOWED_ENTITY_KINDS;
       if (treeIsMethodName(leafTree, parentTree)) {
         // parentTree is the method we need to solve.

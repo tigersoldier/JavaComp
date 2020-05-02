@@ -11,10 +11,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import org.javacomp.logging.JLogger;
 
 /** Scope of sub packages and files in a package. */
 public class PackageScope implements EntityScope {
-  // Map of simple names -> subPackages.
+  static JLogger logger= JLogger.createForEnclosingClass();
+
+// Map of simple names -> subPackages.
   private final Multimap<String, PackageEntity> subPackages;
   private final Set<FileScope> files;
 
@@ -53,11 +56,13 @@ public class PackageScope implements EntityScope {
   }
 
   public void addFile(FileScope fileScope) {
-    files.add(fileScope);
+    if(!files.add(fileScope))
+      logger.warning("couldn't add fileScope:%s", fileScope);
   }
 
   public void removeFile(FileScope fileScope) {
-    files.remove(fileScope);
+    if(!files.remove(fileScope))
+      logger.warning("couln't remove fileScope:%s", fileScope);
   }
 
   /** @return whether the package has sub packages or files. */
